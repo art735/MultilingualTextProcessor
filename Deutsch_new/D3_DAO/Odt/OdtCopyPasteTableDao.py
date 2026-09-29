@@ -1,0 +1,80 @@
+import re
+
+import SentenceUtils
+import Utils
+import beautiful_soup_helper
+from DeutschNewConstants import OO_WRITER_STRIPES_DELIMITER, OO_WRITER_STRIPE_LINES_DELIMITER
+
+
+# Вычитывает содержимое Odt-таблицы, которая была скопирована в буфер обмена и вставлена в окно программы
+class OdtCopyPasteTableDao:
+
+    def get_1st_col_words_ignoring_sentences(self, html_str):
+        results = []
+        table_rows = self.parse_html_table(html_str)
+        # Перебираем в цикле все строки таблицы
+        for table_row in table_rows:
+            # Вычитываем и анализируем содержимое первого столбца каждой строки
+            first_column_data = table_row.split('|')[0]
+            # Первый столбец может содержать немецкие предложения - игнорируем их, собираем только слова!
+            if SentenceUtils.is_not_sentence(first_column_data):
+                results.append(first_column_data)
+
+        return results
+
+    def parse_html_table(self, html_str):
+        table_rows = []
+
+        soup = beautiful_soup_helper.getBs(html_str)
+        # tables = soup.find_all('table')  # Найти все таблицы
+        # Найти первую попавшуюся таблицу (предполагается, что таблица всегда будет одна)
+        table = soup.find('table')
+        rows = table.find_all('tr')  # Найти все строки в таблице
+        # Перебираем строки в таблице
+        for row in rows:
+            row_cells = []
+            cells = row.find_all(['td', 'th'])  # Найти все ячейки в строке
+            # Перебираем ячейки в строке
+            for cell in cells:
+                cell_text = cell.get_text()
+                processed_cell_text = self.process_cell(cell_text)
+                row_cells.append(processed_cell_text)
+            # end of inner loop
+            piped_row_cells = '|'.join(row_cells)
+            table_rows.append(piped_row_cells)
+
+        # table_rows_str = '\n'.join(table_rows)
+        return table_rows
+
+    def process_cell(self, cell_text):
+        result = cell_text
+
+        # Заменяем все символы табуляции на пробел (в OO Writer символов табуляции нет, но в сторонних инструментах по
+        # генерации html на основе OO Writer-таблицы, они могут быть).
+        result = re.sub(r'\t+', ' ', result)
+
+        # Заменяем два и более пробела на один пробел
+        result = re.sub(r' {2,}', ' ', result)
+
+        # Удаляем символ новой строки, стоящий в начале каждой ячейки (на всякий случай с квантификатором «+») и
+        # возможные пробелы, стоящие в конце строки
+        result = re.sub(r'^\n+|\s*$', '', result)
+
+        # Заменяем два и более символа новой строки (разделитель полос поля карточки) на 5 крышек и удаляем возможные
+        # пробелы по краям
+        result = re.sub(r'\s*\n\n+\s*', OO_WRITER_STRIPES_DELIMITER, result)
+
+        # Заменяем один символ новой строки (разделитель между строками одной полосы) на 3 крышки и удаляем возможные
+        # пробелы по краям
+        result = re.sub(r'\s*\n\s*', OO_WRITER_STRIPE_LINES_DELIMITER, result)
+
+        # Удаляем возможные пробелы в начале и конце строки
+        result = result.strip()
+
+        return result
+
+
+#########################################
+
+if __name__ == '__main__':
+    odtCopyPasteTableDao = OdtCopyPasteTableDao()

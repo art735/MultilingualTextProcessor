@@ -1,0 +1,31 @@
+
+
+
+class InputTextPreprocessor:
+
+    def preprocess(self, input_text: str):
+        # Удаляем символ, визуально выглядящий как маленький квадратик. При вставке таблицы из OO Writer в окно
+        # программы, он автоматически появляется в самом конце текста.
+        result = input_text.replace('\x00', '')
+
+        # По краям строки удаляем символы newline, а вслед за ними - и пробелы
+        result = result.strip('\n').strip()
+
+        return result
+
+####################################
+
+inputTextPreprocessor = InputTextPreprocessor()
+
+input_text = """
+
+       Ab morgen muss ich arbeiten. 
+Ich bin oft im Büro, aber nur für wenige Stunden.                 
+
+\x00
+
+"""
+res = inputTextPreprocessor.preprocess(input_text)
+print(res)
+
+

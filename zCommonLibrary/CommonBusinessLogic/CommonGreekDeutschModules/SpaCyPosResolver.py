@@ -1,0 +1,171 @@
+from MorphologyParser import MorphologyParser
+
+
+class SpaCyPosResolver:
+    def __init__(self):
+        self.morphologyParser = MorphologyParser()
+
+    def is_noun(self, pos):
+        result = False
+        # both PROPER and COMMON nouns
+        # if pos in ['PROPN', 'NOUN']:
+        if self.is_proper_noun(pos) or self.is_common_noun(pos):
+            result = True
+        return result
+
+    # Является ли слово СОБСТВЕННЫМ (PROPER) именем существительным
+    def is_proper_noun(self, pos):
+        result = pos == 'PROPN'
+        return result
+
+    # Является ли слово НАРИЦАТЕЛЬНЫМ (COMMON) именем существительным
+    def is_common_noun(self, pos):
+        result = pos == 'NOUN'
+        return result
+
+    def is_noun_in_initial_form(self, morph):
+
+        # Парсим морфологию, напр. Case=Nom|Gender=Neut|Number=Sing
+        gender = self.morphologyParser.parse(morph, 'Gender')
+        number = self.morphologyParser.parse(morph, 'Number')
+        case = self.morphologyParser.parse(morph, 'Case')
+
+        # Если поле Gender не пустое, значит форма ед. ч. для слова существует
+        if gender:
+            result = number == 'Sing' and case == 'Nom'
+        else:
+            # Если же поле Gender - пустое, значит форма ед. ч. для слова не существует, и слово употребляется только
+            # во мн.ч.; слова типа die Leute не имеют формы ед. ч.
+            result = case == 'Nom'
+
+        return result
+
+    def is_noun_in_non_initial_form(self, morph):
+        return not self.is_noun_in_initial_form(morph)
+
+    def is_adjective(self, pos):
+        is_adj = pos == 'ADJ'
+        return is_adj
+
+    # Определяем является ли слово местоимением не по pos-тегу 'PRON', а именно по ключу "PronType"
+    # в словаре morph. Неопределённое местоимение может быть помечено в spaCy одним из шести pos-тегов
+    # (NOUN, ADJ, NUM, PRON, ADV, DET), но при этом pos-тег не будет влиять на определение
+    # начальной формы (леммы) неопределённого местоимения (если верить ChatGPT-4omni, August 2024).
+    # Поэтому первейший критерий, по которому определяем часть речи - это, как ни странно, не pos-тег,
+    # а характерные поля объекта morph. В частности для выяснения является ли слово местоимением,
+    # проверяем поле "PronType" объекта morph и не обращаем внимания на pos-тег.
+    def is_pronoun(self, morph):
+        result = False
+        pronominal_type = self.morphologyParser.parse(morph, 'PronType')
+        # слово является местоимением, если поле 'PronType' в морфологии не пустое
+        if pronominal_type:
+            result = True
+        return result
+
+    # Данный метод вызывается и работает в контексте того, что точно известно, что местоимение является ЛИЧНЫМ или
+    # ПРИТЯЖАТЕЛЬНЫМ. Другие типы местоимений здесь не рассматриваются.
+    def is_pronoun_in_initial_form(self, morph):
+        case = self.morphologyParser.parse(morph, 'Case')
+        number = self.morphologyParser.parse(morph, 'Number')
+        gender = self.morphologyParser.parse(morph, 'Gender')
+
+        # Для личных местоимений достаточно проверить Case=Nom
+        is_in_initial_form = case == 'Nom'
+        # Для притяжательных местоимений будут непустыми поля number и gender, которые важно проверять одновременно
+        # через AND, т. к. поле number есть и у личных местоимений, но у них нет поля gender. Поэтому одновременное
+        # наличие полей number и gender является признаком притяжательных местоимений.
+        if number and gender:
+            is_in_initial_form = is_in_initial_form and number == 'Sing' and gender == 'Masc'
+        return is_in_initial_form
+
+    def is_pronoun_in_non_initial_form(self, morph):
+        return not self.is_pronoun_in_initial_form(morph)
+
+    def is_personal_or_possessive_pronoun(self, morph):
+        is_personal = self.is_personal_pronoun(morph)
+        is_possessive = self.is_possessive_pronoun(morph)
+        return is_personal or is_possessive
+
+    def is_personal_pronoun(self, morph):
+        pronominal_type = self.morphologyParser.parse(morph, 'PronType')
+        possessive_pronoun_flag = self.morphologyParser.parse(morph, 'Poss')
+        reflexive_pronoun_flag = self.morphologyParser.parse(morph, 'Reflex')
+        # Личные, притяжательные и возвратные местоимения в spaCy имеют общую особенность: PronType=Prs
+        # ЛИЧНОЕ местоимение в spaCy - это местоимение, морфология которого удовлетворяет следующим условиям:
+        # 1) PronType=Prs
+        # 2) Poss - отсутствует
+        # 3) Reflex - отсутствует
+        # Например: Case=Acc|Number=Sing|Person=3|PronType=Prs
+        is_personal = pronominal_type == 'Prs' and not possessive_pronoun_flag and not reflexive_pronoun_flag
+        return is_personal
+
+    def is_possessive_pronoun(self, morph):
+        pronominal_type = self.morphologyParser.parse(morph, 'PronType')
+        possessive_pronoun_flag = self.morphologyParser.parse(morph, 'Poss')
+        reflexive_pronoun_flag = self.morphologyParser.parse(morph, 'Reflex')
+        # Личные, притяжательные и возвратные местоимения в spaCy имеют общую особенность: PronType=Prs
+        # ПРИТЯЖАТЕЛЬНЫЕ местоимения в spaCy - это особая категория личных местоимений с доп. флагом Poss=Yes.
+        # Поэтому для выяснения того, является ли местоимение ПРИТЯЖАТЕЛЬНЫМ, нужно соблюдение следующих условий:
+        # 1) PronType=Prs
+        # 2) Poss=Yes
+        # 3) Reflex - отсутствует
+        # Например: Case=Acc|Gender=Masc|Number=Plur|Poss=Yes|PronType=Prs
+        is_possessive = pronominal_type == 'Prs' and possessive_pronoun_flag == 'Yes' and not reflexive_pronoun_flag
+        return is_possessive
+
+    def is_reflexive_pronoun(self, morph):
+        pronominal_type = self.morphologyParser.parse(morph, 'PronType')
+        possessive_pronoun_flag = self.morphologyParser.parse(morph, 'Poss')
+        reflexive_pronoun_flag = self.morphologyParser.parse(morph, 'Reflex')
+        # Личные, притяжательные и возвратные местоимения в spaCy имеют общую особенность: PronType=Prs
+        # ВОЗВРАТНЫЕ местоимения в spaCy - это особая категория личных местоимений с доп. флагом Reflex=Yes.
+        # Поэтому для выяснения того, является ли местоимение ВОЗВРАТНЫМ, нужно соблюдение следующих условий:
+        # 1) PronType=Prs
+        # 2) Reflex=Yes
+        # 3) Poss - отсутствует
+        # Например: Case=Acc|Gender=Masc|Number=Plur|PronType=Prs|Reflex=Yes
+        is_possessive = pronominal_type == 'Prs' and reflexive_pronoun_flag == 'Yes' and not possessive_pronoun_flag
+        return is_possessive
+
+    # Детерминативами в spaCy считаются, например, артикли, некоторые виды местоимений и т. д.
+    def is_determiner(self, pos):
+        result = False
+        if pos == 'DET':
+            result = True
+        return result
+
+    def is_verb(self, pos):
+        result = False
+        # if pos in ['AUX', 'VERB']:
+        if pos in ['VERB']:
+            result = True
+        return result
+
+    def is_aux(self, pos):
+        result = False
+        # if pos in ['AUX', 'VERB']:
+        if pos in ['AUX']:
+            result = True
+        return result
+
+    def is_aux_or_verb(self, pos):
+        result = False
+        if pos in ['AUX', 'VERB']:
+            # if pos in ['AUX']:
+            result = True
+        return result
+
+    # def is_verb_form_finite(morph):
+    #     verb_form = morph.get('VerbForm')[0]
+    #     is_finite = verb_form == 'Fin'
+    #     return is_finite
+
+    # не-инфинитивная VerbForm включает в себя как минимум две категории: VerbForm=Fin и VerbForm=Part
+    def is_verb_form_non_infinitive(self, morph):
+        is_non_infinitive = not self.is_verb_form_infinitive(morph)
+        return is_non_infinitive
+
+    def is_verb_form_infinitive(self, morph):
+        verb_form = self.morphologyParser.parse(morph, 'VerbForm')
+        is_infinitive = verb_form == 'Inf'
+        return is_infinitive

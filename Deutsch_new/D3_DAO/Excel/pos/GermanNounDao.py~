@@ -1,0 +1,78 @@
+import xlrd
+
+import ExcelDaoUtils
+import FileContentsSplitter
+from GermanExcelWorkbooksDao import GermanExcelWorkbooksDao
+from GermanNounDeclensionEntity import GermanNounDeclensionEntity
+
+
+# Реализует логику вычитки существительных из Excel-файлов, в которых имеется лист с названием 'Nouns'.
+class GermanNounDao:
+    # nouns_worksheet_indices = [[0, 1, 2], [4, 5], [6, 7]]
+    nouns_worksheet_indices = [0, 1, 2, 4, 5, 6, 7]
+
+    def __init__(self):
+        # self.germanExcelWorkbooksDao = GermanExcelWorkbooksDao()
+        pass
+
+    def convert_excel_rows_to_entities(self):
+
+        tuples = self._get_tuples()
+
+        # Разбиваем список кортежей на список списков, где разделителем служит строка, содержащая слово в 0-м столбце
+        # (начальная форма слова)
+        delimiter_cb = lambda row: True if row[0] else False
+        # Добавляем строку в результаты ВСЕГДА, т. е. без дополнительных условий
+        addition_condition_cb = lambda row: True
+        grouped_sheet_data = FileContentsSplitter.split_file_contents_by_delimiter(
+            tuples, delimiter_cb, addition_condition_cb, include_line_with_delimiter_in_results=True)
+
+        # Удаляем кортежи, состоящие полностью из пустых строк
+        # any(t) returns True if any item in an iterable are true, otherwise it returns False
+        grouped_sheet_data = [[tup for tup in sublist if any(tup)] for sublist in grouped_sheet_data]
+
+        noun_entities = []
+        for noun_rows in grouped_sheet_data:
+            noun_declension_entity = GermanNounDeclensionEntity()
+            for i, noun_row in enumerate(noun_rows):
+                # если работаем с 1-й строкой существительного (строкой, содержащей слово, транскрипцию и перевод)
+                if i == 0:
+                    noun_declension_entity.word = noun_row[0]
+                    noun_declension_entity.transcription = noun_row[1]
+                    noun_declension_entity.translation = noun_row[2]
+
+                    noun_declension_entity.pl_nom.front = noun_row[3]
+                    noun_declension_entity.pl_nom.transcription = noun_row[4]
+
+                noun_entities.append(noun_declension_entity)
+
+        return noun_entities
+
+    def _get_tuples(self):
+        noun_tuples = []
+        for filename in GermanExcelWorkbooksDao.all_excel_filenames:
+            workbook = xlrd.open_workbook(filename)
+            nouns_worksheet = workbook.sheet_by_name('Nouns')
+            nouns_worksheet_tuples = ExcelDaoUtils.getWorksheetData(nouns_worksheet, self.nouns_worksheet_indices)
+            noun_tuples.extend(nouns_worksheet_tuples)
+
+        return noun_tuples
+
+
+#############################################
+
+if __name__ == '__main__':
+    germanNounDao = GermanNounDao()
+
+    # noun_tuples = germanNounDao._get_tuples()
+    # print(len(noun_tuples))
+    # [print(t) for t in noun_tuples]
+
+    noun_entities = germanNounDao.convert_excel_rows_to_entities()
+    print(len(noun_entities))
+    [print(ne) for ne in noun_entities]
+
+
+
+
+

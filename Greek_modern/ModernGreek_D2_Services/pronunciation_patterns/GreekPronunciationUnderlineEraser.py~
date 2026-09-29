@@ -1,0 +1,49 @@
+from bs4 import BeautifulSoup
+import re
+
+from A1_GreekPronunciationUnderliner import A1_GreekPronunciationUnderliner
+from GrcRegExFinder import GrcRegExFinder
+
+
+def extract_underlined_words(html_text):
+    # Убираем все теги, кроме <u>
+    soup = BeautifulSoup(html_text, "html.parser")
+    for tag in soup.find_all(True):
+        if tag.name != "u":
+            tag.unwrap()
+
+    # Получаем HTML как строку
+    cleaned_html = str(soup)
+
+    greek_letters_class = f'[{GrcRegExFinder.greek_letters}]'
+
+    # Выкусываем из текста все греческие слова, включая те из них, внутри или вокруг которых встречаются
+    # HTML-теги подчёркивания <u>...</u>.
+    # Шаблон: греческие буквы и теги <u>...</u> внутри слова (в том числе многобуквенные <u>)
+    # pattern = re.compile(r'(?:<u>[\u0370-\u03FF\u1F00-\u1FFF]+</u>|[\u0370-\u03FF\u1F00-\u1FFF])+')
+    pattern = re.compile(fr'(?:<u>{greek_letters_class}+</u>|{greek_letters_class})+')
+    all_greek_words = pattern.findall(cleaned_html)
+
+    # Фильтруем список слов: оставляем только те, которые содержат <u>
+    u_tag_words = [word for word in all_greek_words if '<u>' in word]
+
+    # Очищаем u-тегированные слова от тега, чтобы проверить их вхождение в словарь слов-исключений
+    for u_tag_word in u_tag_words:
+        stripped_word = re.sub(r"</?u>", "", u_tag_word)
+        if stripped_word in A1_GreekPronunciationUnderliner.exceptions_dict:
+            subclasses_to_erase = A1_GreekPronunciationUnderliner.exceptions_dict[stripped_word]
+            for s
+
+
+    # TODO: теперь полученные только-тегированные слова очистить от u-тега и проверить их вхождение в словарь слов-исключений
+
+    return result
+
+
+html = """
+<p>Ο <u>υ</u>πολογιστής είναι ένα <u>ηλεκτρονικό</u> σύστημα. 
+Η λέξη <u>π</u>ροέρχεται από την π<u>λη</u>ροφορική.</p>
+"""
+
+words_with_u = extract_underlined_words(html)
+print(words_with_u)

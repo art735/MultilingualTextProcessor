@@ -1,0 +1,33 @@
+import os
+
+folder_path = r'E:\Languages\Deutsch\Goethe-Institut Wortliste\A1'
+
+
+def _get_filenames_by_predicate(folder_path, predicate):
+    absolute_filenames = []
+    for root, dirs, relative_filenames in os.walk(folder_path):
+        for relative_filename in relative_filenames:
+            if predicate(relative_filename):
+                absolute_filename = os.path.join(root, relative_filename)
+                absolute_filenames.append(absolute_filename)
+    return sorted(absolute_filenames)
+
+
+# Business method
+def get_all_vocab_filenames():
+    vocab_predicate = lambda filename: filename.startswith('[Vocab]') and filename.endswith('.odt')
+    vocab_filenames = _get_filenames_by_predicate(folder_path, vocab_predicate)
+    return vocab_filenames
+
+def get_all_portrait_filenames():
+    portrait_predicate = lambda filename: filename.endswith('(portrait).odt')
+    portrait_filenames = _get_filenames_by_predicate(folder_path, portrait_predicate)
+    return portrait_filenames
+
+
+###############################
+
+filenames = get_all_vocab_filenames()
+# filenames = get_all_portrait_filenames()
+for fn in filenames:
+    print(fn)

@@ -1,0 +1,102 @@
+import re
+
+import TranscriptionIntoPiecesSplitterAndProcessorWithCallback
+from german_specific import GermanTranscriptionGlottalStopAppender
+from CharConstants import ACCENT_MARKS_REGEX_CLASS
+
+positive_lookbehind_with_accents = f'(?<={ACCENT_MARKS_REGEX_CLASS})'
+
+starts_with = "^"
+
+p_t_k_class_group = "([ptk])"
+english_vowels = "iuɪʊeoəɛɜʌɔæaɑɒ"
+german_vowels = ''.join(GermanTranscriptionGlottalStopAppender.GERMAN_VOWEL_SOUNDS)
+# Конкатенируем строки и преобразовываем результат в set символов (чтобы исключить их дубликаты), а затем
+# обратно преобразовываем set символов в строку.
+english_and_german_vowels = ''.join(set(english_vowels + german_vowels))
+english_and_german_vowels_class_group = f'([{english_and_german_vowels}])'
+p_t_k_followed_by_vowel = f'{p_t_k_class_group}{english_and_german_vowels_class_group}'
+
+stressed_syllable_in_accented_transcription = positive_lookbehind_with_accents + p_t_k_followed_by_vowel
+stressed_syllable_in_NON_accented_transcription = starts_with + p_t_k_followed_by_vowel
+
+# Модификатор придыхания это не просто строчная буква 'h', это специальный Юникод-символ U+02B0.
+# Его преимущество перед обычной строчной 'h' состоит в том, что он изначально выглядит как надстрочный символ 'h',
+# а значит проблемой его superscript-ирования не нужно заниматься ни в OO Writer, ни в Anki.
+ASPIRATION_MODIFIER = 'ʰ'
+
+
+class TranscriptionAspirationService:
+    def __init__(self):
+        pass
+
+    # В качестве параметра 'transcription' в метод может поступать текст абзаца из ячейки .odt-файла (технически
+    # содержимое ячейки таблицы .odt-файла состоит из paragraphs).
+    # А поскольку абзацы ячейки могут иметь самое произвольное форматирование (какая-то часть текста может быть
+    # выделена определённым цветом, или маркером, или быть жирной и курсивной и т. д.), то в качестве
+    # 'transcription' могут приходить строки самого неожиданного состава:
+    # - они могут начинаться с '[', но не заканчиваться на ']' (или наоборот);
+    # - они могут начинаться и/или заканчиваться на пробел и его ни в коем случае нельзя стрипать, т. к. это ЗНАЧАЩИЙ
+    # пробел из середины текста, находящегося в ячейке таблицы.
+    # В связи с вышеперечисленными особенностями, работаем очень аккуратно:
+    # - пробелы по краям строки вообще не стрипаем;
+    # - скобки стрипаем после проверки на то, что скобка с той или иной стороны строки действительно присутствует.
+    def aspirate(self, bracketed_transcription):
+
+        output = TranscriptionIntoPiecesSplitterAndProcessorWithCallback.process(bracketed_transcription,
+                                                                                 self._aspirate_single_piece)
+
+        return output
+
+    def _aspirate_single_piece(self, piece):
+        # Перед ударным слогом не обязательно стоит знак ударения (напр., [kæt]). Поэтому понять является ли слог
+        # действительно ударным можно только после ответа на вопрос "Есть ли вообще в транскрипции слова знак ударения?"
+        # Если знак ударения где-либо в слове есть (в начале, в середине), значит он и показывает ударный слог.
+        # Если же знака ударения в слове нет, значит слово является односложным, и этот единственный слог слова и
+        # является ударным.
+        has_accent = re.search(ACCENT_MARKS_REGEX_CLASS, piece)
+        if has_accent:  # если транскрипция содержит знак(и) ударения
+            pattern = stressed_syllable_in_accented_transcription
+        else:
+            pattern = stressed_syllable_in_NON_accented_transcription
+        piece = re.sub(pattern, fr'\1{ASPIRATION_MODIFIER}\2', piece)
+
+        return piece
+
+
+######################################################
+### На логику из этого файла имеются юнит-тесты!!! ###
+
+test_transcription = "[pɪŋk]"
+test_transcription = "[tu]"
+test_transcription = "[kæt]"
+test_transcription = "/* это [tuːn] транскрипция */"
+
+
+if __name__ == '__main__':
+    transcriptionAspirationService = TranscriptionAspirationService()
+    # print(transcriptionAspirationService.aspirate(test_transcription))
+    # [print(transcriptionAspirationService.aspirate(tt)) for tt in test_transcriptions]
+
+    input1 = [
+        # В слове есть знак ударения (как в начале, так и в середине слова)
+        "['pʌpi]", "[ə'pend]", "['telɪfəun]", "[ə'tæk]", "['kɔli]", "[ə'kɔːd]",
+        "['pʌpi ə'pend 'telɪfəun ə'tæk 'kɔli ə'kɔːd]",
+        # В слове нет знака ударения
+        "[pɪŋk]", "[tu]", "[kæt]", "[pɪŋk tu kæt]",
+        "/* это [tuːn] транскрипция */",
+    ]
+
+    er1 = [
+        # В слове есть знак ударения (как в начале, так и в середине слова)
+        "['pʰʌpi]", "[ə'pʰend]", "['tʰelɪfəun]", "[ə'tʰæk]", "['kʰɔli]", "[ə'kʰɔːd]",
+        "['pʰʌpi ə'pʰend 'tʰelɪfəun ə'tʰæk 'kʰɔli ə'kʰɔːd]",
+        # В слове нет знака ударения
+        "[pʰɪŋk]", "[tʰu]", "[kʰæt]", "[pʰɪŋk tʰu kʰæt]",
+        "/* это [tʰuːn] транскрипция */",
+    ]
+
+    if all(transcriptionAspirationService.aspirate(input_val) == er for input_val, er in zip(input1, er1)):
+        print('test1 ok')
+    else:
+        print('test1 failed')

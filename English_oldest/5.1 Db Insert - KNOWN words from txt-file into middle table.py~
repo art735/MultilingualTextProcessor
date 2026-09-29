@@ -1,0 +1,28 @@
+from importlib.machinery import SourceFileLoader
+
+import Constants
+
+dbDao = SourceFileLoader('DbDao', './DAO/DbDao.py').load_module()
+excelDao = SourceFileLoader('ExcelDao', './DAO/ExcelDaoEnglishTopics.py').load_module()
+txtDao = SourceFileLoader('TxtDao', './DAO/TxtDao.py').load_module()
+
+
+def createWordFreqList(knownWordsLines):
+    wordFreq_list = list()
+    for line in knownWordsLines:
+        [word, freq] = line.split('\t')
+        wordFreq_list.append([word, freq])
+    return wordFreq_list
+
+########################################################################
+
+knownWordsFilename = txtDao.composeKnownWordsFilename()
+knownWordsLines = txtDao.readLinesFromFile(knownWordsFilename)
+
+wordFreq_list = createWordFreqList(knownWordsLines)
+wordId_dict = dbDao.getDbWordIdDictForAllWords()
+
+###
+linesToBeInsertedIntoDb = dbDao.createMiddleTableInsertList(wordFreq_list, wordId_dict, Constants.KNOWN_STATUS)
+dbDao.insertWordsInfoListIntoMiddleTable(linesToBeInsertedIntoDb)
+

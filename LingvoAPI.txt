@@ -1,0 +1,37 @@
+﻿ZTFlYjJkZTQtY2NlZC00Y2Q4LThlZjktOGEyMjk1YmI0NmZjOmQ5ZDAxODY1ZjJkMjRmMjE4N2ZhZDY3NmE1NWI0M2Y5
+
+**************************
+
+ZTFlYjJkZTQtY2NlZC00Y2Q4LThlZjktOGEyMjk1YmI0NmZjOmQ5ZDAxODY1ZjJkMjRmMjE4N2ZhZDY3NmE1NWI0M2Y5
+
+
+
+https://developers.lingvolive.com/api/v1/Minicard?text=cat&srcLang=en&dstLang=ru
+
+
+api/v1/Minicard?text={cat}&srcLang={en}&dstLang={ru}
+
+
+
+"url": "{{ServiceUrl}}/api/v1/Translation?text=go&srcLang=1033&dstLang=1049"
+
+
+
+https://developers.lingvolive.com/api/v1?key=ZTFlYjJkZTQtY2NlZC00Y2Q4LThlZjktOGEyMjk1YmI0NmZjOmQ5ZDAxODY1ZjJkMjRmMjE4N2ZhZDY3NmE1NWI0M2Y5/Minicard?text=冬&srcLang=1028&dstLang=1049
+
+
+
+
+data = {'sender':   'Alice',
+    'receiver': 'Bob',
+    'message':  'We did it!'}
+r = requests.post("http://localhost:8080", json={'json_payload': data})
+
+
+https://developers.lingvolive.com/ru-ru/Help
+
+
+https://developers.lingvolive.com?text=冬&srcLang=1028&dstLang=1049
+
+
+?text=冬&srcLang=1028&dstLang=1049

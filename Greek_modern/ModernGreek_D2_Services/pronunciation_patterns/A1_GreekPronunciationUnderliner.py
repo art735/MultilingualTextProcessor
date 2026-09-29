@@ -1,0 +1,245 @@
+import re
+import unittest
+
+import GreekPronunciationPatternsComposer
+import beautiful_soup_helper
+
+
+# ChatGPT prompt
+# У меня есть пять сложных регулярных выражений, которые захватывают в тексте как непересекающиеся,
+# так и пересекающиеся последовательности символов. Мне нужен алгоритм, который бы на выходе выдавал список
+# захваченных этими регулярными выражениями последовательностей символов из текста (наподобие результата работы
+# метода re.findall). При этом пересекающиеся последовательности символов не должны дублироваться:
+# ab + bcd = abcd (а не abbcd)
+
+class A1_GreekPronunciationUnderliner:
+    exceptions_dict = {
+        'διάλεξη': ['διά'],
+        'βιολογία': ['βιο'],
+        'γυμνάσιο': ['σιο'],
+        'δωμάτιο': ['τιο'],
+        'εμπόριο': ['όριο'],
+        'κιβώτιο': ['τιο'],
+        'πιέζω': ['πιέ'],
+        'τεράστιο': ['τιο'],
+        # подчёркивание 'νιο' как единого кластера отменяется, но 'νι' впоследствии будет подчёркнуто 2-й группой
+        # регулярных выражений
+        'διαγώνιος': [(0, 3), 'νιο'],
+    }
+
+    def __init__(self):
+        pass
+
+    def underline_sequences(self, text_with_possible_html_formatting):
+        # Подготовить 2 модификации входного текста:
+        # 1) очистить текст от всех тегов, кроме <u>
+        # 2) очистить текст вообще от всех тегов.
+        # Применить алгоритм к вар.2 и сравнить результат с вар.1, если не совпадает - перезаписать старый текст новым.
+        # При этом может произойти потеря форматирования: это цена за правильно подчёркнутый вариант текста.
+
+        plain_text = beautiful_soup_helper.strip_all_tags(text_with_possible_html_formatting)
+        underlined_plain_text = self.wrap_intervals_with_u_tags(plain_text)
+
+        text_stripped_from_all_tags_except_u_tag = beautiful_soup_helper.strip_all_tags_except_u_tag(text_with_possible_html_formatting)
+        if underlined_plain_text != text_stripped_from_all_tags_except_u_tag:
+            result = underlined_plain_text
+        else:
+            result = text_with_possible_html_formatting
+
+        return result
+
+    def wrap_intervals_with_u_tags(self, text):
+        """
+        Обрамляет интервалы тегами подчёркивания <u></u>.
+        Все интервалы считаются неперекрывающимися и отсортированными.
+        """
+
+        intervals = self.find_intervals(text)
+
+        # Интервалы должны быть отсортированы по началу (на всякий случай)
+        sorted_intervals = sorted(intervals, key=lambda x: x[0])
+
+        offset = 0  # Смещение позиции из-за вставки тегов
+        for start, end in sorted_intervals:
+            start += offset
+            end += offset
+
+            text = text[:start] + "<u>" + text[start:end] + "</u>" + text[end:]
+            offset += len("<u></u>")  # Учёт вставленных тегов
+
+        return text
+
+    def find_intervals(self, text):
+        # В первую очередь используем регулярные выражения, отвечающие за поиск правил палатализации. Палатализация
+        # всегда происходит внутри слов и никак не связана с правилами чтения на стыках слов.
+        # Поэтому правильным порядком действий будет найти все интервалы, связанные с палатализацией, сузить или удалить
+        # те из них, которые связаны со словами-исключениями, и затем, наконец, дополнить список интервалов правилами
+        # на стыках слов.
+        consonant_plus_unstressed_i_plus_vowel_patterns = GreekPronunciationPatternsComposer.get_consonant_plus_unstressed_i_plus_vowels()
+        consonant_plus_unstressed_i_plus_vowel_intervals = self._merge_overlapping_matches(text, consonant_plus_unstressed_i_plus_vowel_patterns, [])
+
+        # Корректируем palatalization_intervals с учётом того, что подстроки для слов из exceptions_dict не должны
+        # входить в эти интервалы. Для выполнения этой задачи некоторые интервалы придётся сузить, а другие и вовсе удалить.
+        palatalization_intervals_with_exceptions = self.process_intervals_for_exceptional_words(text, consonant_plus_unstressed_i_plus_vowel_intervals)
+
+        # Подключаем к алгоритму поиска интервалов правила чтения на стыках слов
+        other_patterns = GreekPronunciationPatternsComposer.get_other_patterns()
+        intervals = self._merge_overlapping_matches(text, other_patterns, palatalization_intervals_with_exceptions)
+
+        return intervals
+
+
+    # Алгоритм:
+    # 1. Собрать все вхождения от регулярных выражений: сохранить пары (start, end).
+    # 2. Отсортировать эти интервалы по start.
+    # 3. Слить пересекающиеся и смежные интервалы, чтобы избежать дублирования.
+    # 4. Извлечь соответствующие подстроки из исходного текста по объединённым интервалам.
+    def _merge_overlapping_matches(self, text, patterns, previous_intervals):
+        # Шаг 1: собираем все позиции совпадений
+        matches = []
+        for pattern in patterns:
+            for match in re.finditer(pattern, text):
+                matches.append([match.start(), match.end()])
+
+        # Добавляем также в matches и интервалы с предыдущих шагов
+        matches.extend(previous_intervals)
+
+        # Шаг 2: сортируем по началу совпадения
+        matches.sort()
+
+        # Шаг 3: объединяем пересекающиеся и смежные интервалы
+        intervals = []
+        for start, end in matches:
+            if not intervals:
+                intervals.append([start, end])
+            else:
+                prev_start, prev_end = intervals[-1]
+                if start <= prev_end:  # если есть пересечение или примыкание
+                    intervals[-1][1] = max(prev_end, end)  # расширяем правую границу существующего интервала
+                else:
+                    intervals.append([start, end])
+
+        # Из интервалов можно получить подстроки
+        # substrings = [text[start:end] for start, end in intervals]
+        # print(substrings)
+
+        return intervals
+
+    def process_intervals_for_exceptional_words(self, text, intervals):
+        """
+        Корректирует список интервалов intervals, исключая из него заданные
+        подстроки (исключения) для определённых слов, указанных в exceptions_dict.
+
+        Алгоритм:
+        1. Приводит текст к нижнему регистру.
+        2. Для каждого слова из exceptions_dict ищет все его вхождения в тексте.
+        3. Для каждого вхождения вычисляет абсолютные позиции исключаемых подстрок
+           (либо по смещениям, либо по строковому поиску).
+        4. Обходит все интервалы intervals и:
+            - удаляет или сужает те, которые пересекаются с исключением;
+            - сохраняет непересекающиеся интервалы как есть.
+
+        Параметры:
+        - text (str): исходный текст, в котором производится поиск исключений.
+        - intervals (list of [int, int]): список исходных интервалов.
+
+        Возвращает:
+        - list of [int, int]: обновлённый список интервалов.
+        """
+        lowered_text = text.lower()
+        updated_intervals = intervals
+
+        for word, exclusions in self.exceptions_dict.items():
+            for match in re.finditer(re.escape(word), lowered_text):
+                word_start = match.start()
+                for exclusion in exclusions:
+                    if isinstance(exclusion, tuple):
+                        ex_start, ex_end = exclusion
+                        abs_start = word_start + ex_start
+                        abs_end = word_start + ex_end
+                    else:  # исключение — подстрока
+                        rel_start = word.find(exclusion)
+                        if rel_start == -1:
+                            continue  # защита от ошибки
+                        abs_start = word_start + rel_start
+                        abs_end = abs_start + len(exclusion)
+
+                    # Обновляем интервалы, исключая перекрывающиеся части
+                    temp_intervals = []
+                    for start, end in updated_intervals:
+                        if end <= abs_start or start >= abs_end:
+                            temp_intervals.append([start, end])  # не пересекаются
+                        elif start < abs_start and end > abs_end:
+                            temp_intervals.append([start, abs_start])
+                            temp_intervals.append([abs_end, end])
+                        elif start < abs_start < end <= abs_end:
+                            temp_intervals.append([start, abs_start])
+                        elif abs_start <= start < abs_end < end:
+                            temp_intervals.append([abs_end, end])
+                        # иначе — интервал полностью покрыт исключением: пропускаем
+
+                    updated_intervals = temp_intervals
+
+        return updated_intervals
+
+
+############################################################
+
+test_str = 'τον κήπο'
+test_str = 'η βιολογία'
+test_str = 'της βιολογίας'
+test_str = 'η βιολογία, της βιολογίας'
+# test_str = 'της βιος'
+# test_str = 'η βιολογία, της βιος'
+test_str = 'τον γκιόνη'
+test_str = 'γιαγιά'
+test_str = 'η βιολογία, της βιολογίας'
+test_str = 'τον γκιόνη'
+
+if __name__ == '__main__':
+    a1_GreekPronunciationUnderliner = A1_GreekPronunciationUnderliner()
+    for i in range(0, 1):
+        intervals = a1_GreekPronunciationUnderliner.find_intervals(test_str)
+
+        substrings = [test_str[start:end] for start, end in intervals]
+        print(intervals)
+        print(substrings)
+        print()
+
+    res = test_str
+    for i in range(0, 5):
+        res = a1_GreekPronunciationUnderliner.underline_sequences(res)
+    print(res)
+
+
+    test1_input = [
+        'η βιολογία', 'της βιολογίας', 'η βιολογία, της βιολογίας',
+        'της βιος', 'η βιολογία, της βιος',
+        'τον γκιόνη',
+        'γιαγιά',
+    ]
+    test1_er = [
+        # 'η βιολογία', 'της βιολογίας', 'η βιολογία, της βιολογίας',
+        [[7, 9]], [[2, 5], [9, 11]], [[7, 9], [14, 17], [21, 23]],
+        # 'της βιος', 'η βιολογία, της βιος',
+        [[2, 7]], [[7, 9], [14, 19]],
+        # 'τον γκιόνη'
+        [[2, 10]],
+        [[0, 6]]
+    ]
+    if all(a1_GreekPronunciationUnderliner.find_intervals(input_val) == er for input_val, er in zip(test1_input, test1_er)):
+        print("test1 - ok")
+    else:
+        print("test1 - failed")
+        for i, (input_val, expected) in enumerate(zip(test1_input, test1_er)):
+            result = a1_GreekPronunciationUnderliner.find_intervals(input_val)
+            if result != expected:
+                print(f"\tCase {i + 1}:")
+                print(f"\tInput:    {input_val}")
+                print(f"\tExpected: {expected}")
+                print(f"\tGot:      {result}")
+
+    # Запуск вручную настоящего юнит-теста
+    from Test_GreekPronunciationUnderliner import Test_GreekPronunciationUnderliner
+    suite = unittest.TestLoader().loadTestsFromTestCase(Test_GreekPronunciationUnderliner)
+    unittest.TextTestRunner(verbosity=0).run(suite)

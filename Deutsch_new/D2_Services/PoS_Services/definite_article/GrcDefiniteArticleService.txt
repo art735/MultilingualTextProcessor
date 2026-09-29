@@ -1,0 +1,218 @@
+from CharConstants import NEWLINE
+from GrammarEnums import GenderSpaCy, NumberSpaCy, CaseSpaCy
+from MorphologyParser import MorphologyParser
+
+# Правильный порядок следования грам. категорий существительного: (1) род, (2) число, (3) падеж и никак иначе.
+# Исходя из этого порядка и выбрана схема именования констант!
+
+# SINGULAR number noun articles
+MASC_SG_NOM = 'ὁ'
+FEM_SG_NOM = 'ἡ'
+NEUT_SG_NOM = 'τὸ'
+
+MASC_SG_GEN = 'τοῦ'
+FEM_SG_GEN = 'τῆς'
+NEUT_SG_GEN = 'τοῦ'
+
+MASC_SG_DAT = 'τῷ'
+FEM_SG_DAT = 'τῇ'
+NEUT_SG_DAT = 'τῷ'
+
+MASC_SG_ACC = 'τόν'
+FEM_SG_ACC = 'τὴν'
+NEUT_SG_ACC = 'τὸ'
+
+# DUAL number noun articles
+MASC_DUAL_NOM = 'τὼ'
+FEM_DUAL_NOM = 'τὼ'
+NEUT_DUAL_NOM = 'τὼ'
+
+MASC_DUAL_GEN = 'τοῖν'
+FEM_DUAL_GEN = 'τοῖν'
+NEUT_DUAL_GEN = 'τοῖν'
+
+MASC_DUAL_DAT = 'τοῖν'
+FEM_DUAL_DAT = 'τοῖν'
+NEUT_DUAL_DAT = 'τοῖν'
+
+MASC_DUAL_ACC = 'τὼ'
+FEM_DUAL_ACC = 'τὼ'
+NEUT_DUAL_ACC = 'τὼ'
+
+# PLURAL number noun articles
+MASC_PL_NOM = 'οἱ'
+FEM_PL_NOM = 'αἱ'
+NEUT_PL_NOM = 'τά'
+
+MASC_PL_GEN = 'τῶν'
+FEM_PL_GEN = 'τῶν'
+NEUT_PL_GEN = 'τῶν'
+
+MASC_PL_DAT = 'τοῖς'
+FEM_PL_DAT = 'ταῖς'
+NEUT_PL_DAT = 'τοῖς'
+
+MASC_PL_ACC = 'τοὺς'
+FEM_PL_ACC = 'τάς'
+NEUT_PL_ACC = 'τά'
+
+
+# трёхмерный ассоциативный массив
+grc_definite_articles_dict = {
+    GenderSpaCy.Masc.value: {
+        NumberSpaCy.Sing.value: {
+            CaseSpaCy.Nom.value: MASC_SG_NOM,
+            CaseSpaCy.Gen.value: MASC_SG_GEN,
+            CaseSpaCy.Dat.value: MASC_SG_DAT,
+            CaseSpaCy.Acc.value: MASC_SG_ACC,
+            # CaseSpaCy.Voc.value: format_grammar_string(GenderAbbr.masc, NumberAbbr.sg, CaseAbbr.voc),
+        },
+        NumberSpaCy.Dual.value: {
+            CaseSpaCy.Nom.value: MASC_DUAL_NOM,
+            CaseSpaCy.Gen.value: MASC_DUAL_GEN,
+            CaseSpaCy.Dat.value: MASC_DUAL_DAT,
+            CaseSpaCy.Acc.value: MASC_DUAL_ACC,
+            # CaseSpaCy.Voc.value: format_grammar_string(GenderAbbr.masc, NumberAbbr.du, CaseAbbr.voc),
+        },
+        NumberSpaCy.Plur.value: {
+            CaseSpaCy.Nom.value: MASC_PL_NOM,
+            CaseSpaCy.Gen.value: MASC_PL_GEN,
+            CaseSpaCy.Dat.value: MASC_PL_DAT,
+            CaseSpaCy.Acc.value: MASC_PL_ACC,
+            # CaseSpaCy.Voc.value: format_grammar_string(GenderAbbr.masc, NumberAbbr.pl, CaseAbbr.voc),
+        }
+    },
+    GenderSpaCy.Fem.value: {
+        NumberSpaCy.Sing.value: {
+            CaseSpaCy.Nom.value: FEM_SG_NOM,
+            CaseSpaCy.Gen.value: FEM_SG_GEN,
+            CaseSpaCy.Dat.value: FEM_SG_DAT,
+            CaseSpaCy.Acc.value: FEM_SG_ACC,
+            # CaseSpaCy.Voc.value: format_grammar_string(GenderAbbr.fem, NumberAbbr.sg, CaseAbbr.voc),
+        },
+        NumberSpaCy.Dual.value: {
+            CaseSpaCy.Nom.value: FEM_DUAL_NOM,
+            CaseSpaCy.Gen.value: FEM_DUAL_GEN,
+            CaseSpaCy.Dat.value: FEM_DUAL_DAT,
+            CaseSpaCy.Acc.value: FEM_DUAL_ACC,
+            # CaseSpaCy.Voc.value: format_grammar_string(GenderAbbr.fem, NumberAbbr.du, CaseAbbr.voc),
+        },
+        NumberSpaCy.Plur.value: {
+            CaseSpaCy.Nom.value: FEM_PL_NOM,
+            CaseSpaCy.Gen.value: FEM_PL_GEN,
+            CaseSpaCy.Dat.value: FEM_PL_DAT,
+            CaseSpaCy.Acc.value: FEM_PL_ACC,
+            # CaseSpaCy.Voc.value: format_grammar_string(GenderAbbr.fem, NumberAbbr.pl, CaseAbbr.voc),
+        }
+    },
+    GenderSpaCy.Neut.value: {
+        NumberSpaCy.Sing.value: {
+            CaseSpaCy.Nom.value: NEUT_SG_NOM,
+            CaseSpaCy.Gen.value: NEUT_SG_GEN,
+            CaseSpaCy.Dat.value: NEUT_SG_DAT,
+            CaseSpaCy.Acc.value: NEUT_SG_ACC,
+            # CaseSpaCy.Voc.value: format_grammar_string(GenderAbbr.neut, NumberAbbr.sg, CaseAbbr.voc),
+        },
+        NumberSpaCy.Dual.value: {
+            CaseSpaCy.Nom.value: NEUT_DUAL_NOM,
+            CaseSpaCy.Gen.value: NEUT_DUAL_GEN,
+            CaseSpaCy.Dat.value: NEUT_DUAL_DAT,
+            CaseSpaCy.Acc.value: NEUT_DUAL_ACC,
+            # CaseSpaCy.Voc.value: format_grammar_string(GenderAbbr.neut, NumberAbbr.du, CaseAbbr.voc),
+        },
+        NumberSpaCy.Plur.value: {
+            CaseSpaCy.Nom.value: NEUT_PL_NOM,
+            CaseSpaCy.Gen.value: NEUT_PL_GEN,
+            CaseSpaCy.Dat.value: NEUT_PL_DAT,
+            CaseSpaCy.Acc.value: NEUT_PL_ACC,
+            # CaseSpaCy.Voc.value: format_grammar_string(GenderAbbr.neut, NumberAbbr.pl, CaseAbbr.voc),
+        }
+    }
+}
+
+
+class GrcDefiniteArticleService:
+    def __init__(self):
+        self.morphologyParser = MorphologyParser()
+
+    def add_definite_article_to_lemma(self, lemma: str, pos: str, morph):
+        # Искать артикль для леммы - это значит искать артикль всегда имея в виду только именительный падеж.
+        # Род и число существительного остаются без изменения.
+        gender = self.morphologyParser.parse(morph, "Gender")
+        number = self.morphologyParser.parse(morph, "Number")
+
+        # Если поле Gender не пустое, значит форма ед. ч. для слова существует и для поиска артикля именно для леммы
+        # нужно передавать number='Sing'. Если же поле Gender - пустое, значит форма ед. ч. для слова не существует, и
+        # слово употребляется только во мн.ч. В этом случае передаём тот Number, кот. пришёл от spaCy.
+        new_number = number
+        if gender:
+            new_number = 'Sing'
+
+        new_morph = {"Case": ["Nom"], "Gender": [gender], "Number": [new_number]}
+
+        result = self.add_definite_article_to_token(lemma, pos, new_morph)
+        return result
+
+    def add_definite_article_to_token(self, token: str, pos: str, morph):
+
+        articled_noun = '{0} {1}'
+        vocative_noun = '{0}!'
+
+        case = self.morphologyParser.parse(morph, "Case")
+        number = self.morphologyParser.parse(morph, "Number")
+        gender = self.morphologyParser.parse(morph, "Gender")
+
+        # result = ''
+        if case != CaseSpaCy.Voc.value:
+            definite_article = grc_definite_articles_dict[gender][number][case]
+            result = articled_noun.format(definite_article, token)
+        else:  # если падеж - звательный!
+            result = vocative_noun.format(token)
+
+        return result
+
+    # В gr-ru словарях артикль существительных указывают через запятую после самого существительного в им.п.
+    # (а иногда после род. п. существительного), в любом случае артикль стоит на самом последнем месте.
+    # Задача данного метода - переместить артикль на первое место, т. е. поставить его перед существительным, а заодно
+    # проигнорировать род. п. существительного (если он указывался).
+    def place_definite_article_on_the_first_place(self, input_text):
+        results = list()
+        words = [s for s in input_text.split(NEWLINE) if len(s)]  # взять в дальнейшую работу только непустые строки
+        for word in words:
+            # находим в словаре существительные (после них указан артикль)
+            word_article_ending = ', {0}'
+            masc_ending = word_article_ending.format(MASC_SG_NOM)
+            fem_ending = word_article_ending.format(FEM_SG_NOM)
+            neut_ending = word_article_ending.format(NEUT_SG_NOM)
+
+            if word.endswith(masc_ending) or word.endswith(fem_ending) or word.endswith(neut_ending):
+                pieces = word.split(', ')
+                noun_nominative, definite_article = pieces[0], pieces[-1]
+                res = definite_article + " " + noun_nominative
+                results.append(res)
+            else:
+                results.append(word)
+        output = NEWLINE.join(results)
+        return output
+
+
+###############################################################################
+
+grcDefiniteArticleService = GrcDefiniteArticleService()
+
+pos = 'NOUN'
+
+# lemma = 'άνθρωπος'
+# morph = {'Case': ['Nom'], 'Gender': ['Masc'], 'Number': ['Sing']}
+# res = grcDefiniteArticleService.add_definite_article_to_lemma(lemma, 'NOUN', morph)
+# print(res)
+
+# lemma = 'μελίσσαιν'
+# morph = {'Case': ['Gen'], 'Gender': ['Fem'], 'Number': ['Dual']}
+# res = grcDefiniteArticleService.add_definite_article_to_token(lemma, 'NOUN', morph)
+# print(res)
+
+# lemma = 'μέλια'
+# morph = {'Case': ['Voc'], 'Gender': ['Neut'], 'Number': ['Plur']}
+# res = grcDefiniteArticleService.add_definite_article_to_token(lemma, 'NOUN', morph)
+# print(res)

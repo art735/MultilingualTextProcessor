@@ -1,0 +1,74 @@
+import re
+
+import beautiful_soup_helper
+from CharConstants import SPACE, NBSP_unicode, NBSP_html
+
+
+def insert_nbsp_before_opening_parenthesis(html_str):
+    soup = beautiful_soup_helper.getBs(html_str)
+
+    # whitespace + positive lookahead of '('
+    search_regex = r'\s(?=\()'
+    # в данном случае лучше использовать именно Unicode-версию неразрывного пробела, т. к. в символе nbsp_html
+    # soup будет экранировать амперсанд с помощью &amp; и придётся потом с этим справляться
+
+    # Проходим по всем текстовым узлам
+    for text_node in soup.find_all(string=True):
+        # Заменяем обычный пробел перед скобкой на неразрывный пробел перед скобкой
+        updated_text = re.sub(search_regex, NBSP_unicode, text_node)
+        text_node.replace_with(updated_text)
+
+    # Получаем обновлённый HTML
+    updated_html = beautiful_soup_helper.soup_to_str(soup)
+    return updated_html
+
+
+# На момент написания данный метод предназначался для выполнения замен в Anki-поле Transcription, чтобы затем логика
+# подчёркивания альвеолярных согласных не могла испортить '&nbsp;' превратив его в '&n̲bs̲p;'.
+def replace_nbsp_with_regular_space(html_str):
+    updated_html = html_str.replace(NBSP_html, SPACE).replace(NBSP_unicode, SPACE)
+    return updated_html
+
+
+####################################################################################################
+
+if __name__ == '__main__':
+    # html_str = 'Как Ваша фамилия&nbsp;(<i>N...</i>)?'
+    # html_str = 'грузить (что-л.)'
+    # html_str = '[ar.t͡ʃiˈpɛ.la.ɡo&nbsp;toˈska.no]'
+
+    # res = insert_nbsp_before_opening_parenthesis(html_str)
+    # print(res)
+
+    # res = replace_nbsp_with_regular_space(html_str)
+    # print(res)
+
+    # Тестирование метода insert_nbsp_before_opening_parenthesis
+    input1 = [
+        'сын (<span style="color: rgb (0, 170, 0);"><i>sg. – pl. nom. – pl. gen.</i></span>)',
+        'грузить (что-л.)',
+        'Как Ваша фамилия&nbsp;(<i>N...</i>)?',
+    ]
+    er1 = [
+        'сын&nbsp;(<span style="color: rgb (0, 170, 0);"><i>sg. – pl. nom. – pl. gen.</i></span>)',
+        'грузить&nbsp;(что-л.)',
+        'Как Ваша фамилия&nbsp;(<i>N...</i>)?'
+    ]
+    if all(insert_nbsp_before_opening_parenthesis(input_val) == er for input_val, er in zip(input1, er1)):
+        print('test1 ok')
+    else:
+        print('test1 failed')
+
+    # Тестирование метода replace_nbsp_with_regular_space
+    input2 = [
+        '[ar.t͡ʃiˈpɛ.la.ɡo&nbsp;toˈska.no]',
+        '[ar.t͡ʃiˈpɛ.la.ɡo&nbsp;(toˈska.no)]',
+    ]
+    er2 = [
+        '[ar.t͡ʃiˈpɛ.la.ɡo toˈska.no]',
+        '[ar.t͡ʃiˈpɛ.la.ɡo (toˈska.no)]',
+    ]
+    if all(replace_nbsp_with_regular_space(input_val) == er for input_val, er in zip(input2, er2)):
+        print('test2 ok')
+    else:
+        print('test2 failed')

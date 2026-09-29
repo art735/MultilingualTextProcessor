@@ -1,0 +1,212 @@
+# NumPy (Numerical Python) is a package for scientific computing with Python
+# Данный пакет предлагается как опциональный prerequisite для библиотеки NLTK (http://www.nltk.org/install.html)
+numpy
+
+
+# NLTK (Natural Language Toolkit)
+# в марте 2025 установилась версия nltk==3.9.1
+nltk
+
+
+# spaCy
+# Немецкий язык (март 2025):
+# de_dep_news_trf: 3.7.2 (spaCy >=3.7.0,<3.8.0)
+# Древнегреческий язык (март 2025):
+# grc_odycy_joint_trf: 0.7.0 (spaCy >=3.7.4,<3.8.0)
+# Вывод: для работы _trf-моделей как немецкого, так и древнегреческого языков нужна версия spaCy < 3.8.0
+# в марте 2025 установилась версия spacy==3.7.5
+spacy<3.8.0
+
+
+spacy-transformers
+
+
+# Stanza
+# Нужна как альтернатива spaCy в некоторых ин. языках: хорошо себя зарекомедовала в определении pos & morph для новогреческого языка
+stanza
+
+
+# spacy-stanza
+# Use the latest Stanza (StanfordNLP) research models directly in spaCy
+spacy_stanza
+
+
+# CLTK (Classical Language Toolkit)
+# Пакет нужен для нормализации древнегреческого текста.
+# cltk==1.3.0
+# в марте 2025 установилась версия cltk==1.4.0
+cltk
+
+
+# Очень важно после названия пакета ’beautifulsoup’ указать цифру 4 (номер версии), т. к. почему-то без этого номера версии инсталлятор пытается установить устаревшую 3-ю версию, да ещё и с ошибкой о том, что юнит-тесты failed.
+# в марте 2025 установилась версия beautifulsoup4==4.13.3
+beautifulsoup4
+
+
+# xlrd is a library for developers to extract data from Microsoft Excel (tm) spreadsheet files
+# в марте 2025 установилась версия xlrd==2.0.1
+xlrd
+
+
+# requests - это пакет для формирования json-запросов (в моём случае к https://developers.lingvolive.com)
+# в марте 2025 установилась версия requests==2.32.3
+requests
+
+
+# cssutils - это пакет, для парсинга CSS-стилей
+# в марте 2025 установилась версия cssutils==2.11.1
+cssutils
+
+
+# PyQt6 - comprehensive Python Bindings for Qt v6
+# Переустановка PyQt6
+# pip uninstall PyQt6 pyqt6-tools pyqt6-plugins PyQt6-Qt6 PyQt6_sip qt6-applications qt6-tools -y
+# pip cache purge
+# pip install pyqt6 pyqt6-tools  # в марте 2025 устанавливало версию PyQt6 6.4.2
+
+# При запуске приложения из PyCharm именно в режиме Debug возникала следующая ошибка:
+# from PyQt6.QtWidgets import QApplication, QMainWindow, QMessageBox, QButtonGroup
+# ImportError: DLL load failed while importing QtWidgets: The specified procedure could not be found.
+# Удаление и переустановка PyQt6-пакетов положительного результата не дало. Помогла устранить проблему только полная переустановка Python, PyCharm и всех пакетов. Причём желательно после удаления из системы ещё и вручную почистить следующие папки:
+# C:\Program Files\Python311 
+# C:\Program Files\JetBrains и вообще любые упоминания о PyCharm на диске C:\
+
+# в марте 2025 установились следующие версии PyQt6 и связанных с ней пакетов:
+# PyQt6==6.4.2
+# pyqt6-tools==6.4.2.3.3
+# pyqt6-plugins==6.4.2.2.3
+# PyQt6-Qt6==6.4.3
+# PyQt6_sip==13.10.0
+# qt6-applications==6.4.3.2.3
+# qt6-tools==6.4.3.1.3
+
+pyqt6
+pyqt6-tools
+
+# 'qasync' allows coroutines to be used in PyQt/PySide applications by providing an implementation of the PEP 3156 event loop.
+# With 'qasync', you can use asyncio functionalities directly inside Qt app's event loop, in the main thread. Using async functions for Python tasks can be much easier and cleaner than using threading.Thread or QThread.
+# в марте 2025 установилась версия qasync==0.27.1
+qasync
+
+
+# Dependency Injector is a dependency injection framework for Python.
+# в марте 2025 установилась версия dependency-injector==4.46.0
+dependency-injector
+
+
+# Odfpy is a library to read and write OpenDocument v. 1.2 files.
+# в марте 2025 установилась версия odfpy==1.4.1
+odfpy
+
+# jProperties is a Java Property file parser and writer for Python. It aims to provide the same functionality as Java’s Properties class, although currently the XML property format is not supported.
+# Используется в модуле PythonAndPipVersionValidator.py
+# в марте 2025 установилась версия jproperties==2.1.2
+jproperties
+
+# Google Spreadsheets Python API. Нужен для работы моего проектика FitnessCalc
+gspread
+oauth2client
+
+# После автоматической установки всех пакетов, пришлось по варварски вручную обновлять библиотеку transformers (в марте 2025 года автоматически установилась transformers==4.49.0),
+# чтобы в PyCharm при запуске программы не было ужасных длинных warnings...
+# pip install --upgrade transformers
+
+##############################################
+
+# Список всех пакетов и их версий, установленных в результате обработки зависимостей в requirements-файлах (выполнить в консоли команду pip freeze).
+# Список сформирован 22.03.2025 (40 мучеников Севастийских)
+# Python 3.11.9
+# annotated-types==0.7.0
+# beautifulsoup4==4.13.3
+# blis==0.7.11
+# boltons==21.0.0
+# catalogue==2.0.10
+# certifi==2025.1.31
+# charset-normalizer==3.4.1
+# click==8.1.8
+# cloudpathlib==0.16.0
+# cltk==1.4.0
+# colorama==0.4.6
+# confection==0.1.5
+# cssutils==2.11.1
+# curated-tokenizers==0.0.9
+# curated-transformers==0.1.1
+# cymem==2.0.11
+# de-dep-news-trf @ https://huggingface.co/spacy/de_dep_news_trf/resolve/main/de_dep_news_trf-any-py3-none-any.whl#sha256=3fb898b58c3647aa157e8b3ceb7acb43499f27e6d2f8a23f4c130f9c3de32cd4
+# defusedxml==0.7.1
+# dependency-injector==4.46.0
+# emoji==2.14.1
+# filelock==3.18.0
+# fsspec==2025.3.0
+# gensim==4.3.3
+# gitdb==4.0.12
+# GitPython==3.1.44
+# grc_odycy_joint_trf @ https://huggingface.co/chcaa/grc_odycy_joint_trf/resolve/main/grc_odycy_joint_trf-0.7.0-py3-none-any.whl#sha256=8a828bb5d105e0f2d85d22479ab487fd9b5bacb9fdfb7098245e5e5aaefecd5e
+# greek-accentuation==1.2.0
+# huggingface-hub==0.29.3
+# idna==3.10
+# Jinja2==3.1.6
+# joblib==1.4.2
+# langcodes==3.5.0
+# language_data==1.3.0
+# marisa-trie==1.2.1
+# markdown-it-py==3.0.0
+# MarkupSafe==3.0.2
+# mdurl==0.1.2
+# more-itertools==10.6.0
+# mpmath==1.3.0
+# murmurhash==1.0.12
+# networkx==3.4.2
+# nltk==3.9.1
+# numpy==1.26.4
+# odfpy==1.4.1
+# packaging==24.2
+# preshed==3.0.9
+# protobuf==6.30.1
+# pydantic==2.10.6
+# pydantic_core==2.27.2
+# Pygments==2.19.1
+# PyQt6==6.4.2
+# pyqt6-plugins==6.4.2.2.3
+# PyQt6-Qt6==6.4.3
+# pyqt6-tools==6.4.2.3.3
+# PyQt6_sip==13.10.0
+# python-dotenv==1.0.1
+# PyYAML==6.0.2
+# qasync==0.27.1
+# qt6-applications==6.4.3.2.3
+# qt6-tools==6.4.3.1.3
+# RapidFuzz==3.12.2
+# regex==2024.11.6
+# requests==2.32.3
+# rich==13.9.4
+# safetensors==0.5.3
+# scikit-learn==1.6.1
+# scipy==1.12.0
+# shellingham==1.5.4
+# smart-open==6.4.0
+# smmap==5.0.2
+# soupsieve==2.6
+# spacy==3.7.5
+# spacy-alignments==0.9.1
+# spacy-curated-transformers==0.2.2
+# spacy-legacy==3.0.12
+# spacy-loggers==1.0.5
+# spacy-transformers==1.3.8
+# srsly==2.5.1
+# stanza==1.9.2
+# stringcase==1.2.0
+# sympy==1.13.1
+# thinc==8.2.5
+# threadpoolctl==3.6.0
+# tokenizers==0.21.1
+# torch==2.6.0
+# tqdm==4.67.1
+# transformers==4.49.0
+# typer==0.9.4
+# typing_extensions==4.12.2
+# urllib3==2.3.0
+# wasabi==1.1.3
+# weasel==0.3.4
+# wrapt==1.17.2
+# xlrd==2.0.1

@@ -1,0 +1,204 @@
+from unittest import TestCase
+
+from GreenAndItalicAggregator import GreenAndItalicAggregator
+
+
+class Test_GreenAndItalicAggregator(TestCase):
+
+    def setUp(self):
+        # self.a11_GreenOnlyFormatter = A11_GreenOnlyFormatter()
+        self.greenAndItalicAggregator = GreenAndItalicAggregator()
+
+    # Название методов умышленно НЕ начинаются со слова 'test', чтобы они автоматом не запускались unittest-движком:
+    # автоматом их запускать нельзя, т. к. все они содержат параметр business_method_callback, который я им передаю вручную.
+
+    # Каждый test case должен содержать 2 вызова:
+    # 1-й вызов проверяет, что добавляется нужное форматирование
+    # 2-й вызов проверят, что форматирование не добавляется повторно!
+
+    def tc_01(self, business_method_callback):
+        # Положительный сценарий: тестировать, что форматирование нормально добавляется
+        html_str = 'маульташен<br>(досл. «пастевой карман»)'
+        expected_result = 'маульташен<br>(<i><span style="color: rgb(0, 170, 0);">досл.</span> «пастевой карман»</i>)'
+        actual_result = business_method_callback(html_str)
+        self.assertEqual(expected_result, actual_result)
+
+        # Тестировать, что уже существующая разметка корректно распознаётся и логика ничего в исходной строке не меняет
+        html_str = 'маульташен<br>(<i><span style="color: rgb(0, 170, 0);">досл.</span> «пастевой карман»</i>)'
+        expected_result = html_str
+        actual_result = business_method_callback(html_str)
+        self.assertEqual(expected_result, actual_result)
+
+        ###########
+
+        # Положительный сценарий: тестировать, что форматирование нормально добавляется
+        html_str = 'маульташен<br>(досл. «пастевой карман» разг.)'
+        expected_result = 'маульташен<br>(<i><span style="color: rgb(0, 170, 0);">досл.</span> «пастевой карман» <span style="color: rgb(0, 170, 0);">разг.</span></i>)'
+        actual_result = business_method_callback(html_str)
+        self.assertEqual(expected_result, actual_result)
+
+        # Тестировать, что уже существующая разметка корректно распознаётся и логика ничего в исходном тексте не меняет
+        html_str = 'маульташен<br>(<i><span style="color: rgb(0, 170, 0);">досл.</span> «пастевой карман» <span style="color: rgb(0, 170, 0);">разг.</span></i>)'
+        expected_result = html_str
+        actual_result = business_method_callback(html_str)
+        self.assertEqual(expected_result, actual_result)
+
+    # реальный юнит-тест, который запускает на выполнение соотв. tc_ метод
+    def test_01(self):
+        # self.tc_01(self.a12_ItalicOnlyFormatter.format_italic_only)
+        self.tc_01(self.greenAndItalicAggregator.execute_all_the_methods)
+
+    ##########################
+
+    # Тестировать с большим количеством скобок, в т.ч. вложенных, в т.ч. на разных строчках
+    def tc_02(self, business_method_callback):
+        # Положительный сценарий: тестировать, что форматирование нормально добавляется
+        html_str = 'маульташен<br>(досл. «пастевой карман» разг. (досл. разг. это содержимое внутр. скобок))'
+        expected_result = 'маульташен<br>(<i><span style="color: rgb(0, 170, 0);">досл.</span> «пастевой карман» <span style="color: rgb(0, 170, 0);">разг.</span> (<span style="color: rgb(0, 170, 0);">досл.</span> <span style="color: rgb(0, 170, 0);">разг.</span> это содержимое внутр. скобок)</i>)'
+        actual_result = business_method_callback(html_str)
+        self.assertEqual(expected_result, actual_result)
+
+        # Тестировать, что уже существующая разметка корректно распознаётся и логика ничего в исходном тексте не меняет
+        html_str = 'маульташен<br>(<i><span style="color: rgb(0, 170, 0);">досл.</span> «пастевой карман» <span style="color: rgb(0, 170, 0);">разг.</span> (<span style="color: rgb(0, 170, 0);">досл. разг.</span> это содержимое внутр. скобок)</i>)<br><br>ёжик (<span style="color: rgb(0, 170, 0);"><i>sg. – pl. dat. – pl. acc.</i></span>)'
+        expected_result = html_str
+        actual_result = business_method_callback(html_str)
+        self.assertEqual(expected_result, actual_result)
+
+    # реальный юнит-тест, который запускает на выполнение соотв. tc_ метод
+    def test_02(self):
+        # self.tc_02(self.a12_ItalicOnlyFormatter.format_italic_only)
+        self.tc_02(self.greenAndItalicAggregator.execute_all_the_methods)
+
+    ##########################
+
+    # Тестировать комплексный случай
+    def tc_03(self, business_method_callback):
+        # Положительный сценарий: тестировать, что форматирование нормально добавляется
+        html_str = '(досл. содержимое1)'
+        expected_result = '(<i><span style="color: rgb(0, 170, 0);">досл.</span> содержимое1</i>)'
+        actual_result = business_method_callback(html_str)
+        self.assertEqual(expected_result, actual_result)
+
+        html_str = 'какой-то текст (содержимое2)'
+        expected_result = 'какой-то текст (содержимое2)'
+        actual_result = business_method_callback(html_str)
+        self.assertEqual(expected_result, actual_result)
+
+        html_str = 'ещё текст (досл. содержимое3)'
+        expected_result = 'ещё текст (<i><span style="color: rgb(0, 170, 0);">досл.</span> содержимое3</i>)'
+        actual_result = business_method_callback(html_str)
+        self.assertEqual(expected_result, actual_result)
+
+        html_str = '<br><br>(досл. содержимое4 какой-то текст (содержимое5)) ещё текст'
+        expected_result = '<br><br>(<i><span style="color: rgb(0, 170, 0);">досл.</span> содержимое4 какой-то текст (содержимое5)</i>) ещё текст'
+        actual_result = business_method_callback(html_str)
+        self.assertEqual(expected_result, actual_result)
+
+        # Тестировать, что уже существующая разметка корректно распознаётся и логика ничего в исходном тексте не меняет
+        # plain text: (досл. содержимое1) какой-то текст (содержимое2) ещё текст (досл. содержимое3) (досл. содержимое4 какой-то текст (содержимое5)) ещё текст
+        html_str = '(<i><span style="color: rgb(0, 170, 0);">досл.</span> содержимое1</i>) какой-то текст (содержимое2) ещё текст (<i><span style="color: rgb(0, 170, 0);">досл.</span> содержимое3</i>)<br><br>(<i><span style="color: rgb(0, 170, 0);">досл.</span> содержимое4 какой-то текст (содержимое5)</i>) ещё текст'
+        expected_result = html_str
+        actual_result = business_method_callback(html_str)
+        self.assertEqual(expected_result, actual_result)
+
+    # реальный юнит-тест, который запускает на выполнение соотв. tc_ метод
+    def test_03(self):
+        # self.tc_03(self.a12_ItalicOnlyFormatter.format_italic_only)
+        self.tc_03(self.greenAndItalicAggregator.execute_all_the_methods)
+
+    ##########################
+
+    def tc_04(self, business_method_callback):
+        # Положительный сценарий: тестировать, что форматирование нормально добавляется
+        html_str = '(досл. «озеро в котловине»)'
+        expected_result = '(<i><span style="color: rgb(0, 170, 0);">досл.</span> «озеро в котловине»</i>)'
+        actual_result = business_method_callback(html_str)
+        self.assertEqual(expected_result, actual_result)
+
+        # Тестировать, что уже существующая разметка корректно распознаётся и логика ничего в исходном тексте не меняет
+        html_str = '(<i><span style="color: rgb(0, 170, 0);">досл.</span> «озеро в котловине»</i>)'
+        expected_result = html_str
+        actual_result = business_method_callback(html_str)
+        self.assertEqual(expected_result, actual_result)
+
+    # реальный юнит-тест, который запускает на выполнение соотв. tc_ метод
+    def test_04(self):
+        # self.tc_04(self.a12_ItalicOnlyFormatter.format_italic_only)
+        self.tc_04(self.greenAndItalicAggregator.execute_all_the_methods)
+
+    ##########################
+
+    def tc_05(self, business_method_callback):
+        # Положительный сценарий: тестировать, что форматирование нормально добавляется
+        html_str = 'разг. (досл. «чёрный лес»)'
+        expected_result = '<span style="color: rgb(0, 170, 0);"><i>разг.</i></span> (<i><span style="color: rgb(0, 170, 0);">досл.</span> «чёрный лес»</i>)'
+        actual_result = business_method_callback(html_str)
+        self.assertEqual(expected_result, actual_result)
+
+        # Тестировать, что уже существующая разметка корректно распознаётся и логика ничего в исходном тексте не меняет
+        html_str = '<span style="color: rgb(0, 170, 0);"><i>разг.</i></span> (<i><span style="color: rgb(0, 170, 0);">досл.</span> «чёрный лес»</i>)'
+        expected_result = html_str
+        actual_result = business_method_callback(html_str)
+        self.assertEqual(expected_result, actual_result)
+
+    # реальный юнит-тест, который запускает на выполнение соотв. tc_ метод
+    def test_05(self):
+        # self.tc_05(self.a12_ItalicOnlyFormatter.format_italic_only)
+        self.tc_05(self.greenAndItalicAggregator.execute_all_the_methods)
+
+    ##########################
+
+    def tc_06(self, business_method_callback):
+        # Положительный сценарий: тестировать, что форматирование нормально добавляется
+        html_str = 'имя (N...)'
+        expected_result = 'имя (<i>N...</i>)'
+        actual_result = business_method_callback(html_str)
+        self.assertEqual(expected_result, actual_result)
+
+        # Тестировать, что уже существующая разметка корректно распознаётся и логика ничего в исходной строке не меняет
+        html_str = 'имя (<i>N...</i>)'
+        expected_result = html_str
+        actual_result = business_method_callback(html_str)
+        self.assertEqual(expected_result, actual_result)
+
+    # реальный юнит-тест, который запускает на выполнение соотв. tc_ метод
+    def test_06(self):
+        # self.tc_06(self.c31_ParContentsHintsFormatter.make_italic)
+        self.tc_06(self.greenAndItalicAggregator.execute_all_the_methods)
+
+    ##########################
+
+    # Тестировать, что любое кол-во точек, кроме 3-х, не даёт основания делать содержимое скобок курсивом
+    def tc_07(self, business_method_callback):
+        html_str = 'имя (N.)'  # одна точка после одной буквы
+        expected_result = html_str
+        actual_result = business_method_callback(html_str)
+        self.assertEqual(expected_result, actual_result)
+
+        html_str = 'имя (Na..)'  # две точки после двух букв
+        expected_result = html_str
+        actual_result = business_method_callback(html_str)
+        self.assertEqual(expected_result, actual_result)
+
+        html_str = 'имя (Name....)'  # четыре точки после четырёх букв
+        expected_result = html_str
+        actual_result = business_method_callback(html_str)
+        self.assertEqual(expected_result, actual_result)
+
+    # реальный юнит-тест, который запускает на выполнение соотв. tc_ метод
+    def test_07(self):
+        # self.tc_07(self.c31_ParContentsHintsFormatter.make_italic)
+        self.tc_07(self.greenAndItalicAggregator.execute_all_the_methods)
+
+    ##########################
+
+    def tc_08(self, business_method_callback):
+        html_str = '(hint: 1) а; 2) б; 3) в, г)'  # одна точка после одной буквы
+        expected_result = '(<i>hint: 1) а; 2) б; 3) в, г</i>)'
+        actual_result = business_method_callback(html_str)
+        self.assertEqual(expected_result, actual_result)
+
+    # реальный юнит-тест, который запускает на выполнение соотв. tc_ метод
+    def test_08(self):
+        # self.tc_08(self.c31_ParContentsHintsFormatter.make_italic)
+        self.tc_08(self.greenAndItalicAggregator.execute_all_the_methods)

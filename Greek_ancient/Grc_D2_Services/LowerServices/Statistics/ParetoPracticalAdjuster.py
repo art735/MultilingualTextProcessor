@@ -1,0 +1,65 @@
+import FileContentsReader
+import ParetoCoreService
+
+
+def _remove_first_n_dict_elements(freq_dict, n):
+    # Способ №1 (исходный словарь меняется)
+    # keys_to_remove = list(freq_dict.keys())[:n]
+    # for key in keys_to_remove:
+    #     del freq_dict[key]
+    # return freq_dict
+
+    # Способ №2 (исходный словарь НЕ меняется)
+    truncated_dict = {k: freq_dict[k] for k in list(freq_dict.keys())[n:]}
+    return truncated_dict
+
+
+# Сколько первых самых частых слов нужно отбросить, чтобы достичь percentage %-ного количества ключей?
+def _fit_to_key_percentage(key_percentage):
+    # 1. Выясняем сколько первых самых частных слов нужно отбросить
+    first_n_elements_to_skip = ParetoCoreService.skip_first_n_elements_to_fit_pareto(freq_dict, key_percentage)
+    print(f"Для подтягивания кол-ва ключей до {key_percentage}%-ного порога нужно отбросить: "
+          f"{first_n_elements_to_skip} первых самых частых элементов словаря.")
+
+    # 2. Отбрасываем первые n элементов
+    truncated_freq_dict = _remove_first_n_dict_elements(freq_dict, first_n_elements_to_skip)
+
+    # 3. Выводим точную статистику по ключам "обрезанного" словаря
+    word_count, word_percentage = ParetoCoreService.calculate_real_word_portion_of_pareto_80_percent_frequencies(
+        truncated_freq_dict)
+    print(f'Теперь, после отбрасывания {first_n_elements_to_skip} первых элементов, '
+          f'80% частот приходится на {word_percentage:.2f}% ({word_count} штук) ключей/слов/лемм словаря.')
+
+    # 4. Выводим практическую рекомендацию по изучению слов
+    # На практике (при изучении слов с распечатки) первые самые частые слова частотного словаря мы, конечно,
+    # не отбрасываем, а учим, как и все остальные слова.
+    # Поэтому кол-во слов для гарантированного попадания в заданный % ключей (10, 15, 20) сводится к тому,
+    # что мы всё же учим те слова, которые отбрасывали ради перерасчёта % + найденные при перерасчёте слова {word_count}
+    print(f"Практическая рекомендация: для гарантированного попадания в {key_percentage}%-ный диапазон ключей словаря, "
+          f"нужно выучить с распечатки "
+          f"{first_n_elements_to_skip} + {word_count} = {first_n_elements_to_skip + word_count} слов!\n")
+
+
+# Если сделать частотный словарь употребления всех лемм Четвероевангелия с помощью библиотеки spaCy и взять 80% частот,
+# то выяснится, что на них приходится только 8.2% ключей, а не 20% как хотелось бы по принципу Парето.
+# В данном методе демонстрируется попытка искусственного подтягивания кол-ва ключей до достижения 20%-й отметки
+# за счёт отбрасывания n первых самых частых элементов словаря.
+def print_the_four_gospels_initial_and_adjusted_statistics(freq_dict):
+    word_count, word_percentage = ParetoCoreService.calculate_real_word_portion_of_pareto_80_percent_frequencies(
+        freq_dict)
+    print(f'80% частот приходится на {word_percentage:.2f}% ({word_count} штук) ключей/слов/лемм словаря.\n')
+
+    # Сколько первых самых частых слов нужно отбросить, чтобы достичь 10/15/20%-ного количества ключей?
+    for word_percentage_threshold_to_fit in [10, 15, 20]:
+        _fit_to_key_percentage(word_percentage_threshold_to_fit)
+
+
+####################################
+
+# Вычитываем файл, содержащий частотный словарь.
+# Хранить частотный словарь в файле и вычитывать его практически мгновенно это намного более удачное решение, чем
+# каждый раз этот словарь формировать spaCy-библиотекой (на это уходит около 6 минут времени вычислений!)
+filename_5all_gospels = '5all_four_Gospels_freq_dict.txt'
+freq_dict = FileContentsReader.read_dict_from_file(filename_5all_gospels)
+
+print_the_four_gospels_initial_and_adjusted_statistics(freq_dict)

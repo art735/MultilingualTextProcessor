@@ -1,0 +1,56 @@
+import re
+
+import beautiful_soup_helper
+from AnkiConnectService import AnkiConnectService
+from user_enums import Mode
+
+eng_ipa_vowels = ["i", "ɪ", "e", "ɛ", "æ", "ə", "ʌ", "ɑ", "a", "ɒ", "ɔ", "ʊ", "u"]
+eng_ipa_vowels_pattern = f'[{"".join(eng_ipa_vowels)}]'
+
+# search_pattern = fr'(?<{eng_ipa_vowels_pattern})i(?=[\s\]])'
+search_pattern = fr'{eng_ipa_vowels_pattern}i[\s\]]'
+
+ankiConnectService = AnkiConnectService()
+
+
+def update_transcriptions_in_particular_language_decks(lang):
+    all_deck_names = ankiConnectService.get_all_deck_names()
+    # all_deck_names = ['English']
+
+    # Для избежания дублирования обработки одних и тех же карточек с позиций деков разного уровня вложенности,
+    # обрабатываем только деки самого верхнего уровня: они и так содержат все карточки вложенных деков.
+    upper_level_deck_names_set = dict.fromkeys([deck_name.split('::')[0] for deck_name in all_deck_names])
+    for deck_name in upper_level_deck_names_set:
+        if lang == 'deu' and not deck_name.startswith(('English', 'Italian')) or \
+                lang == 'eng' and deck_name.startswith('English') or \
+                lang == 'ita' and deck_name.startswith('Italian'):
+
+            # Step 1
+            find_wrong_transcriptions(deck_name, lang)
+
+    return
+
+
+def find_wrong_transcriptions(deck_name, lang):
+    notes = ankiConnectService.get_notes_by_deck_name(deck_name)
+    notes_to_update = []
+    info_messages = []
+    # цикл по всем карточкам
+    for note in notes:
+        if 'Transcription' not in note['fields']:
+            continue
+
+        current_transcription = note['fields']['Transcription']['value']
+
+        stripped_current_transcription = beautiful_soup_helper.strip_all_tags_except_br_tag(current_transcription)
+
+        match = re.search(search_pattern, stripped_current_transcription)
+        if match:
+            print(f'{current_transcription}')
+            print(f'{match.group()}\n')
+
+    return
+
+####################################
+
+update_transcriptions_in_particular_language_decks('eng')

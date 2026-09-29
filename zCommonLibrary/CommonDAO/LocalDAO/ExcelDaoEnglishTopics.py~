@@ -1,0 +1,178 @@
+import itertools
+
+import xlrd
+
+from LocalDAO import ConfigDao
+
+# from importlib.machinery import SourceFileLoader
+# configDao = SourceFileLoader('ConfigDao', '../CommonDAO/LocalDAO/ConfigDao.py').load_module()
+# excelDao = SourceFileLoader('ExcelDao', '../CommonDAO/LocalDAO/ExcelDaoUtils.py').load_module()
+
+### EXCEL WORKBOOKS & WORKSHEETS PROCESSING ###
+
+### Использовать напрямую данные глобальные переменные и в рамках данного файла и в других файлах!!!
+### и не усложнять код обёртками!!!!!
+
+[themeNumber, themeName, topicNumber] = ConfigDao.getTopicEnvironmentFromConfig()
+# print("themeNumber = {0}, themeName = {1}, topicNumber = {2}".format(themeNumber, themeName, topicNumber))
+
+relative_path = 'resources/'
+
+workbookFilename = '../resources/Theme {0}. {1}.xls'.format(themeNumber, themeName)
+global_workbook = xlrd.open_workbook(workbookFilename)
+
+# sheet с индексом 0 содержит ignoredWords и не относится к vocabulary
+VOCABULARY_START_SHEET_INDEX = 1
+VOCABULARY_CURRENT_SHEET_INDEX = int(topicNumber)
+VOCABULARY_END_SHEET_INDEX = global_workbook.nsheets - 1
+
+WORDS_COLUMN_INDEX = 1
+TRANSCRIPTIONS_COLUMN_INDEX = WORDS_COLUMN_INDEX + 1
+
+currentWorksheetName = "Topic {0}.{1}".format(themeNumber, topicNumber)
+currentWorksheet = global_workbook.sheet_by_index(VOCABULARY_CURRENT_SHEET_INDEX)
+
+# Workbook API
+# global_workbook.sheet_by_index(sheet_index)
+# global_workbook.sheet_by_name(sheet_name)
+# global_workbook.nsheets
+
+# Worksheet API
+# worksheet.nrows
+# worksheet.ncols
+# worksheet.row_values(rowIndex)
+# worksheet.col_values(colIndex)
+
+# подразумевается, что данный метод вычитывает данные с "текущего" Excel-файла (он прописан в заголовке данного скрипта)
+def getData(start_sheet_index, end_sheet_index, start_col_index, end_col_index):
+    return _getData(global_workbook, start_sheet_index, end_sheet_index, start_col_index, end_col_index)
+
+##########################################
+
+# универсальный внутренний как бы private метод, на базе которого должны строиться все бизнес-обёртки по вычитыванию данных из Excel-файлов
+def _getData(workbook, start_sheet_index, end_sheet_index, start_col_index, end_col_index):
+
+    # validation
+    if (end_sheet_index - start_sheet_index) < 0 or (end_col_index - start_col_index) < 0:
+        print("When reading Excel file, 'end' sheet/column indices can't be smaller than 'start' sheet/column indices")
+        exit()  # прервать выполнение программы
+
+    data = list()
+    col_span = end_col_index - start_col_index
+
+    # цикл по листам Excel-файла
+    # пришлось использовать while вместо for из-за того, что range(x, y) не работает инклюзивно, а крутит только до y-1
+    sheet_index = start_sheet_index
+    while sheet_index <= end_sheet_index:
+
+        worksheet = workbook.sheet_by_index(sheet_index)
+
+        # если ширина диапазона столбцов, из которых мы вычитываем данные, равна 0 - значит мы работаем только с одним столбцом!
+        if col_span == 0:
+            # без разницы по какому индексу вычитывать (start_col_index или end_col_index) - они равны!
+            data.extend(worksheet.col_values(start_col_index))
+        else:
+            # TODO плохо, что программа так негибко подходит к вычитыванию данных - захватывает всё подряд от начального индекса до конечного
+            # TODO сделать больше на немецкий манер, чтобы был не диапазон индексов, а список индексов: их немного, чаще всего два, это оправданнее и гибче!!!
+            res = _getDataFromMultiColumnedSheet(worksheet, start_col_index, end_col_index)
+            data.extend(res)
+
+        sheet_index += 1
+    # end of loop
+
+    # get rid of everything that is "falsy", e. g. empty strings, empty tuples, zeros
+    #result = [x for x in result if x]
+
+    return data
+
+
+# multiple columns require zip()
+def _getDataFromMultiColumnedSheet(worksheet, start_col_index, end_col_index):
+
+    sheet_values = list()
+
+    # цикл по вычитке значений из диапазона столбцов
+    i = start_col_index
+    while i <= end_col_index:
+        single_column_values = worksheet.col_values(i)
+
+        # Use the syntax list1.extend(list2) to combine list1 and list2
+        # Use the syntax list1.append(list2) to add list2 to list1
+        # здесь делаем именно append, чтобы каждый столбец хранился отдельным внутренним списком,
+        # чтобы потом можно было сделать их zip()
+        sheet_values.append(single_column_values)
+        i += 1
+    # end of loop
+
+    # The zip() function returns a zip object, which is an iterator of tuples
+    # where the first item in each passed iterator is paired together, and then the second item in each passed iterator are paired together etc.
+    # If the passed iterators have different lengths, the iterator with the least items decides the length of the new iterator.
+
+    # zip() ignores the extra elements
+    # itertools.zip_longest() fills in the missing elements
+
+    # The * operator is an unpacking operator that unpacks the values from any iterable object, such as lists, tuples, strings, etc.
+    return list(itertools.zip_longest(*sheet_values, fillvalue=""))
+
+
+
+def getIgnoredWordsFromCurrentWorkbook():
+
+    IGNORED_WORDS_SHEET_INDEX = 0
+    IGNORED_WORDS_COLUMN_INDEX = 0
+
+    # getData(start_sheet_index, end_sheet_index, start_col_index, end_col_index):
+    ignoredWords = getData(IGNORED_WORDS_SHEET_INDEX, IGNORED_WORDS_SHEET_INDEX,
+                           IGNORED_WORDS_COLUMN_INDEX, IGNORED_WORDS_COLUMN_INDEX)
+
+    # remove the 1st element in the list - the header of the column in a worksheet
+    ignoredWords.pop(0)
+
+    return ignoredWords
+
+
+def getWordsForMonitoring():
+    return getData(VOCABULARY_START_SHEET_INDEX, VOCABULARY_END_SHEET_INDEX, WORDS_COLUMN_INDEX, WORDS_COLUMN_INDEX)
+
+
+
+#######################################################
+#######################################################
+
+# mode = {'CURRENT_ONLY', 'UP_TO_CURRENT_INCLUDING', 'ALL'}
+def getVocabularyWords(mode):
+
+    result = list()
+
+    if mode == 'CURRENT_ONLY':
+        result = getData(VOCABULARY_CURRENT_SHEET_INDEX, VOCABULARY_CURRENT_SHEET_INDEX, WORDS_COLUMN_INDEX, WORDS_COLUMN_INDEX)
+    elif mode == 'UP_TO_CURRENT_INCLUDING':
+        result = getData(VOCABULARY_START_SHEET_INDEX, VOCABULARY_CURRENT_SHEET_INDEX, WORDS_COLUMN_INDEX, WORDS_COLUMN_INDEX)
+    elif mode == 'ALL':
+        result = getData(VOCABULARY_START_SHEET_INDEX, VOCABULARY_END_SHEET_INDEX, WORDS_COLUMN_INDEX, WORDS_COLUMN_INDEX)
+
+    return result
+
+# mode = {'CURRENT_ONLY', 'UP_TO_CURRENT_INCLUDING', 'ALL'}
+def getVocabularyWordsWithTranscriptions(mode):
+
+    result = list()
+
+    if mode == 'CURRENT_ONLY':
+        result = getData(VOCABULARY_CURRENT_SHEET_INDEX, VOCABULARY_CURRENT_SHEET_INDEX, WORDS_COLUMN_INDEX, TRANSCRIPTIONS_COLUMN_INDEX)
+    elif mode == 'UP_TO_CURRENT_INCLUDING':
+        result = getData(VOCABULARY_START_SHEET_INDEX, VOCABULARY_CURRENT_SHEET_INDEX, WORDS_COLUMN_INDEX, TRANSCRIPTIONS_COLUMN_INDEX)
+    elif mode == 'ALL':
+        result = getData(VOCABULARY_START_SHEET_INDEX, VOCABULARY_END_SHEET_INDEX, WORDS_COLUMN_INDEX, TRANSCRIPTIONS_COLUMN_INDEX)
+
+    return result
+
+def getTop5kWords():
+    top5kWorkbookFilename = relative_path + "Top5k.xls"
+    top5kWorkbook = xlrd.open_workbook(top5kWorkbookFilename)
+
+    # _getData(global_workbook, start_sheet_index, end_sheet_index, start_col_index, end_col_index)
+    return _getData(top5kWorkbook, 0, 0, 1, 2)
+
+# TODO рефакторить данный файл с оглядкой на ExcelDaoUtils.getWorksheetData(worksheet, column_indices) и опыт его применения
+# TODO в немецком модуле в файле Deutsch_Popov/GermanExcelWorkbooksDao

@@ -1,0 +1,180 @@
+from CharConstants import PIPE
+
+
+def convert_lst_to_pipe_delimited_non_capturing_group(lst):
+    # Сортируем входной список по длине элементов: чем длиннее элемент (строка) списка, тем ближе к началу списка она
+    # должна стоять. Такой порядок строк важен для корректной работы регулярных выражений.
+    # lst_sorted_by_length = sorted(lst, key=len, reverse=True)
+    return f'(?:{PIPE.join(lst)})'
+
+# Правило о произношении неударного звука [i] как [j]/[ç] в сочетании "согласный + неударный [i] + гласный"
+# не срабатывает, если в позиции "гласный" стоят сочетания αυ/ευ/ηυ ([ав/ф], [эв/ф], [ив/ф]), так как они,
+# хотя и начинаются с гласного звука при своём произношении, воспринимаются как единый фонетический элемент
+# (единый звуковой комплекс) ([ав/ф], [эв/ф], [ив/ф]) отличный от чистого отдельного гласного.
+# Поэтому в сочетаниях "согласный + неударный [i] + αυ/ευ/ηυ" звук [i] сохраняет своё произношение как [i].
+# Буква υ в αυ/ευ/ηυ играет ключевую роль: она делает сочетания αυ/ευ/ηυ отдельным фонетическим элементом, который
+# не воспринимается как одиночный гласный. По сути, αυ/ευ/ηυ действует как «блок», который изменяет фонетический
+# контекст и препятствует применению правила произношения неударного [i] как [j]/[ç].
+# (c) ChatGPT-4o, Grok 3 beta (May, 2025)
+
+# [a] – α
+# negative lookahead: за «α» не должно следовать [υύ], т. е. букву «α» в составе диграфов αυ/αύ не считаем "чистой и
+# отдельной гласной" и не захватываем.
+a_sound = ['α(?![υύ])', 'ά']
+
+# [e] – ε, αι
+# negative lookahead: за «ε» не должно следовать [υύ], т. е. букву «ε» в составе диграфов ευ/εύ не считаем "чистой и
+# отдельной гласной" и не захватываем.
+e_sound = ['ε(?![υύ])', 'έ', 'α[ιί]']
+e_sound_ncg = convert_lst_to_pipe_delimited_non_capturing_group(e_sound)
+
+# [i] – η, ι, υ, ει, οι, υι
+i_sound_stressed = ['[εου][ί]', '[ήίύ]']
+# negative lookahead: за «η» не должно следовать [υύ], т. е. букву «η» в составе диграфов ηυ/ηύ не считаем "чистой и
+# отдельной гласной" и не захватываем.
+i_sound_unstressed = ['[εου][ι]', 'η(?![υύ])', '[ιυ]']
+i_sound_unstressed_ncg = convert_lst_to_pipe_delimited_non_capturing_group(i_sound_unstressed)
+
+i_sound = [*i_sound_stressed, *i_sound_unstressed]
+i_sound_ncg = convert_lst_to_pipe_delimited_non_capturing_group(i_sound)
+
+# [o] – ο, ω
+o_sound = ['[οόωώ]']
+
+# [u] – ου
+u_sound = ['ο[υύ]']
+
+# Такая комбинация гласных используется с велярными и альвеолярными согласными.
+# a_sound должен идти после e_sound (из-за ai), а o_sound должен идти после u_sound
+a_e_o_u = [*e_sound, *a_sound, *u_sound, *o_sound]
+a_e_o_u_ncg = convert_lst_to_pipe_delimited_non_capturing_group(a_e_o_u)
+unstressed_i_plus_a_e_o_u_ncg = f'(?:{i_sound_unstressed_ncg}{a_e_o_u_ncg})'
+
+# Такая комбинация гласных используется с остальными звонкими и глухими согласными.
+# i_sound в списке гласных должен идти самым первым, а дальше такой же порядок как и в списке a_e_o_u
+a_e_i_o_u = [*i_sound, *a_e_o_u]
+a_e_i_o_u_ncg = convert_lst_to_pipe_delimited_non_capturing_group(a_e_i_o_u)
+unstressed_i_plus_a_e_i_o_u_ncg = f'(?:{i_sound_unstressed_ncg}{a_e_i_o_u_ncg})'
+
+# Регулярные выражения по подчёркиванию случаев палатализации согласных поделены на 2 группы: сначала к тексту
+# применяются подчёркивания последовательностей согласных и гласных, захваченных 1-й группой регулярных выражений.
+# Затем в бизнес-логике производится отмена подчёркивания у слов-исключений и только затем применяются регулярные
+# выражения второй группы, а также регулярные выражения, захватывающие правила чтения на стыках слов.
+# Такое деление на группы обусловлено тем, что, например, в выражении "της βιολογίας" 1-я группа подчеркнёт "βιο" и "γί",
+# но так как данное слово является словом-исключением, но нужно отменить подчёркивание последовательности "βιο" и только
+# после этого можно будет опять подчеркнуть букву "β", но уже в составе захвата на стыке слов "ς β".
+
+### PALATALIZATION (Step 1)
+
+# 4 velar sounds [g]–[k], [γ]–[x]; 5th velar sound [ŋ] is not considered in these rules.
+# '[Γγ][γκ]?' captures 3 different sequences: γ, γγ, γκ
+velars = ['[Γγ][γκ]?', '[ΚκΧχ]']
+velars_ncg = convert_lst_to_pipe_delimited_non_capturing_group(velars)
+
+alveolars_n_l = '[ΝνΛλ]'
+
+velars_or_alveolars_n_l = [*velars, alveolars_n_l]
+velars_or_alveolars_n_l_ncg = convert_lst_to_pipe_delimited_non_capturing_group(velars_or_alveolars_n_l)
+
+# Regex по захвату определённых согласных перед unstressed [i] + [a], [е], [o], [u]
+palatalization11_regex = f'{velars_or_alveolars_n_l_ncg}{unstressed_i_plus_a_e_o_u_ncg}'
+
+ro_with_preceding_vowels = f'{a_e_i_o_u_ncg}ρ'
+
+# Ключи в данном словаре нужны исключительно как метки для удобства систематизации согласных. Бизнес-значение имеют
+# только values словаря
+other_consonants_dict = {
+    'bilabial': ['[Μμ]π', '[Ππ]', '[Μμ]'],
+    'labiodental': ['[Ββ]', '[Φφ]'],
+    'dental': ['[Δδ]', '[Θθ]'],
+    'alveolar': ['[Νν]τ', '[Ττ]', '[Ζζ]', '[Σσ]'], # except [ΝνΛλ] and 'Ρρ'
+    'affricates': ['[Ττ]σ', '[Ξξ]', '[Ψψ]']
+}
+
+# Остальные согласные - это все согласные, за исключением велярных, альвеолярных [ΝνΛλ] и буквы «ρ»
+other_consonants = [item for val in other_consonants_dict.values() for item in val]
+other_consonants_ncg = convert_lst_to_pipe_delimited_non_capturing_group(other_consonants)
+
+# Комбинация "ρ + unstressed [i] + [a], [е], [i], [o], [u]" срабатывает только если перед буквой «ρ» стоит гласный!
+ro_with_preceding_vowels_or_other_consonants = [ro_with_preceding_vowels, other_consonants_ncg]
+ro_with_preceding_vowels_or_other_consonants_ncg = convert_lst_to_pipe_delimited_non_capturing_group(ro_with_preceding_vowels_or_other_consonants)
+
+# Regex по захвату определённых согласных перед unstressed [i] + [a], [e], [i], [o], [u]
+palatalization12_regex = f'{ro_with_preceding_vowels_or_other_consonants_ncg}{unstressed_i_plus_a_e_i_o_u_ncg}'
+
+### PALATALIZATION (Step 2)
+# Выполнив шаг №1 и затем после него отмену подчёркиваний у слов-исключений, переходим к составлению 2-й группы
+# регулярных выражений по подчёркиванию правил палатализации.
+
+palatalization21_regex = f'{velars_or_alveolars_n_l_ncg}{i_sound_ncg}'
+palatalization22_regex = f'{velars_ncg}{e_sound_ncg}'
+
+### Регулярные выражения по подчёркиванию правил чтения на стыках слов
+
+# Квантификатор «?» по умолчанию является жадным (т. е. он сначала пытается захватить символ, если это возможно).
+# Чтобы сделать квантификатор «?» ленивым, нужно написать «??».
+voiced = ['[Μμ]π?',  # bilabial
+          '[Ββ]',  # labiodental
+          '[Δδ]',  # dental
+          '[Νν]τ?', '[Ρρ]', '[Ζζ]', '[Λλ]', # alveolar
+          '[Γγ]k?'  # velar
+          ]
+voiced_except_lamda = [v for v in voiced if v != '[Λλ]']
+voiced_except_lamda_ncg = convert_lst_to_pipe_delimited_non_capturing_group(voiced_except_lamda)
+
+# TODO: точно ли запятая нужна здесь как один из возможных разделителей между словами? Может логическая пауза,
+#  обозначаемая запятой способствует как раз отмене озвончения конечной сигмы?
+s_to_z_before_voiced_regex = f"[Σσς][\s,]*{voiced_except_lamda_ncg}"
+
+# Ni + Plosives (stops) and affricates (b-p/d-t/g-k) at word boundaries
+word_initial_b = 'μπ'
+word_initial_p = ['π', 'ψ']
+
+word_initial_d = ['ντ', 'τζ']
+word_initial_t = ['τ', 'τσ']
+
+word_initial_g = 'γκ'
+word_initial_k = ['κ', 'ξ']
+
+def prepare_word_initial_bp_dt_gk_lst():
+    bp_dt_gk = []
+    for var in [word_initial_b, word_initial_p,
+                word_initial_d, word_initial_t,
+                word_initial_g, word_initial_k]:
+        if isinstance(var, str):
+            bp_dt_gk.append(var)
+        elif isinstance(var, list):
+            bp_dt_gk.extend(var)
+
+    # Сортируем по длине строки (по убыванию), т. е. сортируем так, чтобы диграфы стояли в самом начале
+    bp_dt_gk_sorted = sorted(bp_dt_gk, key=len, reverse=True)
+
+    # for s in bp_gk_dt_sorted:
+    #     print(s)
+
+    return bp_dt_gk_sorted
+
+bp_dt_gk_lst = prepare_word_initial_bp_dt_gk_lst()
+bp_dt_gk_ncg = convert_lst_to_pipe_delimited_non_capturing_group(bp_dt_gk_lst)
+
+ni_plus_bp_dt_gk_regex = f'ν[\s]{bp_dt_gk_ncg}'
+
+###########################################################################
+
+# Методы, которые возвращают regex patterns как в LibreOffice-макрос, так и в бизнес-логику текущего проекта для
+# подчёркивания захваченных последовательностей в Anki-карточках.
+def get_consonant_plus_unstressed_i_plus_vowels():
+    return [palatalization11_regex, palatalization12_regex]
+
+def get_other_patterns():
+    return [palatalization21_regex, palatalization22_regex,  # other palatalization patterns
+            s_to_z_before_voiced_regex, ni_plus_bp_dt_gk_regex  # interword_patterns
+            ]
+
+###############################
+
+if __name__ == '__main__':
+    consonant_plus_unstressed_i_plus_vowel_patterns = get_consonant_plus_unstressed_i_plus_vowels()
+    other_patterns = get_other_patterns()
+    all_patterns = [*consonant_plus_unstressed_i_plus_vowel_patterns, *other_patterns]
+    [print(f'{pattern}\n') for pattern in all_patterns]

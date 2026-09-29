@@ -1,0 +1,2 @@
+PIPE = "|"
+NEWLINE = "\n"

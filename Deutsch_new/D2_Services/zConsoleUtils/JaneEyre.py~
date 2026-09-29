@@ -1,0 +1,33 @@
+import FileContentsReader
+import Tokenizer
+
+filename = r'E:\Languages\English\SVN repo\Python software\MultilingualTextProcessor\resources\English\jane-eyre.txt'
+
+text = FileContentsReader.get_file_text(filename)
+text = text.replace('–', ' – ')
+text = text.replace('-', ' - ')
+text = text.replace('—', ' — ')
+
+tokens = Tokenizer.tokenize(text, considerNumberAsToken=False, strip_apostrophe=True)
+
+unique_tokens = set(tokens)
+print(len(unique_tokens))
+
+# for token in unique_tokens:
+#     print(token)
+
+#############
+
+# from collections import Counter
+# import spacy
+#
+# # Load the spacy model for English
+# nlp = spacy.load("en_core_web_sm")
+#
+# # Process the content with spacy to lemmatize
+# doc = nlp(unique_tokens)
+# lemmatized_tokens = {token.lemma_.lower() for token in doc if token.is_alpha}
+#
+# # Count the unique lemmas
+# unique_lemmas_count = len(lemmatized_tokens)
+# print(unique_lemmas_count)

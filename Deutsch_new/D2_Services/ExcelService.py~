@@ -1,0 +1,42 @@
+import AppContext
+from MultilingualExcelDao import MultilingualExcelDao
+from View_enums import CurrentLanguageComboBoxEnum
+
+
+# Для каждого иностранного языка должен быть Excel-файл с как минимум тремя листами:
+# 1) "ignored_tokens"
+# 2) "manual_lemmas"
+# 3) "morph_forms"
+class ExcelService:
+    def __init__(self):
+        self.multilingualExcelDao = MultilingualExcelDao()
+
+    # Работа с Excel-листом "ignored_tokens"
+    def is_token_ignored(self, token):
+        ignored_tokens = self.multilingualExcelDao.get_ignored_tokens()
+        return token in ignored_tokens
+
+    # Работа с Excel-листом "manual_lemmas"
+    def search_among_excel_manual_lemmas(self, word):
+        manual_lemmas_dict = self.multilingualExcelDao.get_manual_lemmas_dict()
+        # Возвращает значение по ключу, а если ключ отсутствует - заданное значение по умолчанию (в данном случае '')
+        return manual_lemmas_dict.get(word, '')
+
+    # Работа с Excel-листом "morph_forms"
+    # Выясняем присутствует ли морф. форма слова в первом столбце
+    def is_morph_form_present(self, word):
+        excel_morph_forms_dict = self.multilingualExcelDao.get_morph_forms_dict()
+        return word in excel_morph_forms_dict
+
+
+##############################################################################
+
+if __name__ == '__main__':
+    language = CurrentLanguageComboBoxEnum.GERMAN.value
+    # language = CurrentLanguageComboBoxEnum.MODERN_GREEK.value
+    # language = CurrentLanguageComboBoxEnum.ANCIENT_GREEK.value
+    AppContext.switch_language(language)
+    
+    excelService = ExcelService()
+    manual_lemma = excelService.search_among_excel_manual_lemmas('Äpfel')
+    print(manual_lemma)

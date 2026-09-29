@@ -1,0 +1,41 @@
+from unittest import TestCase
+
+import SentenceUtils
+import Utils
+
+
+class TestPronounLemmaService(TestCase):
+
+    # def setUp(self):
+        # self.dashedArticledNounsComposer = DashedArticledNounsComposer()
+        # self.pronounLemmaService = PronounLemmaService()
+
+    def test_is_sentence(self):
+        sentences = [
+            # Без кавычек в конце предложения
+            'Ich will.',
+            'Ich will?',
+            'Ich will!',
+
+            # Предложение заканчивается на «.» с кавычками разной формы после неё
+            'Ich will."',
+            'Ich will.“',
+
+            # Предложение заканчивается на «?» с кавычками разной формы после него
+            'Ich will?"',
+            'Ich will?“',
+
+            # Предложение заканчивается на «!» с кавычками разной формы после него
+            'Ich will!"',
+            'Ich will!“',
+
+            # Разные случаи
+            'Sie sagte: „Ich komme später.“',
+            'War das wirklich „notwendig“?'
+        ]
+
+        for sentence in sentences:
+            self.assertTrue(SentenceUtils.is_sentence(sentence))
+
+
+

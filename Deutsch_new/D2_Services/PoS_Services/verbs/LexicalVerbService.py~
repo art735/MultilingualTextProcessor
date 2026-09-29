@@ -1,0 +1,72 @@
+from BasePosService import BasePosService
+from MorphologyParser import MorphologyParser
+from VerbInfinitiveFinder import VerbInfinitiveFinder
+
+haben_dict = {
+    "Infinitiv": "haben",
+    "Präsens": {
+        "1Sing": "habe",
+        "2Sing": "hast",
+        "3Sing": "hat",
+        "1Plur": "haben",
+        "2Plur": "habt",
+        "3Plur": "haben"
+    },
+    "Präteritum": {
+        "1Sing": "hatte",
+        "2Sing": "hattest",
+        "3Sing": "hatte",
+        "1Plur": "hatten",
+        "2Plur": "hattet",
+        "3Plur": "hatten"
+    },
+    "Partizip II": "gehabt",
+    "Konjunktiv I": {
+        "1Sing": "habe",
+        "2Sing": "habest",
+        "3Sing": "habe",
+        "1Plur": "haben",
+        "2Plur": "habet",
+        "3Plur": "haben"
+    },
+    "Konjunktiv II": {
+        "1Sing": "hätte",
+        "2Sing": "hättest",
+        "3Sing": "hätte",
+        "1Plur": "hätten",
+        "2Plur": "hättet",
+        "3Plur": "hätten"
+    }
+}
+
+
+
+# TODO не забывать добавлять новые глагольные словари в этот список!
+lexical_verbs = [haben_dict]
+
+# "Полнозначный" глагол по-английски будет "full verb" или "lexical verb".
+class LexicalVerbService(VerbInfinitiveFinder):
+    def __init__(self):
+        # Передаём в конструктор базового класса список словарей с формами глаголов
+        super().__init__(lexical_verbs)
+
+    def get_verb_infinitive(self, token, morph):
+        result = super().get_verb_infinitive(token, morph)
+        return result
+
+
+###################################
+
+lexicalVerbService = LexicalVerbService()
+
+# Пример использования функции с переданной морфологией
+morphology = {
+    "Mood": ["Ind"],
+    "Number": ["Sing"],
+    "Person": ["2"],
+    "Tense": ["Pres"],
+    "VerbForm": ["Fin"]
+}
+
+form = lexicalVerbService.get_verb_infinitive('Hast', morphology)
+print(form)

@@ -1,0 +1,28 @@
+from OOWriterOdtFileTableDao import OOWriterOdtFileTableDao, TableRowsToAnkiCardsMode
+
+
+class A60_VocabFileWordsPrinterIgnoringSentences:
+
+    def __init__(self):
+        self.ooWriterOdtFileTableDao = OOWriterOdtFileTableDao()
+
+    def print_vocabulary(self):
+        table_rows_as_anki_card_entities = self.ooWriterOdtFileTableDao.convert_table_rows_to_anki_cards(
+            vocab_files=TableRowsToAnkiCardsMode.LAST_FILE)
+
+        results = []
+        for table_row_as_anki_card_entity in table_rows_as_anki_card_entities:
+            result = table_row_as_anki_card_entity.to_str(format_type="front_transcription_back_with_comments")
+            results.append(result)
+
+        output = '\n'.join(results)
+        return output
+
+
+##################################################################
+
+if __name__ == "__main__":
+    a60_VocabFileWordsPrinterIgnoringSentences = A60_VocabFileWordsPrinterIgnoringSentences()
+    res = a60_VocabFileWordsPrinterIgnoringSentences.print_vocabulary()
+    print(res)
+

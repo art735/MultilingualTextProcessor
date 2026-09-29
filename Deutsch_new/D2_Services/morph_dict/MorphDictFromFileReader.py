@@ -1,0 +1,178 @@
+import re
+import ast
+from typing import Dict, List, Tuple
+
+import FileContentsReader
+from CharConstants import PIPE
+from MyUnitTestingAssertions import assert_raises
+
+# Гарантирует, что строка начинается с '{', заканчивается на '}' и не содержит '{' или '}' в середине.
+# Это нужно для того, чтобы убедиться, что строковое представление Python-словаря в morph_dict файлах не содержит
+# хотя бы такой ошибки своего оформления.
+# "Фигурная скобка" по-английски:
+# - "curly bracket" (BrE)
+# - "curly brace" (AmE)
+# - "brace" (в программировании)
+# [^{}]* — любое количество символов, кроме '{' и '}'.
+pattern = r"^\{[^{}]*\}$"
+
+
+class MorphDictFromFileReader:
+    def __init__(self):
+        pass
+
+    def read_from_file(self, filename):
+        # Вычитываем morph_dict из файла
+        morph_dict_str = FileContentsReader.get_file_text(filename)
+        # Преобразуем словарь из строкового представления в Python-объект
+        parsed_morph_dict = self._parse_and_validate(morph_dict_str)
+        ready_to_use_morph_dict = self._prepare_morph_dict_for_usage(parsed_morph_dict)
+        return ready_to_use_morph_dict
+
+    def _parse_and_validate(self, text: str) -> Dict[str, List[Tuple[str, str, str, str]]]:
+        """
+        Валидирует текстовый Python-словарь с ключами-строками и значениями-списками кортежей.
+        Каждый кортеж должен содержать ровно 4 строки.
+
+        Args:
+            text: Строка с текстом словаря.
+
+        Returns:
+            Валидный словарь, если все проверки пройдены.
+
+        Raises:
+            ValueError: Если структура не соответствует правилам.
+        """
+
+        text = text.strip()  # Убирает по краям строки пробел и следующие символы [\t\n\r\v\f]
+
+        # 1. Проверка фигурных скобок
+        if not self._validate_braces(text):
+            msg = "Словарь должен начинается с '{', заканчивается на '}' и не содержать '{' или '}' в середине."
+            raise ValueError(msg)
+
+        # 2. Попытка парсинга текста в Python-объект
+        try:
+            parsed_dict = ast.literal_eval(text)
+        except (SyntaxError, ValueError) as e:
+            raise ValueError(f"Ошибка синтаксиса в тексте словаря: {str(e)}")
+
+        # 3. Проверка, что результат — словарь
+        if not isinstance(parsed_dict, dict):
+            raise ValueError("Парсированный объект должен быть словарём")
+
+        # 4. Проверка ключей и значений
+        for key, value in parsed_dict.items():
+            # 5. Проверка ключа: должен быть строкой
+            if not isinstance(key, str):
+                raise ValueError(f"Ключ '{key}' должен быть строкой")
+            if not key:  # Проверка на пустую строку (можно убрать, если допустимы)
+                raise ValueError("Ключи не могут быть пустыми строками")
+
+            # 6. Проверка значения: должно быть списком
+            if not isinstance(value, list):
+                raise ValueError(f"Значение для ключа '{key}' должно быть списком")
+
+            # 7. Проверка элементов списка: все должны быть кортежами
+            for i, item in enumerate(value):
+                if not isinstance(item, tuple):
+                    raise ValueError(
+                        f"Элемент {i} в списке для ключа '{key}' должен быть кортежом, а не {type(item)}"
+                    )
+
+                # 8. Проверка длины кортежа: ровно 4 элемента
+                if len(item) != 4:
+                    raise ValueError(
+                        f"Кортеж {item} в списке для ключа '{key}' должен содержать ровно 4 элемента"
+                    )
+
+                # 9. Проверка элементов кортежа: все должны быть строками
+                for j, element in enumerate(item):
+                    if not isinstance(element, str):
+                        raise ValueError(
+                            f"Элемент {j} в кортеже {item} для ключа '{key}' должен быть строкой"
+                        )
+
+        # 10. Дополнительная проверка уникальности ключей (на всякий случай, хотя ast.literal_eval это гарантирует)
+        if len(parsed_dict) != len(set(parsed_dict.keys())):
+            raise ValueError("Ключи в словаре должны быть уникальными")
+
+        return parsed_dict
+
+    def _validate_braces(self, str):
+        return bool(re.fullmatch(pattern, str))
+
+    def _prepare_morph_dict_for_usage(self, parsed_morph_dict: dict):
+        ready_to_use_morph_dict = {}
+        for sentence, tuples in parsed_morph_dict.items():
+            updated_tuples = []
+            for token, lemma, pos, morph_str in tuples:
+                # print(morph_str)
+                morph = self._convert_morph_str_to_dict(morph_str)
+                tup = (token, lemma, pos, morph)
+                updated_tuples.append(tup)
+            ready_to_use_morph_dict[sentence] = updated_tuples
+
+        return ready_to_use_morph_dict
+
+    # Конвертировать строку вида "Case=Acc|Gender=Neut|Number=Plur" в словарь (как это делается в SpaCy)
+    def _convert_morph_str_to_dict(self, morph_str):
+        # key - строка
+        # value - всегда список!
+        morph = {}
+        # 'morph_str', особенно сгенерированная с помощью AI, может представлять собой строку вида "_", например
+        # в кортеже для слова "και": ("και", "και", "CCONJ", "_"). Такая строка должна просто заменяться на пустой
+        # словарь, т. к. с точки зрения морфологии она не содержит никакой полезной информации.
+        if PIPE in morph_str:  #
+            morph = {k.strip(): [v.strip()] for k, v in (item.split("=") for item in morph_str.split("|"))}
+        return morph
+
+
+########################################################
+
+if __name__ == '__main__':
+    morphDictFromFileReader = MorphDictFromFileReader()
+
+    input1 = [
+        # Valid dictionaries
+        "{hello}", "{}",
+        # Invalid dictionaries
+        "{he{llo}}", "{he{llo}", "{hello}}", "{hello", "hello}"
+    ]
+    er1 = [
+        True, True,
+        False, False, False, False
+    ]
+    if all(morphDictFromFileReader._validate_braces(input_val) == er for input_val, er in zip(input1, er1)):
+        print('test1 ok')
+    else:
+        print('test1 failed')
+
+    # Пример корректного текста
+    valid_text = """
+    {
+        "Σκηνή": [("Σκηνή", "σκηνή", "NOUN", "Gender=Fem|Number=Sing|Case=Nom")],
+        "Ευτυχισμένοι Μαζί": [
+            ("Ευτυχισμένοι", "ευτυχισμένος", "ADJ", "Gender=Masc|Number=Plur|Case=Nom"),
+            ("Μαζί", "μαζί", "ADV", "_")
+        ]
+    }
+    """
+
+    # Пример некорректного текста
+    invalid_text = """
+    {
+        "Σκηνή": [("Σκηνή", "σκηνή", "NOUN")],  # Неверная длина кортежа
+        "Ευτυχισμένοι Μαζί": "not a list"       # Значение не список
+    }
+    """
+
+    # Тестирование
+    try:
+        result = morphDictFromFileReader._parse_and_validate(valid_text)
+        print("'valid_text' test - ok")
+    except ValueError as e:
+        print("Ошибка валидации:", e)
+
+    assert_raises(ValueError, morphDictFromFileReader._parse_and_validate, invalid_text)
+    print("'invalid_text' test - ok")

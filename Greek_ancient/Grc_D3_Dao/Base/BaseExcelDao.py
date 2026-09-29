@@ -1,0 +1,70 @@
+import xlrd
+
+class BaseExcelDao:
+    def __init__(self, workbook_filename, worksheet_reader):
+        self.path_to_folder = 'E:/Languages/English/SVN repo/Python software/MultilingualTextProcessor/resources/'
+        self.workbook_filename = self.path_to_folder + workbook_filename
+        self.workbook = xlrd.open_workbook(self.workbook_filename)
+        self.ALL_DATA_DICT = dict()  # глобальный словарь, в который вычитаны все данные из Excel-файла
+
+        self.worksheetReader = worksheet_reader
+        # self.regExFinder = regExFinder
+
+    # Обработчик нажатия на кнопку "Reload data from Excel"
+    def reload_data_from_excel(self):
+        self.ALL_DATA_DICT.clear()
+
+    # В общем случае мы точно не знаем формат сущности и название полей в ней, но рассчитываем на то,
+    # что первое поле в сущности является её бизнес-ключом. Задача метода, не зная имени первого поля,
+    # получить его значение
+    def get_first_field_value(self, word_entry):
+        # Получаем словарь атрибутов объекта
+        attributes_dict = vars(word_entry)
+        # Получаем список имён атрибутов
+        field_names = list(attributes_dict.keys())
+        # Получаем имя первого поля
+        first_field_name = field_names[0]
+        # Получаем значение первого поля
+        first_field_value = attributes_dict.get(first_field_name)
+        return first_field_value
+
+    # Основной DAO-метод, который вызывается в бизнес-логике
+    def get_all_sheets_data_dict(self, ignored_sheets=[]):
+
+        # если глобальная переменная ALL_DATA_DICT содержит данные, то их и использовать!
+        # Не дёргать каждый раз Excel-файл и не читать из него данные каждый раз!!!
+        # Пользоваться уже вычитанными ранее данными этим же методом!!!
+        if len(self.ALL_DATA_DICT) > 0:
+            return self.ALL_DATA_DICT
+
+        all_sheets_data = list()
+        for sheet_name in self.workbook.sheet_names():
+            if sheet_name not in ignored_sheets:
+                sheet = self.workbook.sheet_by_name(sheet_name)
+                sheet_data = self.worksheetReader.get_data_from_worksheet(sheet)
+                all_sheets_data.extend(sheet_data)
+
+        for word_entry in all_sheets_data:
+            first_field_value = self.get_first_field_value(word_entry)
+            self.ALL_DATA_DICT[first_field_value] = word_entry
+
+        return self.ALL_DATA_DICT
+
+    # Используется для вычитки ignored_words и manual_lemmas в German-проекте
+    def get_data_by_sheet_name(self, worksheet_reader, sheet_name):
+        sheet = self.workbook.sheet_by_name(sheet_name)
+        sheet_data = worksheet_reader.get_data_from_worksheet(sheet)
+        return sheet_data
+
+    def get_1st_col_words_for_validation(self):
+        all_data_dict = self.get_all_sheets_data_dict()
+        first_col_words = [k for k, v in all_data_dict.items()]
+        # suspicious_first_col_words = [k for k, v in all_data_dict.items() if not self.regExFinder.is_token_a_canonical_word(k)]
+        # print("Suspicious lemmas: " + str(suspicious_first_col_words))
+        return first_col_words
+
+    def print_all_data(self):
+        all_data_dict = self.get_all_sheets_data_dict()
+        for k, v in all_data_dict.items():
+            print(k + " --> " + str(v))
+        print(len(all_data_dict))

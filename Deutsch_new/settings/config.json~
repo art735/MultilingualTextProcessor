@@ -1,0 +1,14 @@
+{
+  "German": {
+    "odt_vocabulary_files_base_dir": "E:\\Languages\\English\\SVN repo\\Python software\\MultilingualTextProcessor\\resources\\German\\Goethe-Institut A1, A2, B1 docs",
+    "theme": "dark"
+  },
+  "Modern Greek": {
+    "resource_path": "C:/Path/To/Resources2",
+    "theme": "light"
+  },
+  "Ancient Greek": {
+    "resource_path": "C:/Path/To/Resources2",
+    "theme": "light"
+  }
+}

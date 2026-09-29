@@ -1,0 +1,77 @@
+from GermanVerbConjugationDao import GermanVerbConjugationDao
+from MorphologyParser import MorphologyParser
+
+
+class GermanVerbConjugationService:
+
+    def __init__(self):
+        self.germanVerbConjugationDao = GermanVerbConjugationDao()
+        self.verbs = self.germanVerbConjugationDao.convert_excel_rows_to_entities()
+        self.morphologyParser = MorphologyParser()
+
+    def get_verb_conjugation(self, infinitive, morph):
+        result = f"!!! Conjugation of verb '{infinitive}' is not found !!!"
+
+        found_verb = None
+        for verb in self.verbs:
+            if verb.infinitive == infinitive:
+                found_verb = verb
+                break
+
+        if found_verb:
+            result = self._process_verb_form(found_verb, morph)
+
+        return result
+
+    def get_grammar_hint(self, morph):
+        return self._process_verb_form(None, morph, human_readable=True)
+
+    # Внутренний метод, который содержит основную и не дублирующуюся бизнес-логику.
+    # Вызывается из двух бизнес-методов данного класса.
+    def _process_verb_form(self, verb, morph, human_readable=False):
+
+        if human_readable:
+            result = '!!! Grammar not found !!!'
+        else:
+            result = '!!! Conjugation not found !!!'
+
+        spacy_verb_form = self.morphologyParser.parse(morph, "VerbForm")
+        spacy_mood = self.morphologyParser.parse(morph, "Mood")
+        spacy_tense = self.morphologyParser.parse(morph, "Tense")
+
+        # личные формы глагола
+        if spacy_verb_form == 'Fin':
+            # изъявительное наклонение
+            if spacy_mood == 'Ind':
+                if spacy_tense == 'Pres':
+                    result = '(Präsens)' if human_readable else verb.conjugation_to_str(verb.präsens)
+                elif spacy_tense == 'Past':
+                    result = '(Präteritum)' if human_readable else verb.conjugation_to_str(verb.präteritum)
+            # сослагательное наклонение
+            elif spacy_mood == 'Sub':
+                if spacy_tense == 'Pres':
+                    result = '(Konjunktiv I)' if human_readable else verb.conjugation_to_str(verb.konjunktiv_I)
+                elif spacy_tense == 'Past':
+                    result = '(Konjunktiv II)' if human_readable else verb.conjugation_to_str(verb.konjunktiv_II)
+        # неличные формы глагола
+        elif spacy_verb_form == 'Part':
+            result = '(Infinitiv – Partizip II)' if human_readable else verb.conjugation_to_str(
+                verb.infinitiv_partizip_II)
+        elif spacy_verb_form == '' and spacy_mood == 'Imp':
+            result = '(Imperativ)' if human_readable else verb.conjugation_to_str(verb.imperativ)
+
+        return result
+
+
+###########################################
+
+if __name__ == '__main__':
+    # germanVerbConjugationService = GermanVerbConjugationService()
+
+    # res = germanVerbConjugationService.get_verb_conjugation('sein', 'Präsens')
+    # res = germanVerbConjugationService.get_verb_conjugation('arbeiten', 'Partizip II')
+
+    morph_dict = {"Mood": ["Imp"], "Number": ["Sing"], "Person": ["2"]}
+    # res = germanVerbConjugationService.get_verb_conjugation('arbeiten', morph_dict)
+    # res = germanVerbConjugationService.get_verb_conjugation('schreiben', morph_dict)
+    # print(res)

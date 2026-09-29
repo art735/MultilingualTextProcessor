@@ -1,0 +1,202 @@
+import re
+from collections import Counter
+
+import Utils
+from CoreLemmaResolver import CoreLemmaResolver
+from GermanOOWriterService import GermanOOWriterService
+from SpaCyGermanEngineWrapper import SpaCyGermanEngineWrapper
+
+
+class A10_NewLemmasFinder:
+    def __init__(self):
+
+        self.input_sentences = []
+
+        self.spaCyGermanEngineWrapper = SpaCyGermanEngineWrapper()
+        self.germanOOWriterService = None  # каждый раз переинициализируем данный сервис в методе-обработчике нажатия на кнопку "Process"
+        self.coreLemmaResolver = CoreLemmaResolver()
+
+        # Глобальный частотный словарь. Инициализируется спец. объектом Counter из модуля collections для большего
+        # удобства работы с ним: Counter автоматически создаёт запись для нового ключа с нулевым значением, а затем
+        # увеличивает его на 1.
+        self.results_freq_dict = Counter()
+
+    # Параметр consider_vocabulary_empty нужен для отладочных целей, чтобы воспроизвести ситуацию "с чистого листа" для
+    # того или иного предложения (посмотреть леммы всех слов предложения) и полностью отвязаться от вокабуляра,
+    # распределённого по многочисленным [Vocab]-файлам.
+    def find_new_lemmas(self, input_text,
+                        include_sentences_with_new_lemmas_in_the_output=False,
+                        include_even_sentences_without_new_lemmas_in_the_output=False,
+                        output_format_as_freq_dict=False,
+                        consider_vocabulary_empty=False):
+
+        input_text = self._preprocess_input_text(input_text)
+
+        # Обнуляем глобальный словарь при каждом входе в метод
+        self.results_freq_dict = Counter()
+
+        # Каждый раз переинициализируем данный сервис, потому что в конструкторе он вычитывает содержимое
+        # [Vocab]-файлов. А поскольку это содержимое может меняться в процессе работы над материалом, нужно чтобы
+        # при каждом нажатии на кнопку "Process" актуальные данные подтягивались из [Vocab]-файлов без перезапуска
+        # программы.
+        self.germanOOWriterService = GermanOOWriterService()
+
+        # Если флажок выставлен, работаем с текстом в режиме обработки предложений из Гёте-методички: к новым словам
+        # добавляем и само предложение, из которого они были вычитаны.
+        if include_sentences_with_new_lemmas_in_the_output:
+            # Делаем список предложений именно полем класса, а не просто локальной переменной, с целью добавления к ним
+            # позже дополнительного символа newline при выводе на экран в виде списка слов и предложений,
+            # а не в виде частотного словаря.
+            self.input_sentences = Utils.split_by(input_text, '\n')
+            vocab_files_sentences = self.germanOOWriterService.get_sentences_from_all_vocab_files()
+            for input_sentence in self.input_sentences:
+                # Обрабатываем входное предложение только в том случае, если оно ещё ранее не встречалось.
+                # Дело в том, что в методичке Гёте-института предложения (как иллюстрации к использованию того или
+                # иного слова) иногда повторяются. К тому же уровень А2 иногда дублирует примеры предложений из уровня
+                # А1, а уровень B1 дублирует примеры из уровней А1 и А2 и т. д.
+                if input_sentence not in vocab_files_sentences:
+                    # В результате работы метода просто заполняется глобальный словарь self.results_freq_dict.
+                    # Метод возвращает True, если в предложении были обнаружены новые леммы и только в этом случае
+                    # само предложение можно добавлять в результирующий набор.
+                    is_there_at_least_one_new_word = self._process_single_text_unit(input_sentence, consider_vocabulary_empty)
+
+                    # Такая лаконичная запись возможна благодаря тому, что глобальный частотный словарь
+                    # self.results_freq_dict инициализирован объектом Counter из модуля collections.
+                    # Здесь добавляем в частотный словарь и само предложение, причём на всякий случай считаем частоту его
+                    # появления. В большинстве случаев это должна быть 1.
+                    if is_there_at_least_one_new_word:
+                        self.results_freq_dict[input_sentence] += 1
+                    # если установлен флаг, разрешающий добавлять даже предложения, не содержащие новых лемм, добавляем
+                    # эти предложения в результирующий набор
+                    elif include_even_sentences_without_new_lemmas_in_the_output:
+                        self.results_freq_dict[input_sentence] += 1
+        # Иначе воспринимаем входной текст как сплошной монолит и просто ищем в нём список лемм.
+        else:
+            # В результате работы метода заполняется глобальный словарь self.results_freq_dict
+            # В этой ветке не пользуемся возвращаемым значением метода, т. к. предложения и так не нужно включать
+            # в результирующий набор.
+            self._process_single_text_unit(input_text, consider_vocabulary_empty)
+
+        output = ''
+        # Дифолтный параметр метода
+        if output_format_as_freq_dict is False:
+            for line in self.results_freq_dict.keys():
+                # Обычное слово выводим на экран с одним newline-символом
+                if line not in self.input_sentences:
+                    output += f'{line}\n'
+                # Предложение выводим на экран с двумя newline-символами после него (т. е. визуально с одной пустой
+                # строкой после него)
+                else:
+                    output += f'{line}\n\n'
+        else:
+            output = '\n'.join([f'{lemma}: {counter}' for lemma, counter in self.results_freq_dict.items()])
+
+        # Удаляем лишние newline-символы по краям
+        output = output.strip('\n')
+
+        if len(output) == 0:
+            output = "No new lemmas!"
+
+        return output
+
+    def _preprocess_input_text(self, input_text):
+        result = input_text
+        # Сокращение z.B. с возможным пробелом между буквами заменить полным текстом
+        result = re.sub(r'z.\s?B.', 'zum Beispiel', result)
+        return result
+
+    # В названии метода специально использована абстрактная фраза "single_text_unit", т. к. в зависимости от значений
+    # флагов вызывающего метода find_new_lemmas() под "text_unit" может пониматься как отдельное предложение,
+    # так и весь текст целиком.
+    def _process_single_text_unit(self, text_unit, consider_vocabulary_empty=False):
+        is_there_at_least_one_new_word = False
+        tuples = self.spaCyGermanEngineWrapper.get_doc_object_tuples(text_unit, True)
+        for token, lemma, pos, morph in tuples:
+            # в самом худшем случае current_word - это lemma от spaCy, которая не претерпела никаких трансформаций
+            current_word = self.coreLemmaResolver.get_single_lemma(token, lemma, pos, morph)
+
+            # Только если слово отсутствует в вокабуляре, имеет смысл работать с ним дальше.
+            if consider_vocabulary_empty or self.germanOOWriterService.is_word_absent_from_vocabulary(current_word):
+                if current_word not in self.results_freq_dict:
+                    is_there_at_least_one_new_word = True
+                # Такая лаконичная запись возможна благодаря тому, что глобальный частотный словарь
+                # self.results_freq_dict инициализирован объектом Counter из модуля collections.
+                # Counter автоматически создаёт запись для нового ключа с нулевым значением, а затем увеличивает его
+                # на 1.
+                # Основная задача метода - заполнять глобальный частотный словарь self.results_freq_dict
+                self.results_freq_dict[current_word] += 1
+
+        return is_there_at_least_one_new_word
+
+
+######################################
+
+input_str = "1Das ist ein Test-Text mit deutschen Wörtern wie Fußgängerübergang und E-Mail2."
+
+
+# full_path_filename = r'/resources/German/Aa.txt'
+
+# input_str = FileContentsReader.get_file_text(r'E:\Languages\English\SVN repo\Python software\MultilingualTextProcessor\resources\German\all_text.txt')
+# input_str = FileContentsReader.get_file_text(full_path_filename)
+
+### **************************************
+# Это очень хороший отладочный метод для запуска основного метода .find_new_lemmas(...)
+# Если в большом тексте сложно быстро найти предложение, в котором .find_new_lemmas(...) работает некорректно,
+# можно разбить большой текст на отдельные строки-предложения, сохранить его в файл и пользоваться данным отладочным
+# методом. Когда в find_new_lemmas(...) упадёт exception или сработает conditional breakpoint, будет видно в каком
+# конкретно предложении возникла проблемная ситуация: переменная input_text метода find_new_lemmas(...) будет содержать
+# то самое "проблемное" предложение.
+# def run_in_per_line_manner(lines: list):
+#     if lines:
+#         for line in lines:
+#             lemmas_str = a10_NewLemmasFinder.find_new_lemmas(line, False)
+#             print(f'{lemmas_str}\n')
+#
+# lines = FileContentsReader.get_file_text_as_lines(full_path_filename)
+# run_in_per_line_manner(lines)
+
+# input_str = "Haupt- und ableitbaren"
+
+# input_str = "Ich sehe ihn auf der Straße"
+# input_str = "Ich sehe meine Straße"
+
+
+# input_str = """
+# Ab morgen muss ich arbeiten.
+# Ich bin oft im Büro, aber nur für wenige Stunden.
+# Wir fahren um zwölf Uhr ab.
+# """
+
+# input_str = 'Die Eltern bringen ihre Kinder zur Schule.'
+# input_str = 'Alles Gute!'
+# input_str = 'Hast du alles?'
+# input_str = 'Hast du?'
+# input_str = 'Er hat Zeit, also muss er uns helfen.'
+# input_str = 'Willst du diese Jacke?'
+
+input_str = """
+Auf dem Formular müssen Sie an mehreren Stellen etwas ankreuzen.
+Mach bitte das Licht an!
+Ein Pfund Äpfel bitte.
+Guten Appetit!
+Wie heißt das auf Deutsch?
+Zieh die Schuhe aus, bitte!
+"""
+
+# input_str = """
+# Auf dem Formular müssen Sie an mehreren Stellen etwas ankreuzen.
+# """
+#
+# input_str = 'Viele meiner Verwandten, z.B. meine beiden Brüder, arbeiten auch hier.'
+# input_str = 'Nimm noch ein paar Brote für die Fahrt mit.'
+# input_str = 'Deine Tasche kannst du dorthin stellen.'
+
+
+
+if __name__ == "__main__":
+    a10_NewLemmasFinder = A10_NewLemmasFinder()
+    res = a10_NewLemmasFinder.find_new_lemmas(input_str, True,
+                                              False,
+                                              False,
+                                              False)
+    print(res)

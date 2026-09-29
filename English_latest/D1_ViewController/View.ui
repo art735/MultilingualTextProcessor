@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+    <class>MainWindow</class>
+    <widget class="QMainWindow" name="MainWindow">
+        <property name="geometry">
+            <rect>
+                <x>0</x>
+                <y>0</y>
+                <width>859</width>
+                <height>600</height>
+            </rect>
+        </property>
+        <property name="windowTitle">
+            <string>English Text Processor</string>
+        </property>
+        <widget class="QWidget" name="centralwidget">
+            <layout class="QVBoxLayout" name="verticalLayout_2">
+                <item>
+                    <layout class="QVBoxLayout" name="verticalLayout">
+                        <property name="leftMargin">
+                            <number>15</number>
+                        </property>
+                        <property name="topMargin">
+                            <number>10</number>
+                        </property>
+                        <property name="rightMargin">
+                            <number>15</number>
+                        </property>
+                        <property name="bottomMargin">
+                            <number>10</number>
+                        </property>
+                        <item>
+                            <layout class="QHBoxLayout" name="horizontalLayout">
+                                <item>
+                                    <widget class="QRadioButton" name="textTranscriberModeRadioButton">
+                                        <property name="sizePolicy">
+                                            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                                                <horstretch>0</horstretch>
+                                                <verstretch>0</verstretch>
+                                            </sizepolicy>
+                                        </property>
+                                        <property name="text">
+                                            <string>Text transcriber mode</string>
+                                        </property>
+                                    </widget>
+                                </item>
+                                <item>
+                                    <widget class="QRadioButton" name="wordLookupModeRadioButton">
+                                        <property name="sizePolicy">
+                                            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                                                <horstretch>0</horstretch>
+                                                <verstretch>0</verstretch>
+                                            </sizepolicy>
+                                        </property>
+                                        <property name="text">
+                                            <string>Word lookup mode</string>
+                                        </property>
+                                    </widget>
+                                </item>
+                                <item>
+                                    <widget class="QRadioButton" name="textStatisticsModeRadioButton">
+                                        <property name="sizePolicy">
+                                            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                                                <horstretch>0</horstretch>
+                                                <verstretch>0</verstretch>
+                                            </sizepolicy>
+                                        </property>
+                                        <property name="text">
+                                            <string>Text statistics mode</string>
+                                        </property>
+                                    </widget>
+                                </item>
+                                <item>
+                                    <widget class="QRadioButton" name="oxfordTranscriptionLookup">
+                                        <property name="text">
+                                            <string>Oxford transcription lookup</string>
+                                        </property>
+                                    </widget>
+                                </item>
+                            </layout>
+                        </item>
+                        <item>
+                            <widget class="QTextEdit" name="inputTextEdit">
+                                <property name="sizePolicy">
+                                    <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                                        <horstretch>0</horstretch>
+                                        <verstretch>0</verstretch>
+                                    </sizepolicy>
+                                </property>
+                                <property name="font">
+                                    <font>
+                                        <family>Times New Roman</family>
+                                        <pointsize>12</pointsize>
+                                    </font>
+                                </property>
+                            </widget>
+                        </item>
+                        <item>
+                            <layout class="QHBoxLayout" name="horizontalLayout_2">
+                                <property name="spacing">
+                                    <number>6</number>
+                                </property>
+                                <property name="leftMargin">
+                                    <number>0</number>
+                                </property>
+                                <property name="topMargin">
+                                    <number>10</number>
+                                </property>
+                                <property name="rightMargin">
+                                    <number>0</number>
+                                </property>
+                                <property name="bottomMargin">
+                                    <number>10</number>
+                                </property>
+                                <item>
+                                    <widget class="QPushButton" name="processButton">
+                                        <property name="enabled">
+                                            <bool>true</bool>
+                                        </property>
+                                        <property name="sizePolicy">
+                                            <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                                                <horstretch>0</horstretch>
+                                                <verstretch>0</verstretch>
+                                            </sizepolicy>
+                                        </property>
+                                        <property name="minimumSize">
+                                            <size>
+                                                <width>0</width>
+                                                <height>40</height>
+                                            </size>
+                                        </property>
+                                        <property name="text">
+                                            <string>Process</string>
+                                        </property>
+                                    </widget>
+                                </item>
+                                <item>
+                                    <widget class="QPushButton" name="reloadDataFromExcelButton">
+                                        <property name="minimumSize">
+                                            <size>
+                                                <width>0</width>
+                                                <height>40</height>
+                                            </size>
+                                        </property>
+                                        <property name="text">
+                                            <string>Reload data from Excel and Process again</string>
+                                        </property>
+                                    </widget>
+                                </item>
+                            </layout>
+                        </item>
+                        <item>
+                            <widget class="QTextEdit" name="outputTextEdit">
+                                <property name="font">
+                                    <font>
+                                        <family>Times New Roman</family>
+                                        <pointsize>12</pointsize>
+                                    </font>
+                                </property>
+                            </widget>
+                        </item>
+                    </layout>
+                </item>
+            </layout>
+        </widget>
+        <widget class="QMenuBar" name="menubar">
+            <property name="geometry">
+                <rect>
+                    <x>0</x>
+                    <y>0</y>
+                    <width>859</width>
+                    <height>21</height>
+                </rect>
+            </property>
+        </widget>
+        <widget class="QStatusBar" name="statusbar"/>
+    </widget>
+    <resources/>
+    <connections/>
+</ui>

@@ -1,0 +1,480 @@
+import re
+from typing import Dict, List
+
+from AnkiCardEntity import AnkiCardEntity
+from BaseValidator import BaseValidator
+from GermanAnkiDao import GermanAnkiDao
+from GermanRegExFinder import GermanRegExFinder
+
+WHITESPACE = ' '
+SLASH = '/'
+DASH = '–'
+
+ignored_duplicates_dict = {
+    'Damen-': [
+        "der Herr, Herren-, VS., die Dame, Damen-",
+        "die Dame, Damen-"
+    ],
+
+    'Herren-': [
+        "der Herr, Herren-",
+        "der Herr, Herren-, VS., die Dame, Damen-"
+    ],
+
+    'abends': [
+        "der Abend, abends",
+        "der Morgen, morgens, - - -, der Tag, tags, - - -, der Abend, abends, - - -, die Nacht, nachts"
+    ],
+
+    'ankommen': [
+        "ankommen, die Ankunft",
+        "kommen, - - -, ankommen, bekommen"
+    ],
+
+    'das Abendessen': [
+        "frühstücken, das Frühstück, - - -, zu Mittag essen, das Mittagessen, - - -, zu Abend essen, das Abendessen",
+        "zu Abend essen, das Abendessen"
+    ],
+
+    'das Einzel': [
+        "das Einzel, Einzel-, einzeln",
+        "das Einzel, VS., das Doppel"
+    ],
+
+    'das Essen': [
+        "essen, das Essen",
+        "essen, das Essen, VS., trinken, das Trinken"
+    ],
+
+    'das Frühstück': [
+        "das Frühstück, frühstücken",
+        "frühstücken, das Frühstück, - - -, zu Mittag essen, das Mittagessen, - - -, zu Abend essen, das Abendessen"
+    ],
+
+    'das Mittagessen': [
+        "frühstücken, das Frühstück, - - -, zu Mittag essen, das Mittagessen, - - -, zu Abend essen, das Abendessen",
+        "zu Mittag essen, das Mittagessen"
+    ],
+
+    'das Partizip': [
+        "das Partizip, das Partizip I, das Partizip II",
+        "das Partizip, partizipial"
+    ],
+
+    'das Partizip II': [
+        "das Partizip, das Partizip I, das Partizip II",
+        "der Infinitiv, das Präteritum, das Partizip II"
+    ],
+
+    'das Perfekt': [
+        "das Präteritum, das Perfekt, das Plusquamperfekt",
+        "perfekt, das Perfekt"
+    ],
+
+    'das Präteritum': [
+        "das Präteritum, das Perfekt, das Plusquamperfekt",
+        "der Infinitiv, das Präteritum, das Partizip II"
+    ],
+
+    'das Trinken': [
+        "essen, das Essen, VS., trinken, das Trinken",
+        "trinken, das Trinken"
+    ],
+
+    'der Abend': [
+        "der Abend, abends",
+        "der Morgen, morgens, - - -, der Tag, tags, - - -, der Abend, abends, - - -, die Nacht, nachts"
+    ],
+
+    'der Herr': [
+        "der Herr, Herren-",
+        "der Herr, Herren-, VS., die Dame, Damen-"
+    ],
+
+    'der Morgen': [
+        "der Morgen, morgen, morgens",
+        "der Morgen, morgens, - - -, der Tag, tags, - - -, der Abend, abends, - - -, die Nacht, nachts"
+    ],
+
+    'die Dame': [
+        "der Herr, Herren-, VS., die Dame, Damen-",
+        "die Dame, Damen-"
+    ],
+
+    'die Scheidung': [
+        "scheiden, die Scheidung",
+        "trauen, die Trauung, VS., scheiden, die Scheidung"
+    ],
+
+    'die Trauung': [
+        "trauen, die Trauung",
+        "trauen, die Trauung, VS., scheiden, die Scheidung"
+    ],
+
+    'essen': [
+        "essen, das Essen",
+        "essen, das Essen, VS., trinken, das Trinken"
+    ],
+
+    'frühstücken': [
+        "das Frühstück, frühstücken",
+        "frühstücken, das Frühstück, - - -, zu Mittag essen, das Mittagessen, - - -, zu Abend essen, das Abendessen"
+    ],
+
+    'lernen': [
+        "lernen, VS., studieren",
+        "lernen, das Lernen, der Lerner, die Lernerin"
+    ],
+
+    'morgens': [
+        "der Morgen, morgen, morgens",
+        "der Morgen, morgens, - - -, der Tag, tags, - - -, der Abend, abends, - - -, die Nacht, nachts"
+    ],
+
+    'scheiden': [
+        "scheiden, die Scheidung",
+        "trauen, die Trauung, VS., scheiden, die Scheidung"
+    ],
+
+    'schließen': [
+        "schließen, geschlossen, Geschlossen!",
+        "öffnen, VS., schließen"
+    ],
+
+    'studieren': [
+        "lernen, VS., studieren",
+        "studieren, das Studium, der Student, die Studentin"
+    ],
+
+    'trauen': [
+        "trauen, die Trauung",
+        "trauen, die Trauung, VS., scheiden, die Scheidung"
+    ],
+
+    'trinken': [
+        "essen, das Essen, VS., trinken, das Trinken",
+        "trinken, das Trinken"
+    ],
+
+    'zu Abend essen': [
+        "frühstücken, das Frühstück, - - -, zu Mittag essen, das Mittagessen, - - -, zu Abend essen, das Abendessen",
+        "zu Abend essen, das Abendessen"
+    ],
+
+    'zu Mittag essen': [
+        "frühstücken, das Frühstück, - - -, zu Mittag essen, das Mittagessen, - - -, zu Abend essen, das Abendessen",
+        "zu Mittag essen, das Mittagessen"
+    ],
+
+    'öffnen': [
+        "öffnen, VS., schließen",
+        "öffnen, geöffnet, Geöffnet!"
+    ]
+}
+
+
+# ignored_duplicates_dict.clear()
+
+# TODO сделать так, чтобы повелительная форма глагола, заканчивающаяся восклицательным знаком, не участвовала в поиске
+#  себя среди регулярных карточек
+
+
+class AnkiAggregateCardsValidator(BaseValidator):
+
+    def __init__(self):
+        super().__init__()
+        self.germanWordsFromAnkiDao = GermanAnkiDao()
+        self.germanRegExFinder = GermanRegExFinder()
+
+
+        # self.aggregate_cards_deck_name = 'temp'
+        self.aggregate_cards = self.germanWordsFromAnkiDao.get_data(self.aggregate_cards_deck_name)
+
+
+        # self.regular_cards_deck_name = 'English'
+        # self.regular_cards_deck_name = 'temp'
+        self.regular_cards = self.germanWordsFromAnkiDao.get_data(self.regular_cards_deck_name)
+
+    # Validation UC#1. Самый первый шаг в валидациях - это запустить AnkiRunner для замены в карточках всех неправильных
+    # последовательностей символов на правильные
+    def validate_uc1_anki_runner(self):
+        super().validate_uc1_anki_runner_base(self.aggregate_cards_deck_name)
+        # super().validate_uc1_anki_runner_base(self.regular_cards_deck_name)
+
+    # Validation UC#2. Валидировать, что каждая карточка содержит одинаковое количество полос в ключевых полях
+    def validate_uc2_main_card_fields_pieces_consistency(self):
+        super().validate_uc2_main_card_fields_pieces_consistency_base(self.aggregate_cards)
+        # super().validate_uc2_main_card_fields_pieces_consistency_base(self.regular_cards)
+
+
+    # Validation UC#3. Валидировать, что все агрегированные карточки являются мультиполосными (а не однополосными)
+    def validate_uc3_all_aggregate_cards_are_multistriped(self):
+        for aggregate_card in self.aggregate_cards:
+            if not aggregate_card.is_card_multi_striped():
+                print(f"Every aggregate card should be multi-striped by definition, "
+                      f"but '{aggregate_card.front}' is not!")
+
+    # Validation UC#4. Валидировать, что все агрегированные карточки содержат в своих полосах валидные немецкие слова
+    def validate_uc4_aggregate_cards_contain_parsable_german_words(self):
+        for aggregate_card in self.aggregate_cards:
+            for front_stripe in aggregate_card.front:
+                front_stripe_first_line = AnkiCardEntity.parse_front_stripe(front_stripe, False)
+                is_valid, validation_messages = self._is_front_stripe_first_line_valid(front_stripe_first_line)
+                if not is_valid:
+                    for val_msg in validation_messages:
+                        print(val_msg)
+        # if len(results) > 0:
+        #     for msg in results:
+        #         print(msg)
+        # else:
+        #     print("All aggregated cards contain valid data!")
+
+    def _is_front_stripe_first_line_valid(self, front_stripe_first_line):
+        # is_valid = True
+        # validation_message = ''
+        validation_messages = []
+
+        if front_stripe_first_line not in self.ignored_lines:
+            # Пробел может быть, например, между артиклем и существительным: der Mann.
+            # Если пробела в слове нет, в pieces попадёт front_stripe_first_line целиком и цикл выполнится один раз
+
+            # Разделителями между немецкими словами могут быть только указанные символы:
+            # - пример разделителя WHITESPACE: der Mann
+            # - пример разделителя SLASH: der/das Silvester
+            # - пример разделителя DASH: der/das Silvester – den Silvester
+            # Квантификатор «+» здесь нужен для того, чтобы захватывать разделитель ПРОБЕЛ-ТИРЕ-ПРОБЕЛ как одно целое,
+            # в противном случае split по трём отдельным разделителям будет генерировать лишние пустые строки
+            # в результирующем списке. Далее они всё равно отсеиваются, квантификатор добавлен ради красоты
+            # технического решения.
+            split_regex_class = fr'[{WHITESPACE}{SLASH}{DASH}]+'
+            pieces = [piece.strip() for piece in re.split(split_regex_class, front_stripe_first_line) if piece.strip()]
+            for piece in pieces:
+                if not self._can_word_be_qualified_as_german_in_aggregated_card(piece):
+                    validation_message = (f"Validation message: '{piece}' of '{front_stripe_first_line}' can't be "
+                                          f"qualified as a German word.")
+                    validation_messages.append(validation_message)
+
+        is_valid = len(validation_messages) == 0
+
+        return is_valid, validation_messages
+
+    def _can_word_be_qualified_as_german_in_aggregated_card(self, word, match_against_additional_patterns=True):
+        is_a_german_word = False
+
+        patterns = [
+            f'{GermanRegExFinder.german_word_pattern}!$'  # exclamation mark at the end of the german word
+        ]
+
+        if self.germanRegExFinder.is_token_a_canonical_word(word):
+            is_a_german_word = True
+        elif match_against_additional_patterns:
+            for pattern in patterns:
+                if re.match(pattern, word):
+                    is_a_german_word = True
+                    break
+
+        return is_a_german_word
+
+    # Validation UC#5. Валидировать, что слова, принадлежащие одному и тому же семантическому полю максимально кучно
+    # собраны в одной и той же агрегированной карточке и не разбросаны по разным агрегированным карточкам в тех или
+    # иных комбинациях.
+    def validate_uc5_semantic_fields_are_as_full_as_possible(self):
+        results_dict = {}
+
+        # Шаг 1. Ищем дубликаты слов и складываем их в словарь results_dict
+        duplicates_dict = self._find_duplicates()
+        for aggregate_card_ready_token, duplicates in duplicates_dict.items():
+            for duplicate in duplicates:
+                front_field_str = ', '.join(duplicate.front)
+                if aggregate_card_ready_token not in results_dict:
+                    results_dict[aggregate_card_ready_token] = []
+                results_dict[aggregate_card_ready_token].append(front_field_str)
+
+        # Шаг 2. Удаляем из results_dict те элементы, которые полностью совпадают с элементами словаря
+        # ignored_duplicates_dict
+        results_dict_keys_to_delete = []
+        for k, v in results_dict.items():
+            if k in ignored_duplicates_dict:
+                # values этих двух словарей - это списки. Сортируем их для корректного сравнения
+                are_dict_values_equal = sorted(v) == sorted(ignored_duplicates_dict[k])
+                # Если списки равны, значит о таком дубликате уже давно известно, и не нужно информацию о нём выводить
+                # на экран. Просто удаляем эту запись из словаря.
+                if are_dict_values_equal:
+                    # во время итерации по словарю нельзя просто сделать del results_dict[k], поэтому накапливаем
+                    # ключи для удаления в отдельный список
+                    results_dict_keys_to_delete.append(k)
+
+        # Удаляем из результирующего словаря те записи, которые должны быть проигнорированы
+        for k in results_dict_keys_to_delete:
+            del results_dict[k]
+
+        # Шаг 3. Выводим results_dict на экран
+        self._print_dict_with_results(results_dict)
+
+    # end of method
+
+
+
+    # Validation UC#6. Валидировать, что у полос-дубликатов по полю Front совпадают полосы и в полях
+    # Transcription и Back
+    def validate_uc6_duplicate_stripes_are_consistent(self):
+        results_dict = {}
+
+        # Шаг 1. Ищем дубликаты слов и складываем их в словарь results_dict
+        duplicates_dict: Dict[str, List[AnkiCardEntity]] = self._find_duplicates()
+        for aggregate_card_ready_token, duplicates in duplicates_dict.items():
+            # Внутренний цикл имеет четверную вложенность: нужно найти совпадение у двух дубликатов,
+            # поля Front которых – это списки.
+            for i in range(0, len(duplicates)):
+                # Перебираем дубликаты
+                duplicate = duplicates[i]
+                # Для каждого i-го дубликата делаем поиск среди всех остальных дубликатов
+                for j in range(0, len(duplicates)):
+                    if i != j:
+                        other_duplicate = duplicates[j]
+                        # Перебираем значения поля Front i-го дубликата
+                        for k in range(0, len(duplicate.front)):
+                            front_stripe = duplicate.front[k]
+                            # Для каждого значения поля Front i-го дубликата перебираем значения поля Front
+                            # j-го дубликата
+                            for l in range(0, len(other_duplicate.front)):
+                                other_front_stripe = other_duplicate.front[l]
+
+                                # Если полосы равны, преобразуем в строковый вид и складываем в результаты
+                                if front_stripe == other_front_stripe:
+                                    str_res = other_duplicate.to_str_by_stripe_index_front_transcription_back(l)
+                                    if other_front_stripe not in results_dict:
+                                        results_dict[other_front_stripe] = []
+                                    if str_res not in results_dict[other_front_stripe]:
+                                        results_dict[other_front_stripe].append(str_res)
+
+        # Новый словарь, содержащий только те элементы, у которых список длиннее одного элемента
+        filtered_dict = {key: value for key, value in results_dict.items() if len(value) > 1}
+        self._print_dict_with_results(filtered_dict)
+
+    def _find_duplicates(self):
+        # my_dict: Dict[str, int] = {}
+        duplicates_dict: Dict[str, List[AnkiCardEntity]] = {}
+        for i in range(0, len(self.aggregate_cards)):
+            aggregate_card: AnkiCardEntity = self.aggregate_cards[i]
+            for aggregate_card_front_stripe in aggregate_card.front:
+                if aggregate_card_front_stripe not in self.ignored_lines:
+                    aggregate_card_ready_token = AnkiCardEntity.parse_front_stripe(aggregate_card_front_stripe)
+
+                    # ещё один цикл по всем агрегированным карточкам
+                    for j in range(0, len(self.aggregate_cards)):
+                        # во внутреннем цикле не допускаем случая сравнения карточки себя с собой же
+                        if j != i:
+                            other_aggregate_card = self.aggregate_cards[j]
+                            for other_aggregate_card_front_stripe in other_aggregate_card.front:
+                                if other_aggregate_card_front_stripe not in self.ignored_lines:
+                                    other_aggregate_card_ready_token = AnkiCardEntity.parse_front_stripe(
+                                        other_aggregate_card_front_stripe)
+
+                                    if aggregate_card_ready_token == other_aggregate_card_ready_token:
+                                        if aggregate_card_ready_token not in duplicates_dict:
+                                            duplicates_dict[aggregate_card_ready_token] = []
+                                        # other_aggr_card_front_str = ', '.join(other_aggregate_card.front)
+                                        if other_aggregate_card not in duplicates_dict[aggregate_card_ready_token]:
+                                            duplicates_dict[aggregate_card_ready_token].append(other_aggregate_card)
+
+        return duplicates_dict
+
+    # TODO у глаголов убирать окончание -en и искать вхождение этого корня в других словах (проверять без учёта регистра, т. к.
+    #  существительные начинаются с большой буквы)
+
+    # Validation UC#7. Валидировать, что все немецкие слова, содержащиеся в агрегированных карточках,
+    # присутствуют среди {однополосных карточек | последних полос многополосных карточек}.
+    # TODO Также валидировать, что в однополосных карточках есть упоминание о том, что такое-то слово
+    #  присутствует в такой-то агрегированной карточке.
+    def validate_uc7_elements_of_aggregate_cards_can_be_found_among_regular_cards(self):
+        results_dict = {}
+
+        for aggregate_card in self.aggregate_cards:
+            for aggregate_card_front_stripe in aggregate_card.front:
+                if aggregate_card_front_stripe not in self.ignored_lines:
+                    aggregate_card_ready_token = AnkiCardEntity.parse_front_stripe(aggregate_card_front_stripe)
+                    # Не обрабатываем повелительные наклонения, чтобы не добавлять их в регулярные карточки,
+                    # там достаточно иметь инфинитив глагола
+                    if aggregate_card_ready_token.endswith('!'):
+                        continue
+
+                    is_found_among_single_striped = False
+                    is_found_among_multi_striped = False
+
+                    for regular_card in self.regular_cards:
+                        if regular_card.is_word_found_in_a_single_striped_card(aggregate_card_ready_token):
+                            is_found_among_single_striped = True
+                            break
+                        elif regular_card.is_word_found_in_the_last_stripe_of_a_regular_multi_striped_card(aggregate_card_ready_token):
+                            is_found_among_multi_striped = True
+                            break
+
+                    if is_found_among_single_striped is False and is_found_among_multi_striped is False:
+                        # Получаем индекс полосы, для которой провалилась валидация
+                        stripe_index = aggregate_card.front.index(aggregate_card_front_stripe)
+                        result = aggregate_card.to_str_by_stripe_index_all_fields(stripe_index)
+
+                        if aggregate_card_ready_token not in results_dict:
+                            # ключ словаря - строка; значение словаря - список строк (именно список, потому что
+                            # среди всех слов Front поля агрегированных карточек могут встречаться дубликаты и может
+                            # оказаться так, что именно этого дубликатного слова нет среди регулярных карточек).
+                            # Эти дубликаты могут быть по-разному оформлены и иметь отличия в хинтах, комментариях
+                            # и т. д.
+                            results_dict[aggregate_card_ready_token] = []
+
+                        # проверяем является ли result дубликатом уже имеющейся в словаре информации
+                        # по заданному ключу
+                        if result not in results_dict[aggregate_card_ready_token]:
+                            results_dict[aggregate_card_ready_token].append(result)
+
+        # for aggregate_card_ready_token, v in sorted_dict.items():
+        #     if len(v) > 1:
+        #         print(aggregate_card_ready_token)
+
+        word_lines = sorted(string for sublist in results_dict.values() for string in sublist)
+
+        out_msg1 = 'Следующие слова могут добавляться в словарь "как есть":'
+        should_print_out_msg1 = True
+        for word_line in word_lines:
+            front_field = word_line.split('|')[0]
+            if f'{WHITESPACE}{DASH}{WHITESPACE}' not in front_field:
+                if should_print_out_msg1:
+                    # Печатается один раз, если есть слова, к которым это сообщение подходит
+                    print(out_msg1)
+                    should_print_out_msg1 = False
+                print(word_line)
+
+        out_msg2 = '\nУ следующих слов в словарь нужно добавить только часть, стоящую до " – ":'
+        should_print_out_msg2 = True
+        for word_line in word_lines:
+            front_field = word_line.split('|')[0]
+            if f'{WHITESPACE}{DASH}{WHITESPACE}' in front_field:
+                if should_print_out_msg2:
+                    # Печатается один раз, если есть слова, к которым это сообщение подходит
+                    print(out_msg2)
+                    should_print_out_msg2 = False
+                print(word_line)
+
+
+
+
+#####################################
+
+# ankiAggregateCardsValidator = AnkiAggregateCardsValidator()
+
+# germanWordsFromAnkiDao = GermanWordsFromAnkiDao()
+
+# validate_elements_of_aggregate_cards_can_be_found_among_single_striped_cards()
+# for r in res:
+#     print(f'{r}\n')
+
+# ankiAggregateCardsValidator.validate_elements_of_aggregate_cards_can_be_found_among_regular_cards()
+# ankiAggregateCardsValidator.validate_uc1_anki_runner()
+# ankiAggregateCardsValidator.validate_uc2_main_card_fields_pieces_consistency()
+# ankiAggregateCardsValidator.validate_uc3_all_aggregate_cards_are_multistriped()
+# ankiAggregateCardsValidator.validate_uc4_aggregate_cards_contain_parsable_german_words()
+# ankiAggregateCardsValidator.validate_uc5_semantic_fields_are_as_full_as_possible()
+# ankiAggregateCardsValidator.validate_uc6_duplicate_stripes_are_consistent()
+# ankiAggregateCardsValidator.validate_uc7_elements_of_aggregate_cards_can_be_found_among_regular_cards()
+

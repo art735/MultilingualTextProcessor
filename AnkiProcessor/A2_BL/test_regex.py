@@ -1,0 +1,32 @@
+html_tag_name = "[^>]+"
+# regex для захвата html-тега (неважно открывающего или закрывающего)
+html_tag_pattern = fr"<{html_tag_name}>"
+
+# regex для захвата только открывающего html-тега
+# после открывающей угловой скобки идёт не-слеш - в этом ключевое отличие открывающего тега от закрывающего
+html_opening_tag_pattern = fr"<[^/]{html_tag_name}>"
+
+# regex для захвата только закрывающего html-тега
+html_closing_tag_pattern = fr"</{html_tag_name}>"
+
+pattern = fr'({html_opening_tag_pattern})\s+({html_opening_tag_pattern})'
+pattern = fr'({html_closing_tag_pattern})\s+({html_closing_tag_pattern})'
+
+text = r"<b><br><br><br></b>"
+text = r"<i><br><br></i>"
+text = r"<u><br></u>"
+text = r"abc<b><br><br><br></b>xyz"
+text = "<div> <span>Text </div> <span> More text </span> </div><p> Another paragraph </p>"
+# text = r"<div></div>Some text <p></p>More text <a href='link'></a>"
+
+
+# match = re.match(pattern, text)
+#
+# if match:
+#     # Выводим все захваченные группы
+#     print(match.groups())
+# else:
+#     print("Not matched")
+
+# res = re.sub(pattern, r'\1\2', text)
+# print(res)

@@ -1,0 +1,142 @@
+from unittest import TestCase
+
+from DeuDefiniteArticleService import DeuDefiniteArticleService
+
+
+class TestDeuDefiniteArticleService(TestCase):
+
+    def setUp(self):
+        self.definiteArticleService = DeuDefiniteArticleService()
+
+    # Тестировать имена собственные, являющиеся исключениями (т. е. имеющие артикли). Такие существительные хранятся
+    # в глобальном списке DeuDefiniteArticleService.exceptional_proper_nouns_with_articles
+    def test_uc1_exceptional_proper_nouns(self):
+        lemma = "Schweiz"
+        expected_result = "die Schweiz"
+        pos = "PROPN"
+        # В данном случае morph-объект специально не заполняю, т. к. бизнес-метод НЕ должен доходить до разбора
+        # морфологии при работе с именами собственными
+        morph = {}
+        actual_result = self.definiteArticleService.add_definite_article_to_lemma(lemma, pos, morph)
+        self.assertEquals(expected_result, actual_result)
+
+        lemma = "Iran"
+        expected_result = "der Iran"
+        pos = "PROPN"
+        # В данном случае morph-объект специально не заполняю, т. к. бизнес-метод НЕ должен доходить до разбора
+        # морфологии при работе с именами собственными
+        morph = {}
+        actual_result = self.definiteArticleService.add_definite_article_to_lemma(lemma, pos, morph)
+        self.assertEquals(expected_result, actual_result)
+
+        lemma = "EU"
+        expected_result = "die EU"
+        pos = "PROPN"
+        # В данном случае morph-объект специально не заполняю, т. к. бизнес-метод НЕ должен доходить до разбора
+        # морфологии при работе с именами собственными
+        morph = {}
+        actual_result = self.definiteArticleService.add_definite_article_to_lemma(lemma, pos, morph)
+        self.assertEquals(expected_result, actual_result)
+
+    # "Обычные" имена собственные - это имена собственные, которые не являются исключениями и обычно употребляются без
+    # артикля
+    def test_uc2_usual_proper_nouns(self):
+        token = "Alex"
+        expected_result = token
+        pos = "PROPN"
+        # В данном случае morph-объект специально не заполняю, т. к. бизнес-метод НЕ должен доходить до разбора
+        # морфологии при работе с именами собственными
+        morph = {}
+        actual_result = self.definiteArticleService.add_definite_article_to_token(token, pos, morph)
+        self.assertEquals(expected_result, actual_result)
+
+        token = "Berlin"
+        expected_result = token
+        pos = "PROPN"
+        # В данном случае morph-объект специально не заполняю, т. к. бизнес-метод НЕ должен доходить до разбора
+        # морфологии при работе с именами собственными
+        morph = {}
+        actual_result = self.definiteArticleService.add_definite_article_to_token(token, pos, morph)
+        self.assertEquals(expected_result, actual_result)
+
+    # Слова из разряда die Eltern, die Leute и др. употребляются во мн. ч.
+    def test_uc3_plural_only_nouns(self):
+        token = "Eltern"
+        expected_result = "die Eltern"
+        pos = "NOUN"
+        # В morph-объекте специально не указан 'Gender', т. к. для сущ. мн. ч. spaCy, скорей всего, его тоже не укажет
+        morph = {"Case": ["Nom"], "Number": ["Plur"]}
+        actual_result = self.definiteArticleService.add_definite_article_to_token(token, pos, morph)
+        self.assertEquals(expected_result, actual_result)
+
+        token = "Leute"
+        expected_result = "die Leute"
+        pos = "NOUN"
+        # В morph-объекте специально не указан 'Gender', т. к. для сущ. мн. ч. spaCy, скорей всего, его тоже не укажет
+        morph = {"Case": ["Nom"], "Number": ["Plur"]}
+        actual_result = self.definiteArticleService.add_definite_article_to_token(token, pos, morph)
+        self.assertEquals(expected_result, actual_result)
+
+    def test_uc4_common_nouns(self):
+        # Singular cases
+
+        token = "Alter"
+        expected_result = "der Alter"
+        pos = "NOUN"
+        morph = {"Case": ["Nom"], "Gender": ["Masc"], "Number": ["Sing"]}
+        actual_result = self.definiteArticleService.add_definite_article_to_token(token, pos, morph)
+        self.assertEquals(expected_result, actual_result)
+
+        token = "Mutter"
+        expected_result = "der Mutter"  # в род.п.
+        pos = "NOUN"
+        morph = {"Case": ["Gen"], "Gender": ["Fem"], "Number": ["Sing"]}
+        actual_result = self.definiteArticleService.add_definite_article_to_token(token, pos, morph)
+        self.assertEquals(expected_result, actual_result)
+
+        token = "Auge"
+        expected_result = "dem Auge"  # в дат.п.
+        pos = "NOUN"
+        morph = {"Case": ["Dat"], "Gender": ["Neut"], "Number": ["Sing"]}
+        actual_result = self.definiteArticleService.add_definite_article_to_token(token, pos, morph)
+        self.assertEquals(expected_result, actual_result)
+
+        # Plural cases
+
+        token = "Väter"
+        expected_result = "die Väter"
+        pos = "NOUN"
+        morph = {"Case": ["Nom"], "Gender": ["Masc"], "Number": ["Plur"]}
+        actual_result = self.definiteArticleService.add_definite_article_to_token(token, pos, morph)
+        self.assertEquals(expected_result, actual_result)
+
+        token = "Mütter"
+        expected_result = "der Mütter"  # в род.п.
+        pos = "NOUN"
+        morph = {"Case": ["Gen"], "Gender": ["Masc"], "Number": ["Plur"]}
+        actual_result = self.definiteArticleService.add_definite_article_to_token(token, pos, morph)
+        self.assertEquals(expected_result, actual_result)
+
+        token = "Attributen"
+        expected_result = "den Attributen"  # в дат.п.
+        pos = "NOUN"
+        morph = {"Case": ["Dat"], "Gender": ["Masc"], "Number": ["Plur"]}
+        actual_result = self.definiteArticleService.add_definite_article_to_token(token, pos, morph)
+        self.assertEquals(expected_result, actual_result)
+
+    # Тестировать добавление артикля именно к лемме, а не просто к любому существительному в его грамматике
+    def test_uc5_article_addition_to_lemma(self):
+        token = "Mann"
+        expected_result = "der Mann"
+        pos = "NOUN"
+        morph = {"Case": ["Gen"], "Gender": ["Masc"], "Number": ["Plur"]}
+        actual_result = self.definiteArticleService.add_definite_article_to_lemma(token, pos, morph)
+        self.assertEquals(expected_result, actual_result)
+
+        token = "Leute"
+        expected_result = "die Leute"
+        pos = "NOUN"
+        # В morph-объекте специально не указан 'Gender', т. к. для сущ. мн. ч. spaCy, скорей всего, его тоже не укажет
+        morph = {"Case": ["Nom"], "Number": ["Plur"]}
+        actual_result = self.definiteArticleService.add_definite_article_to_lemma(token, pos, morph)
+        self.assertEquals(expected_result, actual_result)

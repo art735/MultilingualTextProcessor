@@ -1,0 +1,42 @@
+import json
+
+from MorphDictService import MorphDictService
+
+
+class A000_MorphDictCreator:
+    def __init__(self):
+        self.morphDictService = MorphDictService()
+
+    def create(self, input_text, line_by_line_mode=True, whole_text_mode=False):
+        morph_dict = self.morphDictService.make_morph_dict_on_the_fly(input_text, line_by_line_mode, whole_text_mode)
+
+        # Запись в файл
+        with open('E:\Languages\Greek\! Subtitles\Ευτυχισμένοι Μαζί\morph_dict.txt', 'w', encoding='utf-8') as file:
+            json.dump(morph_dict, file)
+
+        # Чтение из файла
+        with open('data.txt', 'r', encoding='utf-8') as file:
+            loaded_dict = json.load(file)
+
+
+
+
+    # def dict_to_str(self, morph_dict):
+    #     result = "{\n"
+    #     for key, values in morph_dict.items():
+    #         result += f'\t"{key}": [\n'
+    #         for val in values:
+    #             f.write(f'\t\t{val},\n')
+    #         f.write("    ],\n")
+    #     f.write("}\n")
+    #
+    # def list_of_tuples_to_str(self, tuples):
+    #     result = "[\n"
+    #     tuples_str = '\n\t\t'.join(map(_to_str_single_tuple, tuples))
+    #     result += f'\t{tuples_str}\n'
+    #
+    # def _to_str_single_tuple(self, tup: tuple):
+    #     # tup_str = '\n'.join(', '.join(map(str, t)) for t in tup)
+    #     tup_str = ', '.join(str(t) for t in tup)
+    #     parenthesized_tup = f'({tup_str})'
+    #     return parenthesized_tup

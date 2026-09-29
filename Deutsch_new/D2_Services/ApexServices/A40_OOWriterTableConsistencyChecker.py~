@@ -1,0 +1,109 @@
+from AnkiRegularCardsValidator import AnkiRegularCardsValidator
+from GermanAnkiDao import GermanAnkiDao
+from OOWriterOdtFileTableDao import OOWriterOdtFileTableDao, TableRowsToAnkiCardsMode
+
+
+class A40_OOWriterTableConsistencyChecker:
+
+    def __init__(self):
+        self.ooWriterOdtFileTableDao = None
+
+    def check_consistency(self, should_split_by_space_flag=False):
+        # Инициализируем DAO-объект как можно позже для предотвращения вычитки данных раньше времени.
+        # Такая техника, в частности, позволит главному окну программы открываться как можно быстрее.
+        if self.ooWriterOdtFileTableDao is None:
+            self.ooWriterOdtFileTableDao = OOWriterOdtFileTableDao()
+
+        # Вычитываем содержимое всех [Vocab]-файлов, включая текущий
+        all_files_but_last_cards = self.ooWriterOdtFileTableDao.convert_table_rows_to_anki_cards(
+            vocab_files=TableRowsToAnkiCardsMode.ALL_FILES_BUT_LAST)
+        last_file_cards = self.ooWriterOdtFileTableDao.convert_table_rows_to_anki_cards(
+            vocab_files=TableRowsToAnkiCardsMode.LAST_FILE)
+
+        # Сначала валидируем всю получившуюся коллекцию псевдо-Анки-карточек ЦЕЛИКОМ (без учёта последовательности строк
+        # в таблице OO Writer-а). Данный подход хорош тем, что выведет сразу все ошибки как со стороны lack,
+        # так и со стороны excess, и исправление этих ошибок решит многие проблемы валидации.
+        # Но в то же время успешное прохождение "валидации целиком" не означает полное отсутствие ошибок: количественно
+        # строки могут соответствовать всем критериям, но качественно идти не в том порядке, в котором это было бы
+        # естественно и логично. Поэтому второй пункт валидации на этом шаге будет заключаться в том, чтобы взять
+        # все строки из предыдущих файлов и поочерёдно добавлять к ним по одной строке из текущего файла и следить за
+        # тем, чтобы валидация на каждом таком шажке была успешной!
+        # Step 1.1 Валидируем целиком
+        output1_interlinear_consistency = ''  # interlinear_consistency - "межстрочная согласованность"
+        ankiRegularCardsValidator = AnkiRegularCardsValidator(all_files_but_last_cards + last_file_cards)
+        # TODO: может сделать флажок как checkBox на UI ???
+        lack_results_set, excess_results_set, printable_output =\
+            ankiRegularCardsValidator.find_regular_cards_lack_and_excess_sets(should_split_by_space_flag)
+        if len(lack_results_set) == 0 and len(excess_results_set) == 0:
+            # Step 1.2 Валидируем строку за строкой
+            for i in range(0, len(last_file_cards)):
+                last_file_rows_slice = last_file_cards[:i + 1]
+                ankiRegularCardsValidator = AnkiRegularCardsValidator(all_files_but_last_cards + last_file_rows_slice)
+                lack_results_set, excess_results_set, printable_output =\
+                    ankiRegularCardsValidator.find_regular_cards_lack_and_excess_sets(should_split_by_space_flag)
+                if len(lack_results_set) > 0 or len(excess_results_set) > 0:
+                    output1_interlinear_consistency = printable_output.strip('\n')
+                    break
+        else:
+            output1_interlinear_consistency = printable_output.strip('\n')
+
+        # На втором шаге валидации вычитываем все регулярные карточки из Анки и подмешиваем к ним все псевдо-карточки,
+        # сделанные из строк таблиц всех [Vocab]-файлов. Проверяем, что транскрипция и перевод одного и того же слова
+        # среди всей этой суммы карточек выглядит одинаково!
+        # Этот шаг помогает на самой ранней стадии предотвратить нарушение консистентности в словах и уже на этапе
+        # работы с распечаткой слов (т. е. до импорта в Анки) работать с согласованной версией каждого слова.
+        # Step 2. Валидация согласованности транскрипции и перевода одного и того же слова в разных карточках
+        germanWordsFromAnkiDao = GermanAnkiDao()
+        # anki_regular_cards = germanWordsFromAnkiDao.get_data(AnkiRegularCardsValidator.regular_cards_deck_name)
+        anki_regular_cards = germanWordsFromAnkiDao.get_data('!Deutsch. !Словарь')  # TODO переделать на файл конфигурации
+        ankiRegularCardsValidator = AnkiRegularCardsValidator(anki_regular_cards + all_files_but_last_cards + last_file_cards)
+        output2_inconsistent_words = ankiRegularCardsValidator.find_inconsistent_words()
+
+        if output2_inconsistent_words:
+            output2_inconsistent_words = f"Inconsistent words between Anki and [Vocab]-files (in 'Transcription' and 'Back' fields):\n\n" + output2_inconsistent_words
+
+        # Step 3. Валидация содержимого поля Front_comment (2-й столбец 5-столбцовой таблицы)
+        cards_with_invalid_front_comment = []
+        for card in all_files_but_last_cards + last_file_cards:
+            # Если комментарий в поле Front_comment присутствует, он должен соответствовать определённому формату:
+            # - или быть валидным C-style комментарием, т. е. начинаться с //
+            # - или быть валидным C++-style комментарием, т. е. начинаться с /* и заканчиваться */
+            if card.front_comment:
+                # Парсинг данных в поля сущности работает так, что символы newline делят front_comment на отдельные
+                # части, которые являются отдельными элементами списка. Поэтому для гарантированного восстановления
+                # целостного комментария нужно склеивать все элементы списка в одну строку.
+                front_comment_str = ' '.join(card.front_comment)
+                is_valid_c_style_comment = front_comment_str.startswith('// ')
+                is_valid_cpp_style_comment = front_comment_str.startswith('/*') and front_comment_str.endswith('*/')
+                is_valid_comment = is_valid_c_style_comment or is_valid_cpp_style_comment
+                if not is_valid_comment:
+                    front_str = '^^^'.join(card.front)
+                    cards_with_invalid_front_comment.append(front_str)
+
+        output3_invalid_front_comment = ''
+        if cards_with_invalid_front_comment:
+            output3_invalid_front_comment += f"Cards with invalid front comment:\n\n" + '\n'.join(cards_with_invalid_front_comment)
+
+        # Формирование результирующего вывода по всем категориям
+        output = '\n\n# # #\n\n'.join([out for out in [output1_interlinear_consistency, output2_inconsistent_words, output3_invalid_front_comment] if out])
+
+        # if output:
+        #     if output2_inconsistent_words:
+        #         output += f"\n\n# # #\n\n{output2_inconsistent_words}"
+        # elif output2_inconsistent_words:
+        #     output = output2_inconsistent_words
+        # else:
+        #     output = 'ok'
+
+        if not output:
+            output = 'ok'
+
+        return output
+
+
+##########################################
+
+if __name__ == "__main__":
+    a40_OOWriterTableConsistencyChecker = A40_OOWriterTableConsistencyChecker()
+    res = a40_OOWriterTableConsistencyChecker.check_consistency()
+    print(res)

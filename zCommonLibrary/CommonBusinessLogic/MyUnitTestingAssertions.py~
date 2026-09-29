@@ -1,0 +1,11 @@
+def assert_equal(a, b, msg=''):
+    assert a == b, f"{msg}: ожидаемое {b}, получено {a}"
+
+
+def assert_raises(exception, func, *args, **kwargs):
+    try:
+        func(*args, **kwargs)
+        assert False, f"Ожидалось исключение {exception.__name__}, но оно не было вызвано"
+    except exception:
+        pass
+    # assert True

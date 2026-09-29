@@ -1,0 +1,17 @@
+import zipfile
+import os
+
+apkg_file = r'C:\Users\user\Desktop\apkg\german.apkg'
+extract_dir = r'C:\Users\user\Desktop\apkg\german'
+
+# Проверки
+directory_exists = os.path.exists(extract_dir)  # Папка существует
+is_directory_empty = not os.listdir(extract_dir) if directory_exists else True  # Папка пуста, если существует
+
+# Логика распаковки
+if not directory_exists or is_directory_empty:
+    with zipfile.ZipFile(apkg_file, 'r') as zip_ref:
+        zip_ref.extractall(extract_dir)
+    print("Архив успешно распакован.")
+else:
+    print("Папка уже существует и не пуста. Распаковка не выполнена.")

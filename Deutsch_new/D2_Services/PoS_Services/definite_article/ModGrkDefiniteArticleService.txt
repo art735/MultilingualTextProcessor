@@ -1,0 +1,153 @@
+from GrammarEnums import GenderSpaCy, NumberSpaCy, CaseSpaCy
+from MorphologyParser import MorphologyParser
+
+# SINGULAR number noun articles
+MASC_SG_NOM = 'ο'
+FEM_SG_NOM = 'η'
+NEUT_SG_NOM = 'το'
+
+MASC_SG_GEN = 'του'
+FEM_SG_GEN = 'της'
+NEUT_SG_GEN = 'του'
+
+MASC_SG_ACC = 'τον'
+FEM_SG_ACC = 'την'
+NEUT_SG_ACC = 'το'
+
+# PLURAL number noun articles
+MASC_PL_NOM = 'οι'
+FEM_PL_NOM = 'οι'
+NEUT_PL_NOM = 'τα'
+
+MASC_PL_GEN = 'των'
+FEM_PL_GEN = 'των'
+NEUT_PL_GEN = 'των'
+
+MASC_PL_ACC = 'τους'
+FEM_PL_ACC = 'τις'
+NEUT_PL_ACC = 'τα'
+
+# трёхмерный ассоциативный массив
+mod_grk_definite_articles_dict = {
+    GenderSpaCy.Masc.value: {
+        NumberSpaCy.Sing.value: {
+            CaseSpaCy.Nom.value: MASC_SG_NOM,
+            CaseSpaCy.Gen.value: MASC_SG_GEN,
+            CaseSpaCy.Acc.value: MASC_SG_ACC,
+        },
+        NumberSpaCy.Plur.value: {
+            CaseSpaCy.Nom.value: MASC_PL_NOM,
+            CaseSpaCy.Gen.value: MASC_PL_GEN,
+            CaseSpaCy.Acc.value: MASC_PL_ACC,
+        }
+    },
+    GenderSpaCy.Fem.value: {
+        NumberSpaCy.Sing.value: {
+            CaseSpaCy.Nom.value: FEM_SG_NOM,
+            CaseSpaCy.Gen.value: FEM_SG_GEN,
+            CaseSpaCy.Acc.value: FEM_SG_ACC,
+        },
+        NumberSpaCy.Plur.value: {
+            CaseSpaCy.Nom.value: FEM_PL_NOM,
+            CaseSpaCy.Gen.value: FEM_PL_GEN,
+            CaseSpaCy.Acc.value: FEM_PL_ACC,
+        }
+    },
+    GenderSpaCy.Neut.value: {
+        NumberSpaCy.Sing.value: {
+            CaseSpaCy.Nom.value: NEUT_SG_NOM,
+            CaseSpaCy.Gen.value: NEUT_SG_GEN,
+            CaseSpaCy.Acc.value: NEUT_SG_ACC,
+        },
+        NumberSpaCy.Plur.value: {
+            CaseSpaCy.Nom.value: NEUT_PL_NOM,
+            CaseSpaCy.Gen.value: NEUT_PL_GEN,
+            CaseSpaCy.Acc.value: NEUT_PL_ACC,
+        }
+    }
+}
+
+
+class ModGrkDefiniteArticleService:
+    def __init__(self):
+        self.morphologyParser = MorphologyParser()
+
+    def add_definite_article_to_lemma(self, lemma: str, pos: str, morph):
+        # Gender
+        gender = self.morphologyParser.parse(morph, "Gender")
+        # Number
+        number = self.morphologyParser.parse(morph, "Number")
+        new_number = number if gender else 'Sing'
+        # Case. Артикль леммы (а не токена) - это артикль всегда в именительном падеже
+        case = 'Nom'
+
+        new_morph = {"Gender": [gender], "Number": [new_number], "Case": [case]}
+        return self.add_definite_article_to_token(lemma, pos, new_morph)
+
+    def add_definite_article_to_token(self, token: str, pos: str, morph):
+        articled_noun = '{0} {1}'
+        vocative_noun = '{0}!'
+
+        gender = self.morphologyParser.parse(morph, "Gender")
+        number = self.morphologyParser.parse(morph, "Number")
+        case = self.morphologyParser.parse(morph, "Case")
+
+        if gender:
+            if number and case:
+                if case != CaseSpaCy.Voc.value:
+                    definite_article = mod_grk_definite_articles_dict[gender][number][case]
+                    result = articled_noun.format(definite_article, token)
+                else:
+                    result = vocative_noun.format(token)
+        else:
+            result = f"'Gender' field is empty for '{token}'"
+
+        return result
+
+    # def place_definite_article_on_the_first_place(self, input_text):
+    #     results = []
+    #     words = [s for s in input_text.split(NEWLINE) if s]
+    #     for word in words:
+    #         word_article_ending = ', {0}'
+    #         masc_ending = word_article_ending.format(MASC_SG_NOM)
+    #         fem_ending = word_article_ending.format(FEM_SG_NOM)
+    #         neut_ending = word_article_ending.format(NEUT_SG_NOM)
+    #
+    #         if word.endswith(masc_ending) or word.endswith(fem_ending) or word.endswith(neut_ending):
+    #             pieces = word.split(', ')
+    #             noun_nominative, definite_article = pieces[0], pieces[-1]
+    #             results.append(f"{definite_article} {noun_nominative}")
+    #         else:
+    #             results.append(word)
+    #     return NEWLINE.join(results)
+
+
+###############################################################################
+
+if __name__ == '__main__':
+
+    modGrkDefiniteArticleService = ModGrkDefiniteArticleService()
+
+    morph = {'Case': ['Nom'], 'Gender': ['Masc'], 'Number': ['Sing']}
+    morph = {'Case': ['Gen'], 'Gender': ['Masc'], 'Number': ['Sing']}
+
+    res = modGrkDefiniteArticleService.add_definite_article_to_lemma('pateras', 'NOUN', morph)
+    res = modGrkDefiniteArticleService.add_definite_article_to_token('patera', 'NOUN', morph)
+    print(res)
+
+    # # starts_with_definite_article(...) test
+    # input1 = ['die Ukraine', 'Hamburg']
+    # er1 = [True, False]
+    # if all(deuDefiniteArticleService.starts_with_definite_article(input_val) == er for input_val, er in
+    #        zip(input1, er1)):
+    #     print("'starts_with_definite_article(...)' test - ok")
+    # else:
+    #     print("'starts_with_definite_article(...)' test - failed")
+    #
+    # # strip_definite_article(...) test
+    # input1 = ['der Moment', '  (der)   Alex', 'Berlin']
+    # er1 = ['Moment', 'Alex', 'Berlin']
+    # if all(deuDefiniteArticleService.strip_definite_article(input_val) == er for input_val, er in zip(input1, er1)):
+    #     print("'strip_definite_article(...)' test - ok")
+    # else:
+    #     print("'strip_definite_article(...)' test - failed")

@@ -1,0 +1,69 @@
+import MethodExecutionTimeLogger
+from A010_NewLemmasFinder import A010_NewLemmasFinder
+from OdtFilesService import OdtFilesService
+
+
+class ReRunnerOfFindNewLemmas:
+    def __init__(self):
+        self.odtFilesService = OdtFilesService()
+        self.a010_NewLemmasFinder = A010_NewLemmasFinder()
+
+    # Перед запуском не забыть закоментировать проверку "if input_sentence not in vocab_files_sentences:" в модуле
+    # A010_NewLemmasFinder.py, в противном случае поиск лемм осуществляться не будет, т. к. предложения не будут
+    # попадать на вход алгоритма.
+    def re_run(self, vocab_files_mode, spaCy_mode):
+
+        if vocab_files_mode == 'last-vocab-file':
+            # UC #1. Для запуска алгоритма в пофайловом режиме (по одному доп. Vocab-файлу за раз).
+            # В именах всех Vocab-файлов заменил с помощью Total Commander "Vocab" на "Vocab1" и затем поочерёдно убирая
+            # эту единичку у каждого последующего файла запускал данный скрипт на выполнение.
+            # Такая техника позволяет в ускоренном режиме повторить весь процесс лемматизации предложений Гёте-методички и
+            # создания соответствующих Vocab-файлов с леммами и проверить, что ни на одном из этапов не осталось проблем с
+            # лемматизацией (т. е. все слова корректно лемматизированы и их леммы находятся в соответствующих Vocab-файлах).
+            last_vocab_file_sentences = self.odtFilesService.get_sentences_from_last_vocab_file()
+            print(f'No of sentences: {len(last_vocab_file_sentences)}')
+            input_str = '\n'.join(last_vocab_file_sentences)
+        elif vocab_files_mode == 'all-vocab-files':
+            # UC #2. Для запуска алгоритма сразу для всех Vocab-файлов
+            all_vocab_files_sentences = self.odtFilesService.get_sentences_from_all_vocab_files()
+            print(f'No of sentences: {len(all_vocab_files_sentences)}')
+            input_str = '\n'.join(all_vocab_files_sentences)
+
+        if spaCy_mode == 'line-by-line':
+            new_lemmas_str = self.a010_NewLemmasFinder.find_new_lemmas(input_str, line_by_line_mode=True,
+                                                                       include_sentences_with_new_lemmas_in_the_output=True,
+                                                                       include_even_sentences_without_new_lemmas_in_the_output=False,
+                                                                       whole_text_mode=False)
+        elif spaCy_mode == 'whole-text':
+            # Когда переключатель "Line-by-line mode" выставлен в False, состояние двух его флажков значение не имеет.
+            # Здесь важно, что line_by_line_mode=False, а флаг whole_text_mode=True
+            new_lemmas_str = self.a010_NewLemmasFinder.find_new_lemmas(input_str, line_by_line_mode=False,
+                                                                       include_sentences_with_new_lemmas_in_the_output=True,
+                                                                       include_even_sentences_without_new_lemmas_in_the_output=False,
+                                                                       whole_text_mode=True)
+
+        return new_lemmas_str
+
+
+##########################
+
+if __name__ == '__main__':
+    reRunnerOfFindNewLemmas = ReRunnerOfFindNewLemmas()
+
+    # UC 1.1. Обработка предложений только последнего Vocab-файла в "line-by-line" режиме (основной рабочий сценарий)
+    MethodExecutionTimeLogger.run(lambda: print(reRunnerOfFindNewLemmas.re_run('last-vocab-file', 'line-by-line')))
+
+    # UC 1.2. Обработка предложений всех Vocab-файлов в "line-by-line" режиме.
+    # Данный вариант хорош для запуска в конце всего курса (A1, A2, B1) для проверки того, что все предложения всех
+    # Vocab-файлов курса не содержат новых лемм.
+    # MethodExecutionTimeLogger.run(lambda: print(reRunnerOfFindNewLemmas.re_run('all-vocab-files', 'line-by-line')))
+
+    # СЛЕДУЮЩИЕ 2 РЕЖИМА ИСПОЛЬЗУЮТСЯ БОЛЬШЕ "РАДИ ИНТЕРЕСА", ЧЕМ С КОНКРЕТНОЙ УТИЛИТАРНОЙ ЦЕЛЬЮ
+    # UC 2.1. Обработка предложений только последнего Vocab-файла в "whole-text" режиме.
+    # Данный вариант можно использовать ради интереса для сравнения того, насколько быстрее "whole-text" режим работает
+    # по сравнению с "line-by-line" режимом.
+    # MethodExecutionTimeLogger.run(lambda: print(reRunnerOfFindNewLemmas.re_run('last-vocab-file', 'whole-text')))
+
+    # UC 2.2. Обработка предложений всех Vocab-файлов в в "whole-text" режиме. То же, что и 2.1, но для всех предложений
+    # всех Vocab-файлов.
+    # MethodExecutionTimeLogger.run(lambda: print(reRunnerOfFindNewLemmas.re_run('all-vocab-files', 'whole-text')))

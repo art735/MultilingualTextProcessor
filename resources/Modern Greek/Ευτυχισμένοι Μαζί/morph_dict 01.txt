@@ -1,0 +1,337 @@
+{
+    # Σκηνή 01
+    "Σκηνή": [("Σκηνή", "σκηνή", "NOUN", "Gender=Fem|Number=Sing|Case=Nom")
+    ],    
+    "Ευτυχισμένοι Μαζί": [
+        ("Ευτυχισμένοι", "ευτυχισμένος", "ADJ", "Gender=Masc|Number=Plur|Case=Nom"),
+        ("Μαζί", "μαζί", "ADV", "_")
+    ],
+    "Επεισόδιο 1": [
+        ("Επεισόδιο", "επεισόδιο", "NOUN", "Gender=Neut|Number=Sing|Case=Nom"),
+        ("1", "1", "NUM", "_")
+    ],
+    "(ΓΙΑΝΝΑΚΗΣ) Σήμερα ο μπαμπάς μου παντρεύεται και θέλει να είναι όλα τέλεια.": [
+        ("ΓΙΑΝΝΑΚΗΣ", "Γιαννάκης", "PROPN", "Gender=Masc|Number=Sing|Case=Nom"),
+        ("Σήμερα", "σήμερα", "ADV", "_"),
+        ("ο", "ο", "DET", "Gender=Masc|Number=Sing|Case=Nom"),
+        ("μπαμπάς", "μπαμπάς", "NOUN", "Gender=Masc|Number=Sing|Case=Nom"),
+        ("μου", "μου", "PRON", "Person=1|Number=Sing|Poss=Yes|Case=Gen"),
+        ("παντρεύεται", "παντρεύομαι", "VERB", "Person=3|Number=Sing|Tense=Pres|Voice=Mid|Mood=Ind"),
+        ("και", "και", "CCONJ", "_"),
+        ("θέλει", "θέλω", "VERB", "Person=3|Number=Sing|Tense=Pres|Voice=Act|Mood=Ind"),
+        ("να", "να", "PART", "Mood=Sub"),
+        ("είναι", "είμαι", "AUX", "Person=3|Number=Sing|Tense=Pres|Voice=Act|Mood=Sub"),
+        ("όλα", "όλος", "PRON", "Gender=Neut|Number=Plur|Case=Acc"),
+        ("τέλεια", "τέλειος", "ADJ", "Gender=Neut|Number=Plur|Case=Acc")
+    ],
+    "Γι’ αυτό είναι ταραγμένος και σπαστικός.": [
+        ("Γι’", "για", "ADP", "_"),
+        ("αυτό", "αυτός", "PRON", "Gender=Neut|Number=Sing|Case=Acc"),
+        ("είναι", "είμαι", "AUX", "Person=3|Number=Sing|Tense=Pres|Voice=Act|Mood=Ind"),
+        ("ταραγμένος", "ταραγμένος", "ADJ", "Gender=Masc|Number=Sing|Case=Nom|Voice=Pass"),
+        ("και", "και", "CCONJ", "_"),
+        ("σπαστικός", "σπαστικός", "ADJ", "Gender=Masc|Number=Sing|Case=Nom")
+    ],
+    "Δεν είναι η πρώτη φορά παντρεύεται, αλλά είναι η πρώτη που θα το δω γιατί την προηγούμενη φορά παντρεύτηκε τη μητέρα μου.": [
+        ("Δεν", "δεν", "PART", "Polarity=Neg"),
+        ("είναι", "είμαι", "AUX", "Person=3|Number=Sing|Tense=Pres|Voice=Act|Mood=Ind"),
+        ("η", "ο", "DET", "Gender=Fem|Number=Sing|Case=Nom"),
+        ("πρώτη", "πρώτος", "ADJ", "Gender=Fem|Number=Sing|Case=Nom"),
+        ("φορά", "φορά", "NOUN", "Gender=Fem|Number=Sing|Case=Nom"),
+        ("παντρεύεται", "παντρεύομαι", "VERB", "Person=3|Number=Sing|Tense=Pres|Voice=Mid|Mood=Ind"),
+        ("αλλά", "αλλά", "CCONJ", "_"),
+        ("είναι", "είμαι", "AUX", "Person=3|Number=Sing|Tense=Pres|Voice=Act|Mood=Ind"),
+        ("η", "ο", "DET", "Gender=Fem|Number=Sing|Case=Nom"),
+        ("πρώτη", "πρώτος", "ADJ", "Gender=Fem|Number=Sing|Case=Nom"),
+        ("που", "που", "PRON", "PronType=Rel"),
+        ("θα", "θα", "PART", "Tense=Fut"),
+        ("το", "ο", "PRON", "Gender=Neut|Number=Sing|Case=Acc"),
+        ("δω", "βλέπω", "VERB", "Person=1|Number=Sing|Tense=Pres|Voice=Act|Mood=Sub"),
+        ("γιατί", "γιατί", "SCONJ", "_"),
+        ("την", "ο", "DET", "Gender=Fem|Number=Sing|Case=Acc"),
+        ("προηγούμενη", "προηγούμενος", "ADJ", "Gender=Fem|Number=Sing|Case=Acc"),
+        ("φορά", "φορά", "NOUN", "Gender=Fem|Number=Sing|Case=Acc"),
+        ("παντρεύτηκε", "παντρεύομαι", "VERB", "Person=3|Number=Sing|Tense=Aor|Voice=Mid|Mood=Ind"),
+        ("τη", "ο", "DET", "Gender=Fem|Number=Sing|Case=Acc"),
+        ("μητέρα", "μητέρα", "NOUN", "Gender=Fem|Number=Sing|Case=Acc"),
+        ("μου", "μου", "PRON", "Person=1|Number=Sing|Poss=Yes|Case=Gen")
+    ],
+    "Που δεν είναι ώρα να θυμηθώ τώρα.": [
+        ("Που", "που", "PRON", "PronType=Rel"),
+        ("δεν", "δεν", "PART", "Polarity=Neg"),
+        ("είναι", "είμαι", "AUX", "Person=3|Number=Sing|Tense=Pres|Voice=Act|Mood=Ind"),
+        ("ώρα", "ώρα", "NOUN", "Gender=Fem|Number=Sing|Case=Nom"),
+        ("να", "να", "PART", "Mood=Sub"),
+        ("θυμηθώ", "θυμάμαι", "VERB", "Person=1|Number=Sing|Tense=Aor|Voice=Mid|Mood=Sub"),
+        ("τώρα", "τώρα", "ADV", "_")
+    ],
+    "Γιατί όποτε τη θυμάμαι κλαίω και τ’ αδέρφια μου με κοροϊδεύουν.": [
+        ("Γιατί", "γιατί", "SCONJ", "_"),
+        ("όποτε", "όποτε", "ADV", "_"),
+        ("τη", "ο", "PRON", "Gender=Fem|Number=Sing|Case=Acc"),
+        ("θυμάμαι", "θυμάμαι", "VERB", "Person=1|Number=Sing|Tense=Pres|Voice=Mid|Mood=Ind"),
+        ("κλαίω", "κλαίω", "VERB", "Person=1|Number=Sing|Tense=Pres|Voice=Act|Mood=Ind"),
+        ("και", "και", "CCONJ", "_"),
+        ("τ’", "το", "DET", "Gender=Neut|Number=Plur|Case=Nom"),
+        ("αδέρφια", "αδέρφια", "NOUN", "Gender=Neut|Number=Plur|Case=Nom"),
+        ("μου", "μου", "PRON", "Person=1|Number=Sing|Poss=Yes|Case=Gen"),
+        ("με", "με", "PRON", "Person=1|Number=Sing|Case=Acc"),
+        ("κοροϊδεύουν", "κοροϊδεύω", "VERB", "Person=3|Number=Plur|Tense=Pres|Voice=Act|Mood=Ind")
+    ],
+    
+    # Σκηνή 02
+    "(αναφώνημα πόνου)": [("αναφώνημα", "αναφώνημα", "NOUN", "Gender=Neut|Number=Sing|Case=Nom"),
+                           ("πόνου", "πόνος", "NOUN", "Gender=Masc|Number=Sing|Case=Gen")],
+
+    "Επιτρέπεται την ημέρα του γάμου μου να σιδερώνω μόνος μου πουκάμισα; Επιτρέπεται;": [
+        ("Επιτρέπεται", "επιτρέπομαι", "VERB", "Mood=Ind|Tense=Pres|Voice=Pass|Person=3|Number=Sing"),
+        ("την", "ο", "DET", "Gender=Fem|Number=Sing|Case=Acc|Definite=Def"),
+        ("ημέρα", "ημέρα", "NOUN", "Gender=Fem|Number=Sing|Case=Acc"),
+        ("του", "ο", "DET", "Gender=Masc|Number=Sing|Case=Gen|Definite=Def"),
+        ("γάμου", "γάμος", "NOUN", "Gender=Masc|Number=Sing|Case=Gen"),
+        ("μου", "μου", "PRON", "Person=1|Number=Sing|Poss=Yes"),
+        ("να", "να", "PART", "Mood=Sub"),
+        ("σιδερώνω", "σιδερώνω", "VERB", "Mood=Sub|Tense=Pres|Voice=Act|Person=1|Number=Sing"),
+        ("μόνος", "μόνος", "ADV", "_"),
+        ("μου", "μου", "PRON", "Person=1|Number=Sing|Poss=Yes"),
+        ("πουκάμισα", "πουκάμισο", "NOUN", "Gender=Neut|Number=Plur|Case=Acc"),
+        (";", ";", "PUNCT", "_"),
+        ("Επιτρέπεται", "επιτρέπομαι", "VERB", "Mood=Ind|Tense=Pres|Voice=Pass|Person=3|Number=Sing"),
+        (";", ";", "PUNCT", "_")
+    ],
+
+    "Η αλήθεια είναι δεν επιτρέπεται.": [
+        ("Η", "ο", "DET", "Gender=Fem|Number=Sing|Case=Nom|Definite=Def"),
+        ("αλήθεια", "αλήθεια", "NOUN", "Gender=Fem|Number=Sing|Case=Nom"),
+        ("είναι", "είμαι", "VERB", "Mood=Ind|Tense=Pres|Voice=Act|Person=3|Number=Sing"),
+        ("δεν", "δεν", "PART", "Polarity=Neg"),
+        ("επιτρέπεται", "επιτρέπομαι", "VERB", "Mood=Ind|Tense=Pres|Voice=Pass|Person=3|Number=Sing"),
+        (".", ".", "PUNCT", "_")
+    ],
+
+    "Μια κι έπιασες να φέρω και κάτι δικά μου να τα πατήσεις;": [
+        ("Μια", "ένας", "DET", "Gender=Fem|Number=Sing|Case=Nom|Definite=Ind"),
+        ("κι", "και", "CCONJ", "_"),
+        ("έπιασες", "πιάνω", "VERB", "Mood=Ind|Tense=Past|Voice=Act|Person=2|Number=Sing"),
+        ("να", "να", "PART", "Mood=Sub"),
+        ("φέρω", "φέρω", "VERB", "Mood=Sub|Tense=Pres|Voice=Act|Person=1|Number=Sing"),
+        ("και", "και", "CCONJ", "_"),
+        ("κάτι", "κάτι", "PRON", "Gender=Neut|Number=Sing|Case=Acc"),
+        ("δικά", "δικός", "ADJ", "Gender=Neut|Number=Plur|Case=Nom"),
+        ("μου", "μου", "PRON", "Person=1|Number=Sing|Poss=Yes"),
+        ("να", "να", "PART", "Mood=Sub"),
+        ("τα", "ο", "PRON", "Gender=Neut|Number=Plur|Case=Acc|Person=3"),
+        ("πατήσεις", "πατάω", "VERB", "Mood=Sub|Tense=Pres|Voice=Act|Person=2|Number=Sing"),
+        (";", ";", "PUNCT", "_")
+    ],
+
+    "Το βλέπεις;": [
+        ("Το", "ο", "PRON", "Gender=Neut|Number=Sing|Case=Acc|Person=3"),
+        ("βλέπεις", "βλέπω", "VERB", "Mood=Ind|Tense=Pres|Voice=Act|Person=2|Number=Sing"),
+        (";", ";", "PUNCT", "_")
+    ],
+
+    "ο μεγαλύτερος αδελφός": [
+        ("ο", "ο", "DET", "Gender=Masc|Number=Sing|Case=Nom|Definite=Def"),
+        ("μεγαλύτερος", "μεγάλος", "ADJ", "Degree=Cmp|Gender=Masc|Number=Sing|Case=Nom"),
+        ("αδελφός", "αδελφός", "NOUN", "Gender=Masc|Number=Sing|Case=Nom")
+    ],
+
+    "ο μεσαίος αδελφός": [
+        ("ο", "ο", "DET", "Gender=Masc|Number=Sing|Case=Nom|Definite=Def"),
+        ("μεσαίος", "μεσαίος", "ADJ", "Gender=Masc|Number=Sing|Case=Nom"),
+        ("αδελφός", "αδελφός", "NOUN", "Gender=Masc|Number=Sing|Case=Nom")
+    ],
+
+    "ο μικρότερος αδελφός": [
+        ("ο", "ο", "DET", "Gender=Masc|Number=Sing|Case=Nom|Definite=Def"),
+        ("μικρότερος", "μικρός", "ADJ", "Degree=Cmp|Gender=Masc|Number=Sing|Case=Nom"),
+        ("αδελφός", "αδελφός", "NOUN", "Gender=Masc|Number=Sing|Case=Nom")
+    ],
+
+    "ο μεγάλος αδελφός": [
+        ("ο", "ο", "DET", "Gender=Masc|Number=Sing|Case=Nom|Definite=Def"),
+        ("μεγάλος", "μεγάλος", "ADJ", "Gender=Masc|Number=Sing|Case=Nom"),
+        ("αδελφός", "αδελφός", "NOUN", "Gender=Masc|Number=Sing|Case=Nom")
+    ],
+
+    "(ΓΙΑΝΝΑΚΗΣ) Αυτός είναι ο θείος Σπύρος ο μεγάλος αδελφός του πατέρα.": [
+        ("ΓΙΑΝΝΑΚΗΣ", "Γιαννάκης", "PROPN", "Gender=Masc|Number=Sing|Case=Nom"),
+        ("Αυτός", "αυτός", "PRON", "Gender=Masc|Number=Sing|Case=Nom|Person=3"),
+        ("είναι", "είμαι", "VERB", "Mood=Ind|Tense=Pres|Voice=Act|Person=3|Number=Sing"),
+        ("ο", "ο", "DET", "Gender=Masc|Number=Sing|Case=Nom|Definite=Def"),
+        ("θείος", "θείος", "NOUN", "Gender=Masc|Number=Sing|Case=Nom"),
+        ("Σπύρος", "Σπύρος", "PROPN", "Gender=Masc|Number=Sing|Case=Nom"),
+        ("ο", "ο", "DET", "Gender=Masc|Number=Sing|Case=Nom|Definite=Def"),
+        ("μεγάλος", "μεγάλος", "ADJ", "Gender=Masc|Number=Sing|Case=Nom"),
+        ("αδελφός", "αδελφός", "NOUN", "Gender=Masc|Number=Sing|Case=Nom"),
+        ("του", "ο", "DET", "Gender=Masc|Number=Sing|Case=Gen|Definite=Def"),
+        ("πατέρα", "πατέρας", "NOUN", "Gender=Masc|Number=Sing|Case=Gen"),
+        (".", ".", "PUNCT", "_")
+    ],
+
+    "Τα παιδιά;": [
+        ("Τα", "ο", "DET", "Gender=Neut|Number=Plur|Case=Nom|Definite=Def"),
+        ("παιδιά", "παιδί", "NOUN", "Gender=Neut|Number=Plur|Case=Nom"),
+        (";", ";", "PUNCT", "_")
+    ],
+
+    "(ΓΙΑΝΝΑΚΗΣ) Όταν λέει παιδιά, μια κουβέντα είναι.": [
+        ("ΓΙΑΝΝΑΚΗΣ", "Γιαννάκης", "PROPN", "Gender=Masc|Number=Sing|Case=Nom"),
+        ("Όταν", "όταν", "SCONJ", "_"),
+        ("λέει", "λέω", "VERB", "Mood=Ind|Tense=Pres|Voice=Act|Person=3|Number=Sing"),
+        ("παιδιά", "παιδί", "NOUN", "Gender=Neut|Number=Plur|Case=Acc"),
+        (",", ",", "PUNCT", "_"),
+        ("μια", "ένας", "DET", "Gender=Fem|Number=Sing|Case=Nom|Definite=Ind"),
+        ("κουβέντα", "κουβέντα", "NOUN", "Gender=Fem|Number=Sing|Case=Nom"),
+        ("είναι", "είμαι", "VERB", "Mood=Ind|Tense=Pres|Voice=Act|Person=3|Number=Sing"),
+    ],
+
+    "(ΔΑΣΚΑΛΑ) Το αγαπημένο μου μέρος για διακοπές. Λοιπόν...": [
+        ("ΔΑΣΚΑΛΑ", "δασκάλα", "NOUN", "Gender=Fem|Number=Sing|Case=Nom"),
+        ("Το", "ο", "DET", "Gender=Neut|Number=Sing|Case=Nom|Definite=Def"),
+        ("αγαπημένο", "αγαπημένος", "ADJ", "Gender=Neut|Number=Sing|Case=Nom"),
+        ("μου", "μου", "PRON", "Person=1|Number=Sing|Poss=Yes"),
+        ("μέρος", "μέρος", "NOUN", "Gender=Neut|Number=Sing|Case=Nom"),
+        ("για", "για", "ADP", "_"),
+        ("διακοπές", "διακοπές", "NOUN", "Gender=Fem|Number=Plur|Case=Acc"),
+        (".", ".", "PUNCT", "_"),
+        ("Λοιπόν", "λοιπόν", "ADV", "_"),
+        ("...", "...", "PUNCT", "_")
+    ],
+    
+    # Σκηνή 03
+    "(ΓΙΑΝΝΑΚΗΣ) Αυτός είναι ο Μάρκος, ο μεγάλος μου αδελφός.": [
+        ("ΓΙΑΝΝΑΚΗΣ", "Γιαννάκης", "PROPN", "Case=Nom|Gender=Masc|Number=Sing"),
+        ("Αυτός", "αυτός", "PRON", "Case=Nom|Gender=Masc|Number=Sing|Person=3"),
+        ("είναι", "είμαι", "AUX", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"),
+        ("ο", "ο", "DET", "Case=Nom|Gender=Masc|Number=Sing|PronType=Art"),
+        ("Μάρκος", "Μάρκος", "PROPN", "Case=Nom|Gender=Masc|Number=Sing"),
+        ("ο", "ο", "DET", "Case=Nom|Gender=Masc|Number=Sing|PronType=Art"),
+        ("μεγάλος", "μεγάλος", "ADJ", "Case=Nom|Degree=Pos|Gender=Masc|Number=Sing"),
+        ("μου", "μου", "PRON", "Case=Gen|Number=Sing|Person=1|Poss=Yes|PronType=Prs"),
+        ("αδελφός", "αδελφός", "NOUN", "Case=Nom|Gender=Masc|Number=Sing")
+    ],
+    "Τον Μάρκο τον ενδιαφέρουν δύο πράγματα.": [
+        ("Τον", "ο", "DET", "Case=Acc|Gender=Masc|Number=Sing|PronType=Art"),
+        ("Μάρκο", "Μάρκος", "PROPN", "Case=Acc|Gender=Masc|Number=Sing"),
+        ("τον", "αυτός", "PRON", "Case=Acc|Gender=Masc|Number=Sing|Person=3"),
+        ("ενδιαφέρουν", "ενδιαφέρω", "VERB", "Mood=Ind|Number=Plur|Person=3|Tense=Pres|VerbForm=Fin"),
+        ("δύο", "δύο", "NUM", "NumType=Card"),
+        ("πράγματα", "πράγμα", "NOUN", "Case=Acc|Gender=Neut|Number=Plur")
+    ],
+    "Να τον θαυμάζει ο μπαμπάς και να τον κυνηγάν οι γκόμενες.": [
+        ("Να", "να", "PART", "VerbForm=Fin"),
+        ("τον", "αυτός", "PRON", "Case=Acc|Gender=Masc|Number=Sing|Person=3"),
+        ("θαυμάζει", "θαυμάζω", "VERB", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"),
+        ("ο", "ο", "DET", "Case=Nom|Gender=Masc|Number=Sing|PronType=Art"),
+        ("μπαμπάς", "μπαμπάς", "NOUN", "Case=Nom|Gender=Masc|Number=Sing"),
+        ("και", "και", "CCONJ", "_"),
+        ("να", "να", "PART", "VerbForm=Fin"),
+        ("τον", "αυτός", "PRON", "Case=Acc|Gender=Masc|Number=Sing|Person=3"),
+        ("κυνηγάν", "κυνηγάω", "VERB", "Mood=Ind|Number=Plur|Person=3|Tense=Pres|VerbForm=Fin"),
+        ("οι", "ο", "DET", "Case=Nom|Gender=Fem|Number=Plur|PronType=Art"),
+        ("γκόμενες", "γκόμενα", "NOUN", "Case=Nom|Gender=Fem|Number=Plur")
+    ],
+    "Αν γίνει καλός ποδοσφαιριστής θα τα ’χει και τα δύο.": [
+        ("Αν", "αν", "SCONJ", "_"),
+        ("γίνει", "γίνομαι", "VERB", "Mood=Ind|Number=Sing|Person=3|Tense=Aor|VerbForm=Fin"),
+        ("καλός", "καλός", "ADJ", "Case=Nom|Degree=Pos|Gender=Masc|Number=Sing"),
+        ("ποδοσφαιριστής", "ποδοσφαιριστής", "NOUN", "Case=Nom|Gender=Masc|Number=Sing"),
+        ("θα", "θα", "PART", "Tense=Fut"),
+        ("τα", "ο", "DET", "Case=Acc|Gender=Neut|Number=Plur|PronType=Art"),
+        ("’χει", "έχω", "VERB", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"),
+        ("και", "και", "CCONJ", "_"),
+        ("τα", "ο", "DET", "Case=Acc|Gender=Neut|Number=Plur|PronType=Art"),
+        ("δύο", "δύο", "NUM", "NumType=Card")
+    ],
+    
+    "Παίζει στην ομάδα της γειτονιάς που προπονεί ο μπαμπάς.": [
+        ("Παίζει", "παίζω", "VERB", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"),
+        ("στην", "σε", "ADP", "Case=Acc"),
+        ("ομάδα", "ομάδα", "NOUN", "Case=Acc|Gender=Fem|Number=Sing"),
+        ("της", "ο", "DET", "Case=Gen|Gender=Fem|Number=Sing|PronType=Art"),
+        ("γειτονιάς", "γειτονιά", "NOUN", "Case=Gen|Gender=Fem|Number=Sing"),
+        ("που", "που", "PRON", "PronType=Rel"),
+        ("προπονεί", "προπονώ", "VERB", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"),
+        ("ο", "ο", "DET", "Case=Nom|Gender=Masc|Number=Sing|PronType=Art"),
+        ("μπαμπάς", "μπαμπάς", "NOUN", "Case=Nom|Gender=Masc|Number=Sing")
+    ],
+    "Η Ελένη, ο πρώτος έρωτας του πατέρα μου.": [
+        ("Η", "ο", "DET", "Case=Nom|Gender=Fem|Number=Sing|PronType=Art"),
+        ("Ελένη", "Ελένη", "PROPN", "Case=Nom|Gender=Fem|Number=Sing"),
+        ("ο", "ο", "DET", "Case=Nom|Gender=Masc|Number=Sing|PronType=Art"),
+        ("πρώτος", "πρώτος", "ADJ", "Case=Nom|Degree=Pos|Gender=Masc|Number=Sing"),
+        ("έρωτας", "έρωτας", "NOUN", "Case=Nom|Gender=Masc|Number=Sing"),
+        ("του", "ο", "DET", "Case=Gen|Gender=Masc|Number=Sing|PronType=Art"),
+        ("πατέρα", "πατέρας", "NOUN", "Case=Gen|Gender=Masc|Number=Sing"),
+        ("μου", "μου", "PRON", "Case=Gen|Number=Sing|Person=1|Poss=Yes|PronType=Prs")
+    ],
+    "Είναι πολύ όμορφη, κι ο αδελφός μου ο Θανάσης λέει ένα στιχάκι με το όνομά της που ντρέπομαι να σας το πω.": [
+        ("Είναι", "είμαι", "AUX", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"),
+        ("πολύ", "πολύ", "ADV", "Degree=Pos"),
+        ("όμορφη", "όμορφος", "ADJ", "Case=Nom|Degree=Pos|Gender=Fem|Number=Sing"),
+        ("κι", "και", "CCONJ", "_"),
+        ("ο", "ο", "DET", "Case=Nom|Gender=Masc|Number=Sing|PronType=Art"),
+        ("αδελφός", "αδελφός", "NOUN", "Case=Nom|Gender=Masc|Number=Sing"),
+        ("μου", "μου", "PRON", "Case=Gen|Number=Sing|Person=1|Poss=Yes|PronType=Prs"),
+        ("ο", "ο", "DET", "Case=Nom|Gender=Masc|Number=Sing|PronType=Art"),
+        ("Θανάσης", "Θανάσης", "PROPN", "Case=Nom|Gender=Masc|Number=Sing"),
+        ("λέει", "λέω", "VERB", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"),
+        ("ένα", "ένας", "DET", "Case=Acc|Gender=Neut|Number=Sing|PronType=Art"),
+        ("στιχάκι", "στιχάκι", "NOUN", "Case=Acc|Gender=Neut|Number=Sing"),
+        ("με", "με", "ADP", "_"),
+        ("το", "ο", "DET", "Case=Acc|Gender=Neut|Number=Sing|PronType=Art"),
+        ("όνομά", "όνομα", "NOUN", "Case=Acc|Gender=Neut|Number=Sing"),
+        ("της", "αυτός", "PRON", "Case=Gen|Gender=Fem|Number=Sing|Person=3|PronType=Prs"),
+        ("που", "που", "PRON", "PronType=Rel"),
+        ("ντρέπομαι", "ντρέπομαι", "VERB", "Mood=Ind|Number=Sing|Person=1|Tense=Pres|VerbForm=Fin"),
+        ("να", "να", "PART", "VerbForm=Fin"),
+        ("σας", "εσύ", "PRON", "Case=Acc|Number=Plur|Person=2|PronType=Prs"),
+        ("το", "αυτός", "PRON", "Case=Acc|Gender=Neut|Number=Sing|Person=3|PronType=Prs"),
+        ("πω", "λέω", "VERB", "Mood=Sub|Tense=Pres|Person=1|Number=Sing|Voice=Act")
+    ],
+    "Ο πατέρας μου με τον θείο Σπύρο έχουν μια μπιραρία που το πρωί είναι καφενείο.": [
+        ("Ο", "ο", "DET", "Case=Nom|Gender=Masc|Number=Sing|PronType=Art"),
+        ("πατέρας", "πατέρας", "NOUN", "Case=Nom|Gender=Masc|Number=Sing"),
+        ("μου", "μου", "PRON", "Case=Gen|Number=Sing|Person=1|Poss=Yes|PronType=Prs"),
+        ("με", "με", "ADP", "_"),
+        ("τον", "ο", "DET", "Case=Acc|Gender=Masc|Number=Sing|PronType=Art"),
+        ("θείο", "θείος", "NOUN", "Case=Acc|Gender=Masc|Number=Sing"),
+        ("Σπύρο", "Σπύρος", "PROPN", "Case=Acc|Gender=Masc|Number=Sing"),
+        ("έχουν", "έχω", "VERB", "Mood=Ind|Number=Plur|Person=3|Tense=Pres|VerbForm=Fin"),
+        ("μια", "ένας", "DET", "Case=Acc|Gender=Fem|Number=Sing|PronType=Art"),
+        ("μπιραρία", "μπιραρία", "NOUN", "Case=Acc|Gender=Fem|Number=Sing"),
+        ("που", "που", "PRON", "PronType=Rel"),
+        ("το", "ο", "DET", "Case=Acc|Gender=Neut|Number=Sing|PronType=Art"),
+        ("πρωί", "πρωί", "NOUN", "Case=Acc|Gender=Neut|Number=Sing"),
+        ("είναι", "είμαι", "AUX", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"),
+        ("καφενείο", "καφενείο", "NOUN", "Case=Nom|Gender=Neut|Number=Sing")
+    ],
+    "Ο μπαμπάς τη λέει καφέ-μπαρ με σπεσιαλιτέ τα φίνγκερ φουντ.": [
+        ("Ο", "ο", "DET", "Case=Nom|Gender=Masc|Number=Sing|PronType=Art"),
+        ("μπαμπάς", "μπαμπάς", "NOUN", "Case=Nom|Gender=Masc|Number=Sing"),
+        ("τη", "αυτός", "PRON", "Case=Acc|Gender=Fem|Number=Sing|Person=3|PronType=Prs"),
+        ("λέει", "λέω", "VERB", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"),
+        ("καφέ-μπαρ", "καφέ-μπαρ", "NOUN", "Case=Acc|Gender=Neut|Number=Sing"),
+        ("με", "με", "ADP", "_"),
+        ("σπεσιαλιτέ", "σπεσιαλιτέ", "NOUN", "Case=Acc|Gender=Fem|Number=Sing"),
+        ("τα", "ο", "DET", "Case=Acc|Gender=Neut|Number=Plur|PronType=Art"),
+        ("φίνγκερ", "φίνγκερ", "NOUN", "Case=Acc|Gender=Neut|Number=Plur"),
+        ("φουντ", "φουντ", "NOUN", "Case=Acc|Gender=Neut|Number=Plur")
+    ],
+    "Ή μεζεδάκια όπως τα λέει ο θείος.": [
+        ("Ή", "ή", "CCONJ", ""),  
+        ("μεζεδάκια", "μεζεδάκι", "NOUN", "Gender=Neut|Number=Plur|Case=Nom"),  
+        ("όπως", "όπως", "SCONJ", ""),  
+        ("τα", "ο", "DET", "Gender=Neut|Number=Plur|Case=Acc|PronType=Art"),  
+        ("λέει", "λέω", "VERB", "Mood=Ind|Tense=Pres|Person=3|Number=Sing"),  
+        ("ο", "ο", "DET", "Gender=Masc|Number=Sing|Case=Nom|PronType=Art"),  
+        ("θείος", "θείος", "NOUN", "Gender=Masc|Number=Sing|Case=Nom")
+    ],
+    
+    # Σκηνή 04
+    
+    
+}
+

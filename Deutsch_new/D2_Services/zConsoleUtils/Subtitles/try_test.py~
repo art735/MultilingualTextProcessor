@@ -1,0 +1,16 @@
+import os
+import chardet
+
+folder_path = r"C:\Users\user"
+
+def get_all_dir_filenames(dir_path):
+    filenames = []
+    for root, _, files in os.walk(dir_path):
+        for file in files:
+            file_path = os.path.join(root, file)
+            filenames.append(file_path)
+            print(file_path)
+    return filenames
+
+
+get_all_dir_filenames(folder_path)

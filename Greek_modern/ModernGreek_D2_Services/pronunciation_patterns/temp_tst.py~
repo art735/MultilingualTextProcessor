@@ -1,0 +1,144 @@
+import re
+
+exceptions_dict = {
+    'διάλεξη': ['διά'],
+    'βιολογία': ['βιο'],
+    'γυμνάσιο': ['σιο'],
+    'δωμάτιο': ['τιο'],
+    'εμπόριο': ['όριο'],
+    'κιβώτιο': ['τιο'],
+    'πιέζω': ['πιέ'],
+    'τεράστιο': ['τιο'],
+    'διαγώνιος': [(0, 3), 'νιο'],
+}
+
+# ЦЕЛЬ: Найти и удалить HTML-теги <u> вокруг частей, указанных в exceptions_dict, даже если эти части текста разбиты
+# HTML-тегами (например, <u>γί</u> вместо γι).
+
+# РЕШЕНИЕ:
+# 1. Сначала удалим все теги <u> и сохраним их позиции.
+# 2. Потом найдем "исключения" в "чистом" тексте.
+# 3. Удалим HTML-теги только в соответствующих местах.
+
+def remove_html_underlining(text):
+    def clean_html_underlining(word_with_tags, plain_word, subclasses):
+        # Удаляем подчёркивания только внутри подстрок исключений
+        for subclass in subclasses:
+            if isinstance(subclass, tuple):
+                start, end = subclass
+                subclass_str = plain_word[start:end]
+            else:
+                subclass_str = subclass
+
+            # Поддержка вариантов: <u>τι</u>ο, τ<u>ι</u>ο, т. е. частичное оборачивание
+            pattern = re.compile(rf'(<u>)?({re.escape(subclass_str)})(</u>)?', re.IGNORECASE)
+
+            # Вспомогательная функция, которая передаётся в re.sub(), чтобы гибко управлять заменой текста по
+            # регулярному выражению.
+            # Аргумент m — это совпадение (match object) от re.sub(...), который содержит:
+            # 1) всё, что совпало с регуляркой (m.group(0))
+            # 2) группы (...) из шаблона, полученные через m.groups()
+            def replacer(m):
+                # Убираем <u> и </u> только если они окружают всю подстроку
+                # before - <u> или None - Начало подчёркивания (если было)
+                # core - напр., 'βιο' - Основная подстрока (из словаря)
+                # after - </u> или None - Конец подчёркивания (если было)
+                before, core, after = m.groups()
+                
+                # Проверяем: была ли вообще обёртка <u>...</u>
+                # - если была, возвращаем только core, то есть убираем <u> и </u>.
+                # - если не было, возвращаем m.group(0), то есть всё как есть — ничего не меняем.
+                if before or after:
+                    return core
+                return m.group(0)
+
+            word_with_tags = pattern.sub(replacer, word_with_tags)
+
+        return word_with_tags
+
+    # Найти все слова с возможной разметкой
+    # Шаблон для разделения текста на слова и другие фрагменты, включая HTML-теги <u>...</u> внутри слов.
+    # \w	    Любой "словесный" символ (латиница, цифры, подчёркивание)
+    # άέήίόύώ	Строчные греческие гласные с ударением
+    # ϊϋ	    Строчные гласные с диерезисом
+    # ΆΈΉΊΌΎΏ	Прописные ударные греческие
+    # ΪΫ	    Прописные с диерезисом
+    # < >	    Символы HTML-тегов (<u>, </u>) (само имя тега "u" захватывается с помощью \w)
+    # \-/	    Символы дефиса и косой черты (например, в составных словах)
+    pattern = re.compile(r'([\wάέήίόύώϊϋΆΈΉΊΌΎΏΪΫ<>\-/]+)', re.UNICODE)
+
+    def process_word(word):
+        # Удалим временно теги для проверки plain формы
+        plain_word = re.sub(r'</?u>', '', word)
+        if plain_word in exceptions_dict:
+            return clean_html_underlining(word, plain_word, exceptions_dict[plain_word])
+        return word
+
+    # Разбиваем текст на слова и обрабатываем выборочно
+    parts = pattern.split(text)
+    processed = [process_word(part) if pattern.fullmatch(part) else part for part in parts]
+
+    return ''.join(processed)
+
+# def remove_html_underlining(text):
+#     for plain_word, subclasses in exceptions_dict.items():
+#         u_tagged_word = plain_word
+#         for subclass in subclasses:
+#             if isinstance(subclass, str):
+#                 u_tagged_word = u_tagged_word.replace(subclass, f'<u>{subclass}</u>')
+#             elif isinstance(subclass, tuple):
+#                 start, end = subclass
+#                 substring = plain_word[start:end]
+#                 u_tagged_word = u_tagged_word.replace(substring, f'<u>{substring}</u>')
+#
+#         # print(u_tagged_word)
+#         text = text.replace(u_tagged_word, plain_word)
+#
+#     return text
+
+###########################################
+
+test_str = 'А вот слово биология на греческом: <u>βιο</u>λογία'
+test_str = '<u>βιο</u>λο<u>γί</u>α'
+test_str = 'Это <u>βιο</u>λο<u>γί</u>α и просто λο<u>γί</u>α, а ещё <u>τιο</u> внутри δωμά<u>τιο</u>.'
+
+
+if __name__ == '__main__':
+    res = remove_html_underlining(test_str)
+    print(res)
+
+# test1_input = [
+#     '<u>δια</u>γώ<u>νιο</u>ς',
+#     '<u>διά</u>λεξη',
+#     '<u>βιο</u>λο<u>γί</u>α',
+#     # '<u>γυ</u>μνά<u>σιο</u>', 'δωμά<u>τιο</u>', 'εμπ<u>όριο</u>', '<u>κι</u>βώ<u>τιο</u>', '<u>πιέ</u>ζω',
+#     # 'τεράσ<u>τιο</u>',
+#     # 'Это слово <u>διά</u>λεξη имеет подчёркнутый префикс.',
+#     # 'А вот слово биология на греческом: <u>βιο</u>λογία',
+#     # 'И ещё примеры: <u>γυ</u>μνά<u>σιο</u>, δωμά<u>τιο</u>, εμπ<u>όριο</u>, <u>κι</u>βώ<u>τιο</u>',
+# ]
+#
+# test1_er = [
+#     'διαγώνιος',
+#     'διάλεξη',
+#     'βιολο<u>γί</u>α',
+#     # '<u>γυ</u>μνάσιο', 'δωμάτιο', 'εμπόριο', '<u>κι</u>βώτιο', 'πιέζω', 'τεράστιο',
+#     # 'Это слово διάλεξη имеет подчёркнутый префикс.',
+#     # 'А вот слово биология на греческом: βιολογία',
+#     # 'И ещё примеры: <u>γυ</u>μνάσιο, δωμάτιο, εμπόριο, <u>κι</u>βώτιο',
+#
+# ]
+#
+# if all(remove_html_underlining(input_val) == er for input_val, er in zip(test1_input, test1_er)):
+#     print("test1 - ok")
+# else:
+#     print("test1 - failed")
+#     # Print detailed comparison for debugging
+#     for i, (input_val, er) in enumerate(zip(test1_input, test1_er)):
+#         result = remove_html_underlining(input_val)
+#         if result != er:
+#             print(f"Mismatch at index {i}:")
+#             print(f"Input:    {input_val}")
+#             print(f"Expected: {er}")
+#             print(f"Got:      {result}")
+

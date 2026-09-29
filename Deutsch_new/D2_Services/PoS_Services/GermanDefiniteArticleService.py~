@@ -1,0 +1,185 @@
+import re
+
+import DefiniteArticles
+from CharConstants import PIPE
+from DeuExcelDao import DeuExcelDao
+from MorphologyParser import MorphologyParser
+from SpaCyPosResolver import SpaCyPosResolver
+
+german_definite_article_transcription_dict = {
+    'der': '[deːɐ̯]',
+    'die': '[diː]',
+    'das': '[das]',
+    'des': '[dɛs]',
+    'dem': '[deːm]',
+    'den': '[deːn]'
+}
+
+# Здесь нужно обязательно обернуть в незахватывающую группу, иначе пайпы будут работать неправильно в том регулярном
+# выражении, в которое будет встроено данное регулярное выражение: пайпы разобьют его на отдельные части и всё будет
+# работать неправильно
+piped_definite_articles = f'(?:{PIPE.join(german_definite_article_transcription_dict.keys())})'
+
+# Формула регулярного выражения для захвата определённого артикля:
+# - возможный пробел(ы) перед артиклем из-за погрешностей копирования/вставки слова в ячейку Excel
+# - возможная открывающая круглая скобка (для артиклей перед географическими названиями, фамилиями и т. д.)
+# - piped последовательность определённых артиклей
+# - возможная закрывающая круглая скобка
+# - один или более пробел (между артиклем и словом)
+definite_article_regex = fr'^\s*\(?{piped_definite_articles}\)?\s+'
+
+exceptional_proper_nouns_with_articles = ['die Schweiz', 'die Türkei', 'die USA', 'die Niederlande', 'die Slowakei',
+                                          'die Ukraine', 'der Iran', 'der Irak', 'der Sudan', 'der Libanon', 'die EU']
+
+
+class GermanDefiniteArticleService:
+    def __init__(self):
+        self.morphologyParser = MorphologyParser()
+        self.deuExcelDao = DeuExcelDao()
+        self.spaCyPosResolver = SpaCyPosResolver()
+
+    def add_definite_article_to_lemma(self, lemma: str, pos: str, morph):
+        # Чтобы не потерять lemma в перипетиях алгоритма, сразу записываем её в result и в худшем случае её же
+        # и вернём в качестве результата.
+        result = lemma
+
+        # Самое первое действие здесь - это проверить, не содержится ли token в Excel-листе manual_lemmas, т. к.
+        # spaCy может неправильно лемматизировать и определить морфологию некоторых слов. И если это так, то просто
+        # возвращаем hard-coded лемму для соответствующего токена.
+        manual_lemmas_dict = self.deuExcelDao.get_manual_lemmas_dict()
+        if lemma in manual_lemmas_dict:
+            result = manual_lemmas_dict[lemma]
+        # Ветка для работы с СОБСТВЕННЫМ именем существительным
+        elif self.spaCyPosResolver.is_proper_noun(pos):
+            # В первую очередь ищем СОБСТВЕННОЕ имя существительное среди специального списка исключений.
+            # Если оно нашло себя в этом списке, возвращаем результат с артиклем, в противном случае - без артикля.
+            search_res = self._search_among_exceptional_proper_nouns_with_articles(lemma)
+            if search_res:
+                result = search_res
+        else:
+            # Искать артикль для леммы - это значит искать артикль всегда имея в виду только именительный падеж.
+            # Род существительного остаётся без изменения.
+            # Число существительного в spaCy имеет логическую зависимость от Gender, см. ниже.
+            gender = self.morphologyParser.parse(morph, "Gender")
+            number = self._resolve_number(gender, morph)
+            new_morph = {"Case": ["Nom"], "Gender": [gender], "Number": [number]}
+            result = self.add_definite_article_to_token(lemma, pos, new_morph)
+        return result
+
+    def _resolve_number(self, gender, morph):
+        # Если поле Gender не пустое, значит форма ед. ч. для слова существует и для поиска артикля именно для леммы
+        # нужно передавать number='Sing'.
+        # Если же поле Gender - пустое, значит форма ед. ч. для слова не существует, и слово употребляется только во
+        # мн. ч. В этом случае передаём тот Number, кот. пришёл от spaCy.
+        if gender:
+            number = 'Sing'
+        else:
+            number = self.morphologyParser.parse(morph, "Number")
+        return number
+
+    def add_definite_article_to_token(self, token: str, pos: str, morph):
+        # Чтобы не потерять token в перипетиях алгоритма, сразу записываем его в result и в худшем случае его же
+        # и вернём в качестве результата.
+        result = token
+        definite_article = ''
+        error_msg = ''
+
+        # Если token начинается с маленькой буквы, то делаем первую букву заглавной, т. к. немецкие существительные
+        # должны начинаться с большой буквы.
+        if token[0].islower():
+            token = token.capitalize()
+
+        # Парсим морфологию, напр.:
+        # - для сущ. в ед.ч.: Case=Nom|Gender=Neut|Number=Sing
+        # - для сущ. во мн.ч.: Case=Nom|Number=Plur (для Plur-сущ. морфология в SpaCy обычно не указывается)
+        case = self.morphologyParser.parse(morph, "Case")
+        number = self.morphologyParser.parse(morph, "Number")
+        gender = self.morphologyParser.parse(morph, "Gender")
+
+        if gender:
+            try:
+                definite_article = DefiniteArticles.de_definite_articles_dict[gender][number][case]
+            except KeyError:
+                result = f"Can't find appropriate definite article for word '{token}' with morph = '{morph}'"
+        else:
+            for gender, number_case_dict in DefiniteArticles.de_definite_articles_dict.items():
+                if number in number_case_dict and case in number_case_dict[number]:
+                    definite_article = number_case_dict[number][case]
+                    break
+
+        # if case and number:
+        #     if number == 'Sing':
+        #         # Определяем ключ для вложенного словаря
+        #         number_gender_key = f"{number}_{gender}"
+        #         definite_article = DefiniteArticles.de_definite_articles_dict.get(case).get(number_gender_key)
+        #     elif number == 'Plur':  # для сущ. во мн.ч. spaCy, скорей всего, не укажет поле 'Gender' в морфологии
+        #         definite_article = DefiniteArticles.de_definite_articles_dict.get(case).get('Plur')
+        #     else:
+        #         result = f"Can't find appropriate definite article for word '{token}' with number = '{number}'"
+
+        if definite_article:
+            result = f'{definite_article} {token}'
+
+        return result
+
+    def _search_among_exceptional_proper_nouns_with_articles(self, token):
+        result = ''
+        for proper_noun in exceptional_proper_nouns_with_articles:
+            # Разбиваем только по первому пробелу (параметр maxsplit=1) на случай, если название имени собственного
+            # будет состоять из нескольких частей, разделённых пробелом. Пример привести сложно, но в целом это будет
+            # более правильным подходом.
+            article, bare_proper_noun = proper_noun.split(' ', 1)
+            if bare_proper_noun == token:
+                result = proper_noun
+                break
+        return result
+
+    def starts_with_definite_article(self, token):
+        result = bool(re.search(definite_article_regex, token))
+        return result
+
+    def not_starts_with_definite_article(self, token):
+        result = not self.starts_with_definite_article(token)
+        return result
+
+    # Удаляет определённый артикль перед немецким словом
+    def strip_definite_article(self, articled_noun):
+        bare_noun = re.sub(f'{definite_article_regex}', '', articled_noun)
+        return bare_noun
+
+    def get_definite_article_transcription(self, definite_article):
+        result = ''
+        if definite_article in german_definite_article_transcription_dict:
+            result = german_definite_article_transcription_dict[definite_article]
+        return result
+
+
+#################################################################
+
+if __name__ == '__main__':
+
+    germanDefiniteArticleService = GermanDefiniteArticleService()
+
+    morph = {'Case': ['Nom'], 'Gender': ['Masc'], 'Number': ['Sing']}
+    morph = {'Case': ['Dat'], 'Gender': ['Masc'], 'Number': ['Sing']}
+    morph = {'Case': ['Nom'], 'Number': ['Plur']}
+
+    res = germanDefiniteArticleService.add_definite_article_to_token('Eltern', 'NOUN', morph)
+    print(res)
+
+    # starts_with_definite_article(...) test
+    input1 = ['die Ukraine', 'Hamburg']
+    er1 = [True, False]
+    if all(germanDefiniteArticleService.starts_with_definite_article(input_val) == er for input_val, er in
+           zip(input1, er1)):
+        print("'starts_with_definite_article(...)' test - ok")
+    else:
+        print("'starts_with_definite_article(...)' test - failed")
+
+    # strip_definite_article(...) test
+    input1 = ['der Moment', '  (der)   Alex', 'Berlin']
+    er1 = ['Moment', 'Alex', 'Berlin']
+    if all(germanDefiniteArticleService.strip_definite_article(input_val) == er for input_val, er in zip(input1, er1)):
+        print("'strip_definite_article(...)' test - ok")
+    else:
+        print("'strip_definite_article(...)' test - failed")

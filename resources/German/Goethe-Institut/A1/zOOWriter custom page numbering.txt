@@ -1,0 +1,6 @@
+1. Insert page break
+2. Place cursor on the first paragraph of the next page, right click and select:
+Format > Paragraph > Text Flow > Breaks 
+check "With Page Style" -> Page number
+
+Потом открыть odt-документ в Microsoft Word, удалить разрыв станицы и распечатать!

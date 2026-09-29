@@ -1,0 +1,28 @@
+# Установка spacy-модели для немецкого языка
+https://huggingface.co/spacy/de_dep_news_trf/resolve/main/de_dep_news_trf-any-py3-none-any.whl
+
+# Установка spacy-модели для древнегреческого языка
+https://huggingface.co/chcaa/grc_odycy_joint_trf/resolve/main/grc_odycy_joint_trf-0.7.0-py3-none-any.whl
+
+# Установка spacy-модели для новогреческого языка
+# Здесь нельзя прописать команду python -m spacy download el_core_news_lg, поэтому что все прописываемые здесь инструкции предназначены для pip. Данная команда прописывается в .cmd-скрипте, который использует данный файл для установки языковых моделей.
+
+
+# МОДЕЛИ, КОТОРЫЕ УСТУПАЮТ В КАЧЕСТВЕ ЛЕММАТИЗАЦИИ СВЯЗКЕ spaCy + grc_odycy_joint_trf
+# greCy models
+# grc_perseus_sm
+# grc_proiel_sm
+# grc_perseus_lg
+# grc_proiel_lg
+# grc_perseus_trf
+# grc_proiel_trf
+
+# intall greCy 'grc_perseus_trf' model
+# https://huggingface.co/Jacobo/grc_perseus_trf/resolve/main/grc_perseus_trf-any-py3-none-any.whl
+
+# intall greCy 'grc_proiel_trf' model
+# https://huggingface.co/Jacobo/grc_proiel_trf/resolve/main/grc_proiel_trf-any-py3-none-any.whl
+
+# OdyCy - хорошо совместим с CLTK последней версии (1.3.0 на момент июля 2024 года), а greCy - не совместим с
+# библиотекой CTLK v1.3.0 (они конфликтуют из-за версии их общей зависимости spaCy).
+# https://huggingface.co/chcaa/grc_odycy_joint_trf/resolve/main/grc_odycy_joint_trf-any-py3-none-any.whl

@@ -1,0 +1,285 @@
+import re
+
+import GermanWiktionaryService
+import Tokenizer
+# Custom user imports
+from D3_DAO import ExcelDaoGerman
+from GermanTranscriptionGlottalStopAppender import GermanTranscriptionGlottalStopAppender
+
+NEWLINE = "\n"
+SPACE_DASH_SPACE = ' – '
+
+
+class GermanTextTranscriber:
+    def __init__(self):
+        self.germanTranscriptionGlottalStopAppender = GermanTranscriptionGlottalStopAppender()
+
+    def transcribe_whole_text(self, text, is_dash_separator):
+        text_unknown_words = list()
+        text_transcriptions = list()
+
+        chunks = [chunk for chunk in text.split('\n\n') if chunk not in ['\n', ""]]
+
+        for chunk in chunks:
+            chunk_unknown_words, chunk_transcription = self.transcribe_chunk(chunk, is_dash_separator)
+            text_unknown_words.extend(chunk_unknown_words)
+            text_transcriptions.append(chunk_transcription)
+
+        # As of Python 3.7, standard dict is guaranteed to preserve order and is more performant than OrderedDict.
+        # Here's an example of how to use dict as an ordered set to filter out duplicate items while preserving order,
+        # thereby emulating an ordered set.
+        # Use the dict class method fromkeys() to create a dict, then simply ask for the keys() back.
+        non_duplicated_and_ordered_text_unknown_words = list(dict.fromkeys(text_unknown_words))
+        output_unknown_words = NEWLINE.join(non_duplicated_and_ordered_text_unknown_words)
+
+        output_transcription = "\n\n".join([t for t in text_transcriptions if len(t)])
+
+        if len(output_unknown_words):
+            output = output_unknown_words + "\n\n* * * * * * *\n\n" + output_transcription
+        else:
+            output = output_transcription
+
+        return output
+
+    def transcribe_chunk(self, chunk, is_dash_separator):
+        chunk_unknown_words = list()
+        chunk_transcriptions = list()
+
+        sentences = [s for s in chunk.split("\n") if len(s)]  # взять в дальнейшую работу только непустые строки
+        for sentence in sentences:
+            if not self._should_line_be_ignored(sentence):  # если предложение это НЕ строка вида (sg. – pl.) и ей подобные
+                if is_dash_separator:
+                    sentence_unknown_words, sentence_transcription = self._process_dash_separated_line(sentence)
+                else:
+                    sentence_unknown_words, sentence_transcription = self.transcribe_single_sentence(sentence)
+
+                # Use the syntax list1.extend(list2) to combine list1 and list2
+                # Use the syntax list1.append(list2) to add list2 to list1
+                chunk_unknown_words.extend(sentence_unknown_words)
+                chunk_transcriptions.append(sentence_transcription)
+
+        chunk_transcription = NEWLINE.join([ct for ct in chunk_transcriptions if len(ct)])
+
+        return chunk_unknown_words, chunk_transcription
+
+    # Игнорировать строки, начинающиеся и заканчивающиеся круглыми скобками, и содержащие внутри скобок грам. термины
+    def _should_line_be_ignored(self, sentence):
+        grammar_terms_regex_group = r'(sg[.]|pl[.]|nom[.]|gen[.]|dat[.]|acc[.]|voc[.]|masc[.]|fem[.]|neut[.])'
+        delimiter_regex = '\s[-–]\s'
+        target_regex = r'^\({0}({1}{0})*\)$'.format(grammar_terms_regex_group, delimiter_regex)
+        return re.search(target_regex, sentence)
+
+    def _process_dash_separated_line(self, sentence, should_lookup_unknown_word_transcription_in_wiktionary=False):
+        dash_separated_line_unknown_words = list()
+        dash_separated_line_transcriptions = list()
+
+        pieces = [p for p in re.split('\s[-–]\s', sentence) if
+                  len(p)]  # split by either 'space-hyphen-space' or 'space–dash–space'
+
+        for piece in pieces:
+            piece_unknown_words, piece_transcription = self.transcribe_single_sentence(piece,
+                                                                                  should_lookup_unknown_word_transcription_in_wiktionary)
+
+            # Use the syntax list1.extend(list2) to combine list1 and list2
+            # Use the syntax list1.append(list2) to add list2 to list1
+            dash_separated_line_unknown_words.extend(piece_unknown_words)
+            dash_separated_line_transcriptions.append(piece_transcription)
+
+        dash_separated_line_transcription = SPACE_DASH_SPACE.join(dash_separated_line_transcriptions)
+        return dash_separated_line_unknown_words, dash_separated_line_transcription
+
+    # TODO: сделать работу с флагом более явной и в вызывающем коде, и на UI
+    def transcribe_single_sentence(self, sentence, should_lookup_unknown_word_transcription_in_wiktionary=False):
+        sentence_unknown_words_set = set()
+
+        sentence = preprocess_before_transcribing(sentence)
+
+        words = Tokenizer.tokenize(sentence, True, True)
+        # Не нужно слова немецкого предложения приводить к нижнему регистру! Среди них могут быть существительные, которые,
+        # будучи написанными с маленькой буквы, неправильно ищутся в Wiktionary или совсем не ищутся в Wiktionary.
+        # Лучше пожертвовать самым первым словом предложения, которое будет написано с большой буквы (и поэтому его
+        # транскрипция может быть совсем не найдена или окажется неправильной), чем всеми остальными существительными
+        # предложения.
+        # words = [word.lower() for word in words]
+
+        dict_from_excel = ExcelDaoGerman.get_data_as_dict()
+
+        transcriptions = []
+        # for word in words:
+        for index, word in enumerate(words):
+            transcription = dict_from_excel.get(word)
+
+            if word in ['Der', 'Die', 'Das', 'Am']:
+                word = word.lower()
+
+            # Если в Excel-файле транскрипции не оказалось и флаг разрешает попробовать достать транскрипцию из Wiktionary
+            if not transcription and should_lookup_unknown_word_transcription_in_wiktionary:
+                # Если работаем с первым словом предложения, и оно находится в списке исключений (т. е. точно не является
+                # существительным), то приводим его к нижнему регистру
+                if index == 0 and word in ['']:
+                    word = word.lower()
+
+                sentence_unknown_words_set.add(word)
+                transcription = GermanWiktionaryService.get_word_transcription(word, True)
+                # Если транскрипция не найдена, пробуем сделать слово с маленькой буквы и повторить попытку.
+                # Первое слово предложения всегда пишется с большой буквы и если оно не является существительным, это
+                # проблема для этого слова, т. к. оно, будучи написанным с большой буквы, не будет найдено в Wiktionary.
+                if transcription in ['', '[???]']:
+                    word = word.lower()  # делаем слово с маленькой буквы
+                    transcription = GermanWiktionaryService.get_word_transcription(word, True)
+
+            if transcription:
+                transcriptions.append(transcription[1:-1])  # убираем квадратные скобки
+            else:
+                sentence_unknown_words_set.add(word)
+                transcriptions.append("???")  # добавляем "???" для неизвестных слов
+
+        sentence_transcription = ' '.join(transcriptions)  # объединяем транскрипции с пробелами
+
+        # sentence_transcription = sentence_transcription.strip()  # trim trailing whitespace
+        sentence_transcription = "[{}]".format(sentence_transcription)  # surround with []
+        sentence_transcription = _post_process_sentence_transcription(sentence, sentence_transcription)
+
+        # Добавляем гортанные смычки
+        sentence_transcription = germanTranscriptionGlottalStopAppender.add_glottal_stops(sentence_transcription)
+
+        return sentence_unknown_words_set, sentence_transcription
+
+    def preprocess_before_transcribing(self, sentence):
+
+        for raw_case in re.findall(r'DM\s[0-9,-]+', sentence):
+            # Лесенка условий: от самого объёмного и конкретного - к самому простому
+            if ',-' in raw_case:    # DM 10,-  --> DM 10 Mark
+                nice_case = raw_case.replace(',-', ' Mark')
+            elif ',' in raw_case:   # DM 10,50 --> DM 10 Mark 50
+                nice_case = raw_case.replace(',', ' Mark ')
+            else:   # DM 10 --> DM 10 Mark
+                nice_case = raw_case + ' Mark'
+
+            nice_case = nice_case.replace('DM ', '')    # удаляем название валюты DM
+            sentence = sentence.replace(raw_case, nice_case)
+
+        if 'Uhr' in sentence:
+            sentence = _make_time_readable_and_transcribable(sentence)
+
+        return sentence
+
+    # Если в предложении есть слово 'geht’s', делаем для него правильную транскрипцию
+    def _post_process_sentence_transcription(self, sentence, sentence_transcription):
+        updated_sentence_transcription = sentence_transcription
+
+        # Флаг, который показывает, что транскрипция предложения была изменена
+        is_sentence_transcription_modified = False
+
+        # Разбиваем предложение на отдельные слова
+        sentence_words = sentence.split()
+        # Убираем квадратные скобки и разбиваем транскрипцию на отдельные слова
+        transcription_words = sentence_transcription[1:-1].split()
+
+        for index, word in enumerate(sentence_words):
+            # Проверяем вхождение фразы через in, а не полное равенство её токену через ==, потому что к ней могут
+            # приклеиться знаки пунктуации после разбивки по пробелу (не очень совершенный метод токенизации)
+            # if "geht’s" in word:
+            if word.startswith("geht’s"):
+                try:
+                    # перезаписываем транскрипцию
+                    transcription_words[index] = "ɡeːt͡s"
+                    is_sentence_transcription_modified = True
+                except ValueError:
+                    # Если почему-то слово не найдено в транскрипции, возвращаем её без изменений
+                    pass
+            # Проверяем, встречается ли за словом "Pommes" слово "frites"
+            elif word == "Pommes" and index + 1 < len(sentence_words) and sentence_words[index + 1].startswith("frites"):
+                # перезаписываем транскрипцию: вместо ˈpɔməs пишем pɔmˈfʁɪt
+                transcription_words[index] = "pɔmˈfʁɪt"
+                # удаляем транскрипцию слова "frites" (она там значится в виде трёх знаков вопроса)
+                del transcription_words[index + 1]
+                is_sentence_transcription_modified = True
+
+            if is_sentence_transcription_modified:
+                # Собираем обновлённую транскрипцию
+                merged_transcription = ' '.join(transcription_words)
+                updated_sentence_transcription = f'[{merged_transcription}]'
+
+        return updated_sentence_transcription
+
+    def _make_time_readable_and_transcribable(self, sentence):
+        # Регулярное выражение для поиска времени в формате "часы.минуты Uhr".
+        # Как часы, так и минуты могут быть представлены одной или двумя цифрами, незначащие нули игнорируются.
+        # "Встреча начнётся в 18.30 Uhr и закончится в 9.05 Uhr." ->
+        # "Встреча начнётся в 18 Uhr 30 и закончится в 9 Uhr 5."
+        pattern = r'0?(\d{1,2})\.0?(\d{1,2}) Uhr'
+        # Замена на формат "часы Uhr минуты"
+        return re.sub(pattern, r'\1 Uhr \2', sentence)
+
+
+################################################################################
+
+# text = "Wie heißen Sie?\n\n\n\n\nHeißen Sie Martin?"
+# text = "1 Frau"
+# text = "- Entschuldigen Sie! Sind Sie Herr Smirnow?"
+# text = "Das ist Manfred."
+# text = "Mein Name ist Sindermann." + "\n\n" + "Mein Name ist Sindermann."
+# text = "– Kommt Herr Böhme aus Großbritannien?" + "\n" + "– Nein, er kommt nicht aus Großbritannien."
+
+# text = '''in
+#
+# das Zimmer – dem Zimmer – das Zimmer
+#
+# in Ihr Zimmer
+#
+# in meinem Zimmer'''
+
+# text = '''a
+#
+# das Zimmer – dem b – das Zimmer
+#
+# in Ihr Zimmer
+#
+# in meinem Zimmer'''
+#
+# # text = 'das Zimmer – dem Zimmer – das Zimmer'
+#
+# output = transcribeWholeText(text, True)
+# print(output)
+
+# text = '''das Formular – das Formular
+# (nom. – acc.)
+#
+# das Formular ausfüllen
+#
+# – Haben Sie das Formular ausgefüllt?
+# – Ja, das Formular ist schon ausgefüllt.'''
+#
+# text = "Gibt ihr der Ober auf DM 17,- heraus?"
+# output = transcribeWholeText(text, True)
+# print(output)
+
+# text = "DM 10,50"
+# output = preprocessBeforeTranscribing(text)
+# print(output)
+
+# line = 'das Büro – dem Büro'
+# line = 'das Büro'
+# dash_separated_line_unknown_words, dash_separated_line_transcription = process_dash_separated_line(line, True)
+#
+# print(dash_separated_line_unknown_words)
+# print(dash_separated_line_transcription)
+
+sentence = 'Am nächsten Montag geht es leider nicht.'
+# sentence = 'Wo geht’s hier bitte zur Autobahn?'
+# sentence = 'Schnell, steig ein, der Zug fährt gleich.'
+# sentence = 'steig'
+sentence = '48'
+sentence = 'Dieses Auto kostet'
+sentence = 'Ich bin kulturell interessiert. Ich gehe oft ins Museum.'
+sentence = 'Die Kinder essen Hähnchen mit Pommes frites.'
+sentence = 'Ich wohne am Messeplatz 5.'
+# sentence = 'Pommes frites.'
+# sentence = 'Pommes'
+sentence = 'Wörter'
+
+if __name__ == "__main__":
+    sentence_unknown_words, sentence_transcription = transcribe_single_sentence(sentence, False)
+    print(sentence_unknown_words)
+    print(sentence_transcription)

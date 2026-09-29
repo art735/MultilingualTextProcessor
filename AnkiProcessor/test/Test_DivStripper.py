@@ -1,0 +1,186 @@
+from unittest import TestCase
+
+from DivStripper import DivStripper
+
+
+class Test_DivStripper(TestCase):
+
+    def setUp(self):
+        self.divStripper = DivStripper()
+
+    def test_real_cases(self):
+        # Test all leading and trailing <br> tags are properly stripped
+        text = """<br><br>abc<br><br><br>"""
+        expected_result = r'abc'
+        actual_result = self.divStripper.strip_div_tags(text)
+        self.assertEqual(expected_result, actual_result)
+
+        # CASE #1
+        text = """<div>Разрешите представить? Петер\nЦан.</div>"""
+        expected_result = "Разрешите представить? Петер Цан."
+        actual_result = self.divStripper.strip_div_tags(text)
+        self.assertEqual(expected_result, actual_result)
+
+        # CASE #2
+        text = """<div>Разрешите
+представить?</div>
+<div><br>
+</div>
+<div>Это
+– господин Смирнов.</div>
+<div><br>
+</div>
+<div>Его зовут Юрий.</div>
+<div><br>
+</div>
+<div>Он родом из
+России.</div>
+<div><br>
+</div>
+<div>Он живёт в
+Санкт-Петербурге.</div>
+<div><br>
+</div>
+<div>Он говорит
+немного по-немецки.</div>
+<div><br>
+</div>
+<div>Это
+–
+очень прекрасно.</div>"""
+        expected_result = "Разрешите представить?<br><br>Это – господин Смирнов.<br><br>Его зовут Юрий.<br><br>Он родом из России.<br><br>Он живёт в Санкт-Петербурге.<br><br>Он говорит немного по-немецки.<br><br>Это – очень прекрасно."
+        actual_result = self.divStripper.strip_div_tags(text)
+        self.assertEqual(expected_result, actual_result)
+
+        # CASE #3. Тестировать корректное удаление <div>-ов из текста с большим количеством форматирования
+        text = """<div><font color="#800000">Привет, я
+<b>даже</b> не скучаю.</font></div>
+<div><span style="background-color: rgb(255, 255, 0);"><font color="#ff0000"><i><u><b>Привет</b></u></i></font>,
+тебя не замечаю.</span></div>
+<div>Магнит <span style="background-color: rgb(255, 204, 255);">болит</span>,
+да просто <i><u>умираю</u></i>.</div>"""
+        expected_result = r'<font color="#800000">Привет, я <b>даже</b> не скучаю.</font><br><span style="background-color: rgb(255, 255, 0);"><font color="#ff0000"><i><u><b>Привет</b></u></i></font>, тебя не замечаю.</span><br>Магнит <span style="background-color: rgb(255, 204, 255);">болит</span>, да просто <i><u>умираю</u></i>.'
+        actual_result = self.divStripper.strip_div_tags(text)
+        self.assertEqual(expected_result, actual_result)
+
+        # CASE #4
+        text = r'<div>Вы (<span style="color: rgb(0, 170, 0);"><i>вежл.</i></span>) приезжаете один?</div>'
+        expected_result = r'Вы (<span style="color: rgb(0, 170, 0);"><i>вежл.</i></span>) приезжаете один?'
+        actual_result = self.divStripper.strip_div_tags(text)
+        self.assertEqual(expected_result, actual_result)
+
+        # CASE #5
+        text = """<div>–&nbsp;Разрешите
+представить? Рольф Винтер.</div>
+<div>–&nbsp;Очень
+приятно!</div>"""
+        expected_result = r'–&nbsp;Разрешите представить? Рольф Винтер.<br>–&nbsp;Очень приятно!'
+        actual_result = self.divStripper.strip_div_tags(text)
+        self.assertEqual(expected_result, actual_result)
+
+        # CASE #6
+        text = """<div>–&nbsp;Я говорю по-французски.
+Он тоже говорит немного по-французски?</div>
+<div>–&nbsp;Да, он хорошо говорит
+по-французски.</div>"""
+        expected_result = r'–&nbsp;Я говорю по-французски. Он тоже говорит немного по-французски?<br>–&nbsp;Да, он хорошо говорит по-французски.'
+        actual_result = self.divStripper.strip_div_tags(text)
+        self.assertEqual(expected_result, actual_result)
+
+        # CASE #7. Тестировать, что <br> перед </div> действительно удаляется
+        text = """<div>уважать, почитать<br></div><div><br></div>1) уважение, почтение<br>2) Осторожно! (<i>призыв</i>)"""
+        expected_result = r'уважать, почитать<br><br>1) уважение, почтение<br>2) Осторожно! (<i>призыв</i>)'
+        actual_result = self.divStripper.strip_div_tags(text)
+        self.assertEqual(expected_result, actual_result)
+
+        # CASE #8
+        text = """длиться, продолжаться<div><br></div><div>длительность, продолжительность<br></div>"""
+        expected_result = r'длиться, продолжаться<br><br>длительность, продолжительность'
+        actual_result = self.divStripper.strip_div_tags(text)
+        self.assertEqual(expected_result, actual_result)
+
+        # CASE #9
+        text = """дом<div>(<i><font color="#00aa00">sg. – pl.</font></i>)</div>"""
+        expected_result = r'дом<br>(<i><font color="#00aa00">sg. – pl.</font></i>)'
+        actual_result = self.divStripper.strip_div_tags(text)
+        self.assertEqual(expected_result, actual_result)
+
+        # CASE #10
+        text = 'abc <br> xyz'
+        expected_result = 'abc<br>xyz'
+        actual_result = self.divStripper.strip_div_tags(text)
+        self.assertEqual(expected_result, actual_result)
+
+        # CASE #11
+        text = '<br> <br><br>abc <br> <br> <br> <br> <br> <br> xyz<br>       <br>     <br>'
+        expected_result = 'abc<br><br>xyz'
+        actual_result = self.divStripper.strip_div_tags(text)
+        self.assertEqual(expected_result, actual_result)
+
+    # Тестировать как регулярное выражение поиска самой вложенной пары <div>-ов справляется со своей задачей
+#     def test_regex_search_correctness(self):
+#         # CASE #1. Самый простой однозначный случай, без вложенностей тегов <div>
+#         text = "<div>aaa</div>"
+#         expected_result = ["<div>aaa</div>"]
+#         actual_result = self.divStripper.search_innermost_div_contents(text)
+#         [self.assertEqual(er, ar.group()) for er, ar in zip(expected_result, actual_result)]
+# 
+#         # CASE #2. Случай, когда несколько групп тегов <div> идут подряд друг за дружкой, без вложенностей
+#         text = """
+#         <div>aaa</div>
+#         <div>bbb</div>
+#         <div>ccc</div>
+#         """
+#         expected_result = ["<div>aaa</div>", "<div>bbb</div>", "<div>ccc</div>"]
+#         # aaa<br>bbb<br>ccc
+#         actual_result = self.divStripper.search_innermost_div_contents(text)
+#         [self.assertEqual(er, ar.group()) for er, ar in zip(expected_result, actual_result)]
+#
+#         # CASE #3. Внутренняя пара тегов <div>...</div> не соприкасается с внешними тегами <div>
+#         text = "<div>aaa<div>bbb</div><u>bold text</u></div>"
+#         expected_result = ["<div>bbb</div>"]
+#         actual_result = self.divStripper.search_innermost_div_contents(text)
+#         [self.assertEqual(er, ar.group()) for er, ar in zip(expected_result, actual_result)]
+#
+#         # CASE #4. Внутренняя пара <div>...</div> пустая
+#         text = "<div>aaa<div></div><u>bold text</u></div>"
+#         expected_result = ["<div></div>"]
+#         actual_result = self.divStripper.search_innermost_div_contents(text)
+#         [self.assertEqual(er, ar.group()) for er, ar in zip(expected_result, actual_result)]
+#
+#         # CASE #5. Два открывающих тега <div> находятся непосредственно друг за дружкой
+#         text = "<div><div>bbb</div><u>bold text</u></div>"
+#         expected_result = ["<div>bbb</div>"]
+#         actual_result = self.divStripper.search_innermost_div_contents(text)
+#         [self.assertEqual(er, ar.group()) for er, ar in zip(expected_result, actual_result)]
+#
+#         # CASE #6. Два закрывающих тега </div> находятся непосредственно друг за дружкой
+#         text = "<div>aaa<div>bbb</div></div>"
+#         expected_result = ["<div>bbb</div>"]
+#         actual_result = self.divStripper.search_innermost_div_contents(text)
+#         [self.assertEqual(er, ar.group()) for er, ar in zip(expected_result, actual_result)]
+#
+#         # CASE #7. Два открывающих и закрывающих тега <div> находятся в непосредственном соприкосновении друг с другом
+#         text = "<div><div>bbb</div></div>"
+#         expected_result = ["<div>bbb</div>"]
+#         actual_result = self.divStripper.search_innermost_div_contents(text)
+#         [self.assertEqual(er, ar.group()) for er, ar in zip(expected_result, actual_result)]
+#
+#         # CASE #7. Две вложенных пары <div>-ов, причём вторая расползлась на несколько строк
+#         text = """
+# <div>aaa<div>bbb</div><u>bold <div>
+# a
+# b
+# c
+# </div> text</u></div>
+# """
+#
+#         expected_result = ["<div>bbb</div>", "<div>\na\nb\nc\n</div>"]
+#         actual_result = self.divStripper.search_innermost_div_contents(text)
+#         [self.assertEqual(er, ar.group()) for er, ar in zip(expected_result, actual_result)]
+#
+#         # CASE #8. Теги div без вложенностей и без содержимого
+#         text = "<div></div>"
+#         expected_result = ["<div></div>"]
+#         actual_result = self.divStripper.search_innermost_div_contents(text)
+#         [self.assertEqual(er, ar.group()) for er, ar in zip(expected_result, actual_result)]

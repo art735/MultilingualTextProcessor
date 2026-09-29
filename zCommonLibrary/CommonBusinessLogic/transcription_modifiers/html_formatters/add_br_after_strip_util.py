@@ -1,0 +1,117 @@
+import re
+
+import beautiful_soup_helper
+from AnkiConnectService import AnkiConnectService
+
+# eng_ipa_vowels = ["i", "ɪ", "e", "ɛ", "æ", "ə", "ʌ", "ɑ", "a", "ɒ", "ɔ", "ʊ", "u"]
+# eng_ipa_vowels_pattern = f'[{"".join(eng_ipa_vowels)}]'
+#
+# # search_pattern = fr'(?<{eng_ipa_vowels_pattern})i(?=[\s\]])'
+# search_pattern = fr'{eng_ipa_vowels_pattern}i[\s\]]'
+
+# negative lookbehind + '(hint'
+hint_regex = r'(?<!<br>)(\(hint)'
+
+# Найти цифру с последующей точкой или скобкой (чтобы добавить перед ней <br>), которая удовлетворяет следующим условиям:
+# (?<!^) — negative lookbehind: "перед совпадением не должно находиться начало строки".
+# (?<!<br>) — negative lookbehind: "перед совпадением не должен находиться тег <br>".
+# ([1-9][.)]) — основная группа захвата:
+# [1-9] — цифра от 1 до 9,
+# [.)] — символ . или ),
+# (?!<br>) — negative lookahead: "после совпадения не должно быть <br> или конца строки".
+digit_regex = r'(?<!^)(?<!<br>)([1-9][.)])(?!<br>|$)'
+
+ankiConnectService = AnkiConnectService()
+
+def find_wrong_transcriptions(deck_name=''):
+    if deck_name:
+        # Вычитываем notes из Anki по названию дека
+        notes = ankiConnectService.get_notes_by_deck_name(deck_name)
+    # если название дека не указано, вычитываем notes из Anki по note type-у
+    else:
+        # Вычитываем notes из Anki по названию note type-а
+        notes = ankiConnectService.get_notes_by_note_type_basic_and_reversed_card_with_additional_fields()
+
+    # Кортеж (не список!) игнорируемых слов
+    ignored_words = (
+        'новичок', 'Марко Рубио', 'Кир Стармер', 'Фамилия&nbsp;(N...)', 'Будет сделано!', '«В гостинице»',
+        '(1) вешать', 'мешать<br>// 1) мешать',
+        'чашка<br><br>кекс<br><br>(маленький) кекс<br>(Android 1.5)',
+        'пончик<br>(Android 1.6)',
+        'экле́р&nbsp;(пирожное)<br>(Android 2.0–2.1)',
+        'замороженный<br><br>йогурт<br><br>замороженный йогурт',
+        'имбирь<br><br>хлеб<br><br>имбирный пряник<br>(Android 2.3–2.3.7)',
+        'мёд<br><br>1) расчёска<br>2) пчелиные соты<br><br>медовые соты<br>(Android 3.0–3.2.6)',
+        'брикет мороженого, мороженое в вафлях<br>(Android 4.0–4.0.4)',
+        'желе<br><br>боб; фасоль<br><br>драже “желе-бобы”',
+        '1) клуб вигов<br>2)&nbsp;серия шоколадных батончиков',
+        'леденец на палочке<br>(Android 5.0–5.1.1)',
+        'болото<br>(m...)<br><br>бот. мальва, просвирник<br><br>зефир, пастила́<br>(Android 6.0)',
+        'jumbo&nbsp;(noun)&nbsp;(hint: 1) б н ч, ж и в; 2) р к с в з и ц)<br><br>jumbo&nbsp;(adj.)&nbsp;(hint: г, о)',
+        'нуга́&nbsp;(сладкая масса, состоящая из сахара и орехов)<br>(Android 7.0)',
+        'Ла-Гуардия<br>(аэропорт, расположенный в северной части Куинса в Нью-Йорке',
+        '1) последовательность; непрерывный ряд',
+        '(1) Только начальная школа',
+        '(5) Некоторые университетские курсы',
+        'Покажи мне любовь',
+        'миля&nbsp;(= 1.6 км)<br><br>камень<br><br>1) мильный камень или столб',
+        '[Хубецова Ольга',
+        '[итал.]<br>1) точка',
+    )
+
+    notes_to_update = []
+    info_messages = []
+    # цикл по всем карточкам
+    for note in notes:
+        front_text = beautiful_soup_helper.strip_all_tags_except_br_tag(note['fields']['Front']['value'])
+        if re.search(hint_regex, front_text):
+            updated_front_text = re.sub(hint_regex, r'<br>\1', front_text)
+            # Нужно обязательно делать strip, т. к. нередко <br> добавляется в самое начало строки
+            updated_front_text = strip_br_tags_around_text(updated_front_text)
+            notes_to_update.append({'id': note['noteId'], 'fields': {'Front': updated_front_text}})
+            info_messages.append(f'{front_text}\n-->\n{updated_front_text}')
+
+        back_text = beautiful_soup_helper.strip_all_tags_except_br_tag(note['fields']['Back']['value'])
+        if back_text.startswith(ignored_words):
+            continue
+        if re.search(digit_regex, back_text):
+            updated_back_text = re.sub(digit_regex, r'<br>\1', back_text)
+            # Нужно обязательно делать strip, т. к. нередко <br> добавляется в самое начало строки
+            updated_back_text = strip_br_tags_around_text(updated_back_text)
+            notes_to_update.append({'id': note['noteId'], 'fields': {'Back': updated_back_text}})
+            info_messages.append(f'{back_text}\n-->\n{updated_back_text}')
+
+    # Сохраняем в Анки карточки с обновлённым полем Transcription
+    # ankiConnectService.update_multiple_notes_in_anki(notes_to_update)
+
+    # Печатаем на экран отчёт об обновлённых полях карточек
+    for i, info_message in enumerate(info_messages):
+        print(info_message)
+        print(f'note {i + 1} updated\n')
+
+    return
+
+# Использовать здесь strip('<br>') будет логической ошибкой, т. к. strip('<br>') работает не с подстрокой,
+# а с множеством символов, которые нужно удалить с начала и конца строки. То есть strip('<br>') означает:
+# «удалить все символы, входящие в строку '<br>' (т. е. <, b, r, >) с начала и конца строки, пока встречаются такие
+# символы».
+def strip_br_tags_around_text(text):
+    while text.startswith('<br>'):
+        text = text.removeprefix('<br>')
+    while text.endswith('<br>'):
+        text = text.removesuffix('<br>')
+    return text
+
+####################################
+
+deck = 'English::English (IT Vocabulary) (2. multi-striped)'
+deck = 'Languages. Greek Modern::raw'
+deck = 'Languages. Greek Modern'
+deck = 'English::Languages. English. Miscellaneous'
+
+if __name__ == '__main__':
+    # UC 1. Anki notes вычитываются из указанного дека
+    # find_wrong_transcriptions(deck)
+
+    # UC 2. Anki notes вычитываются по note type
+    find_wrong_transcriptions()

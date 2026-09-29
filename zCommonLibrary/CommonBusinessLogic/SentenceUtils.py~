@@ -1,0 +1,160 @@
+import re
+
+from CharConstants import SPACE
+
+
+# Проверяет, является ли строка предложением.
+# Предложение может заканчиваться точкой, вопросительным или восклицательным знаком, а также кавычкой после этих
+# знаков препинания.
+def is_sentence(text):
+    return bool(re.search(r'[.?!]["“]?$', text))
+
+
+def is_not_sentence(text):
+    return not is_sentence(text)
+
+
+# s = "foobar"
+# matches = re.finditer(r"(?<=foo)(?=bar)", s)
+# for m in matches:
+#     print(f"Match at position {m.start()}")  # Position 3
+
+
+# Регулярное выражение, целиком состоящее из lookarounds, просто указывает на позицию, в которой выполняются все
+# заданные условия. Такой подход удобно использовать при поиске позиций для разбиения строки (например, для разбиения
+# текста на отдельные предложения).
+def split_into_sentences(text):
+
+    # Заменить в тексте 2 и более подряд идущих пробелов на один пробел
+    text = re.sub(' {2,}', f'{SPACE}', text)
+
+    # 1. (?<!\w\.\w\.)
+    # Negative lookbehind — проверяет, что перед текущей позицией не стоит аббревиатура вроде U.S. или e.g.:
+    # \w\.\w\. означает: буква, точка, буква, точка
+    # Примеры: U.S., e.g., A.B.
+    # Назначение: исключить такие случаи, чтобы не считать точку после таких сокращений концом предложения.
+    # 2. (?<![A-Z][a-z]\.)
+    # Negative lookbehind — проверяет, что перед текущей позицией не стоит сокращение, например Mr., Dr., Ms.:
+    # [A-Z][a-z]\. — заглавная + строчная буква + точка
+    # Примеры: Mr., Dr., Ms., St.
+    # Назначение: тоже не считать точку после таких сокращений концом предложения.
+    # 3. (?<=[.?!…])
+    # POSITIVE lookbehind — убеждается, что перед текущей позицией стоит один из знаков конца предложения.
+    lookbehind = r'(?<!\w\.\w\.)(?<![A-Z][a-z]\.)(?<=[.?!…])'
+
+    quotes = r'"\'„“«»›‹”‚‘”’'
+    quotes_class_optional = f'[{quotes}]*'
+
+    # обязательный пробел между предложениями + возможная открывающая кавычка + начало следующего предложения с большой
+    # буквы
+    lookahead = fr'(?=\s{quotes_class_optional}[A-ZÄÖÜЁ])'
+
+    pattern = (
+            lookbehind +
+            quotes_class_optional +  # возможная кавычка в конце предложения (после знака препинания)
+            lookahead
+    )
+
+    sentence_split_re = re.compile(pattern)
+
+    # Если бы регулярное выражение целиком состояло из lookbehind + lookahead, удобно было бы разбивать текст на
+    # отдельные предложения с помощью re.split(). Но так как регулярное выражение предусматривает, что между
+    # lookbehind и lookahead могут реальные символы текста (кавычки), re.split() здесь уже не подходит, т. к. он будет
+    # закусывать те символы, которые окажутся им захваченными между lookbehind и lookahead.
+    # Лучший способ здесь — использовать re.finditer() для поиска позиций, а затем вручную разбивать строку,
+    # не теряя ни одного символа.
+
+    # Ищем позиции границ
+    positions = []
+    for match in sentence_split_re.finditer(text):
+        # Если средняя часть регулярного выражения ничего не захватывает, но регулярка вырождается в этом случае в
+        # lookbehind + lookahead; тогда match.start() и match.end() найденной позиции в тексте будут совпадать.
+        # Если же средняя часть регулярного выражения захватывает кавычку(-и) в конце предложения, то match.start() и
+        # match.end() будут различаться на длину захваченной подстроки (как правило, на 1 позицию, но если вдруг в конце
+        # предложения будет идти несколько кавычек подряд, то match.start() и match.end() будут отличаться на длину этой
+        # захваченной подстроки).
+        # В любом случае для дальнейшей разбивки текста важна позиция именно match.end().
+        positions.append(match.end())
+
+    # Добавляем к найденным позициям в середине текста позицию начала и конца всего текста
+    positions = [0, *positions, len(text)]
+
+    # Разбиваем текст вручную по найденным позициям
+    sentences = []
+    for start, end in zip(positions, positions[1:]):
+        sentence = text[start:end].strip()
+        sentences.append(sentence)
+
+    return sentences
+
+#####################################
+
+test_text = '„Ich bin müde“, sagte er. „Ich gehe jetzt.“ Was willst du tun? „Nichts…“, flüsterte sie.'
+# test_text = 'Das ist wahr.“ Nun gut.'
+test_text = 'Mr. A.B. Carter arrived from the U.S. He spoke at the conference.'
+
+
+res = split_into_sentences(test_text)
+print(res)
+
+test1_input = [
+    # Аббревиатура U.S. — исключение (?<!\w\.\w\.)
+    'She moved to the U.S. in 1995. Later, she started working in education.',
+
+    # Сокращение Dr. — исключение (?<![A-Z][a-z]\.)
+    'Dr. Smith will join us shortly. Please take a seat.',
+
+    # Тест обоих исключений одновременно НЕ ОТРАБАТЫВАЕТСЯ АЛГОРИТМОМ ПРАВИЛЬНО
+    # 'Mr. A.B. Carter arrived from the U.S. He spoke at the conference.',
+
+    # Тестирование многоточий (как в виде 3-х отдельных точек, так и в виде одного символа)
+    'It’s over... I can’t believe it… Are you happy now?',
+
+    '„Ich bin müde“, sagte er. „Ich gehe jetzt.“ Was willst du tun? „Nichts…“, flüsterte sie.',
+    'Das ist wahr.“ Nun gut.',
+    'Er sagte: „Ich komme gleich.“ Dann ging er.',
+
+    # Тестирование целого абзаца со всеми случаями
+    """Dr. Jones, a noted historian from the U.S., gave a lecture on colonial history. It was well-received by both students and faculty. "History is not just about the past," he said. "It's about understanding our present." Mr. A.B. Carter, who also attended, agreed wholeheartedly. He added, "We often forget that context is everything… Don't we?" Afterwards, they had coffee at St. Mary’s Café. The event was organized by Ms. Taylor and co-hosted by Professor Lewis."""
+
+]
+test1_er = [
+    # Аббревиатура U.S. — исключение (?<!\w\.\w\.)
+    ['She moved to the U.S. in 1995.', 'Later, she started working in education.'],
+
+    # Сокращение Dr. — исключение (?<![A-Z][a-z]\.)
+    ['Dr. Smith will join us shortly.', 'Please take a seat.'],
+
+    # Тест обоих исключений одновременно НЕ ОТРАБАТЫВАЕТСЯ АЛГОРИТМОМ ПРАВИЛЬНО
+    # ['Mr. A.B. Carter arrived from the U.S.', 'He spoke at the conference.'],
+
+    # Тестирование многоточий (как в виде 3-х отдельных точек, так и в виде одного символа)
+    ['It’s over...', 'I can’t believe it…', 'Are you happy now?'],
+
+    ['„Ich bin müde“, sagte er.', '„Ich gehe jetzt.“', 'Was willst du tun?', '„Nichts…“, flüsterte sie.'],
+    ['Das ist wahr.“', 'Nun gut.'],
+    ['Er sagte: „Ich komme gleich.“', 'Dann ging er.'],
+
+    [
+        'Dr. Jones, a noted historian from the U.S., gave a lecture on colonial history.',
+        'It was well-received by both students and faculty.',
+        '"History is not just about the past," he said.',
+        '"It\'s about understanding our present."',
+        'Mr. A.B. Carter, who also attended, agreed wholeheartedly.',
+        'He added, "We often forget that context is everything…',
+        'Don\'t we?"',
+        'Afterwards, they had coffee at St. Mary’s Café.',
+        'The event was organized by Ms. Taylor and co-hosted by Professor Lewis.'
+    ]
+]
+if all(split_into_sentences(input_val) == er for input_val, er in zip(test1_input, test1_er)):
+    print("test1 - ok")
+else:
+    print("test1 - failed")
+    for i, (input_val, expected) in enumerate(zip(test1_input, test1_er)):
+        result = split_into_sentences(input_val)
+        if result != expected:
+            print(f"\tCase {i + 1}:")
+            print(f"\tInput:    {input_val}")
+            print(f"\tExpected: {expected}")
+            print(f"\tGot:      {result}")

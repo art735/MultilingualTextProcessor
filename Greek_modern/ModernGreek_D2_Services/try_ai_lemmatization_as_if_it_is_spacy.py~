@@ -1,0 +1,48 @@
+# import ast
+#
+# import FileContentsReader
+#
+# data_str = """
+# [
+#     ("Ο", "ο", "DET", "Definite=Def|Gender=Masc|Number=Sing|Case=Nom"),
+#     ("άνθρωπος", "άνθρωπος", "NOUN", "Gender=Masc|Number=Sing|Case=Nom"),
+#     ("τρέχει", "τρέχω", "VERB", "Mood=Ind|Tense=Pres|Person=3|Number=Sing"),
+#     ("γρήγορα", "γρήγορα", "ADV", "")
+# ]
+# """
+#
+# # Преобразование строки в список Python
+# data_list = ast.literal_eval(data_str)
+#
+# # Вывод результата
+# [print(dl) for dl in data_list]
+
+
+######################
+
+import ast
+
+import FileContentsReader
+from DictionaryAppearanceValidator import DictionaryAppearanceValidator
+
+# TODO: сделать вычитку последнего файла
+base_dir = r'E:\Languages\Greek\! Subtitles\Ευτυχισμένοι Μαζί'
+filename = fr'{base_dir}\\pos & morph 01.txt'
+
+txt_data = FileContentsReader.get_file_text(filename)
+txt_data = txt_data.strip()  # Убирает по краям строки пробел и следующие символы [\t\n\r\v\f]
+
+dictionaryAppearanceValidator = DictionaryAppearanceValidator()
+if not dictionaryAppearanceValidator.validate_braces(txt_data):
+    raise Exception(f"Braces mismatch in file '{filename}'")
+
+
+# Преобразуем строку в словарь
+dictionary = ast.literal_eval(txt_data)
+
+print(dictionary)
+print(type(dictionary))  # Убедимся, что это действительно словарь
+
+##########################
+
+

@@ -1,0 +1,37 @@
+from A0_CoreAnkiFormatter import A0_CoreAnkiFormatter
+from AnkiProcessorConstants import YELLOW_COLOR_RGB, YELLOW_COLOR_HTML, GERMAN_o_VOWEL
+
+
+# Обёртка над логикой класса A0_CoreAnkiFormatter
+class TextHighlighter:
+    def __init__(self):
+        self.a0_CoreAnkiFormatter = A0_CoreAnkiFormatter()
+
+    def highlight_yellow(self, html_str, search_regex):
+        result = self._highlight(html_str, search_regex, YELLOW_COLOR_RGB, self._is_text_highlighted_yellow_recursive_upwards)
+        return result
+
+    def _highlight(self, html_str, search_regex, color_rgb, is_already_highlighted_cb):
+        # TODO: следующий callback рассчитан именно на 'o' + ']', т. е. рассчитан на конкретный случай форматирования.
+        #  Другие кейсы (если они в будущем появятся) будут требовать, скорей всего, другой callback.
+        #  Нужно продумать как реализовать передачу callback'а под каждый сценарий.
+        # {m.group(1)} - это сама буква 'о'
+        # {m.group(2)} - это закрывающая квадратная скобка
+        background_color_replacement = lambda m: fr'<span style="background-color: {color_rgb};">{m.group(1)}</span>{m.group(2)}'
+        result = self.a0_CoreAnkiFormatter.make_formatting(
+            html_str,
+            search_regex,
+            is_already_highlighted_cb,
+            self.a0_CoreAnkiFormatter.get_find_and_replace_callback(background_color_replacement)
+        )
+        return result
+
+    def _is_text_highlighted_yellow_recursive_upwards(self, tag):
+        result = self.a0_CoreAnkiFormatter.is_text_formatted_recursive_upwards_base(
+            self._is_tag_background_color_yellow, tag)
+        return result
+
+    def _is_tag_background_color_yellow(self, tag):
+        is_styled = self.a0_CoreAnkiFormatter.is_tag_styled(
+            tag, 'background-color', YELLOW_COLOR_HTML, YELLOW_COLOR_RGB)
+        return is_styled

@@ -1,0 +1,127 @@
+import sys
+
+from PyQt6 import QtWidgets
+from PyQt6 import uic
+from PyQt6.QtWidgets import QMessageBox
+
+import NounInflectionService
+from D2_Services import ExcelToAnkiVerbService
+from D2_Services import WiktionaryToExcelService
+from GermanPopovTextTranscriber import GermanPopovTextTranscriber
+from MainGuiWindowTitleService import MainGuiWindowTitleService
+
+
+class View(QtWidgets.QMainWindow):
+    def __init__(self):
+        super(QtWidgets.QMainWindow, self).__init__()
+        ### User code ###
+        uic.loadUi("D1_ViewController/View.ui", self)
+        self.mainWrkflwRadioButton.setChecked(True)
+        self.mainWrkflwRadioButton.clicked.connect(self.mainWrkflwRadioButton_Clicked)
+
+        self.helperLogicRadioButton.clicked.connect(self.helperLogicRadioButton_Clicked)
+        self.formatExcelVerbsForAnkiRadioButton.clicked.connect(self.formatExcelVerbsForAnkiRadioButton_Clicked)
+        self.formatExcelVerbsForAwesomeTTSRadioButton.clicked.connect(
+            self.formatExcelVerbsForAwesomeTTSRadioButton_Clicked)
+        self.nounInlectionsFromWiktionaryRadioButton.clicked.connect(
+            self.nounInlectionsFromWiktionaryRadioButton_Clicked)
+
+        self.processButton.clicked.connect(self.processButton_Clicked)
+        self.reloadDataFromExcelButton.clicked.connect(self.reloadDataFromExcelButton_Clicked)
+
+        # Main GUI window title
+        self.mainGuiWindowTitleService = MainGuiWindowTitleService()
+        main_window_title = self.mainGuiWindowTitleService.get_window_title()
+        self.setWindowTitle(main_window_title)
+
+        self.germanPopovTextTranscriber = None
+        self.excelToAnkiVerbService = None
+        # self.germanExcelWorkbooksDao = GermanExcelWorkbooksDao()
+        self.nounInflectionService = None
+
+        # self.germanTextLemmasFinder = A1_NewLemmasFinder()
+
+    def processButton_Clicked(self):
+        input_text = self.inputTextEdit.toPlainText()
+        output_text = ''
+
+        try:
+            if self.mainWrkflwRadioButton.isChecked():
+                if self.germanPopovTextTranscriber is None:
+                    self.germanPopovTextTranscriber = GermanPopovTextTranscriber()
+
+                is_dash_separator_flag = self.dashSeparatorCheckBox.isChecked()
+                output_text = self.germanPopovTextTranscriber.transcribe_whole_text(input_text, is_dash_separator_flag)
+
+            elif self.helperLogicRadioButton.isChecked():
+                output_text = WiktionaryToExcelService.run(input_text)
+
+            elif self.formatExcelVerbsForAnkiRadioButton.isChecked():
+                if self.excelToAnkiVerbService is None:
+                    self.excelToAnkiVerbService = ExcelToAnkiVerbService()
+                output_text = self.excelToAnkiVerbService.get_forms_for_verbs(input_text)
+
+            elif self.formatExcelVerbsForAwesomeTTSRadioButton.isChecked():
+                if self.excelToAnkiVerbService is None:
+                    self.excelToAnkiVerbService = ExcelToAnkiVerbService()
+                output_text = self.excelToAnkiVerbService.get_forms_for_awesome_tts(input_text)
+
+            elif self.nounInlectionsFromWiktionaryRadioButton.isChecked():
+                if self.nounInflectionService is None:
+                    self.nounInflectionService = NounInflectionService()
+                output_text = NounInflectionService.get_noun_inflections(input_text)
+        except Exception as e:
+            self.show_error_message(str(e))
+
+        self.outputTextEdit.setText(output_text)
+
+    def show_error_message(self, error_message):
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle("Error")
+        # msg_box.setText(f"Exception:\n{error_message}")
+        msg_box.setText(f"{error_message}")
+        # msg_box.setIcon(QMessageBox.Icon.Critical)
+        msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
+        msg_box.exec()
+
+    def reloadDataFromExcelButton_Clicked(self):
+        # self.germanExcelWorkbooksDao.reload_data_from_excel()
+        # self.processButton_Clicked()
+        self.germanPopovTextTranscriber = None
+        self.excelToAnkiVerbService = None
+
+    # **********************
+
+    def mainWrkflwRadioButton_Clicked(self):
+        self.dashSeparatorCheckBox.setEnabled(True)
+        self.reloadDataFromExcelButton.setEnabled(True)
+
+    def helperLogicRadioButton_Clicked(self):
+        self.dashSeparatorCheckBox.setEnabled(False)
+        self.reloadDataFromExcelButton.setEnabled(False)
+
+    def formatExcelVerbsForAnkiRadioButton_Clicked(self):
+        self.dashSeparatorCheckBox.setEnabled(False)
+        self.reloadDataFromExcelButton.setEnabled(False)
+
+    def formatExcelVerbsForAwesomeTTSRadioButton_Clicked(self):
+        self.dashSeparatorCheckBox.setEnabled(False)
+        self.reloadDataFromExcelButton.setEnabled(False)
+
+    def nounInlectionsFromWiktionaryRadioButton_Clicked(self):
+        self.dashSeparatorCheckBox.setEnabled(False)
+        self.reloadDataFromExcelButton.setEnabled(False)
+
+
+#####################################################################################
+
+def run():
+    # if __name__ == '__main__':
+    app = QtWidgets.QApplication(sys.argv)
+
+    # создание экземпляра пользовательского класса и вызов его метода
+    view = View()
+    view.show()
+    view.inputTextEdit.setFocus()  # place cursor into this field upon app startup
+
+    sys.exit(app.exec())

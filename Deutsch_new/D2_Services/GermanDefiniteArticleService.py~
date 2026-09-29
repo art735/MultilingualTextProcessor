@@ -1,0 +1,196 @@
+import re
+
+from GermanExcelDao import GermanExcelDao
+from MorphologyParser import MorphologyParser
+from SpaCyPosResolver import SpaCyPosResolver
+
+# Именительный падеж (Nominativ)
+MASC_SG_NOM = 'der'
+FEM_SG_NOM = 'die'
+NEUT_SG_NOM = 'das'
+PLUR_NOM = 'die'
+
+# Родительный падеж (Genitiv)
+MASC_SG_GEN = 'des'
+FEM_SG_GEN = 'der'
+NEUT_SG_GEN = 'des'
+PLUR_GEN = 'der'
+
+# Дательный падеж (Dativ)
+MASC_SG_DAT = 'dem'
+FEM_SG_DAT = 'der'
+NEUT_SG_DAT = 'dem'
+PLUR_DAT = 'den'
+
+# Винительный падеж (Akkusativ)
+MASC_SG_ACC = 'den'
+FEM_SG_ACC = 'die'
+NEUT_SG_ACC = 'das'
+PLUR_ACC = 'die'
+
+definite_articles_dict = {
+    "Nom": {
+        "Sing_Masc": MASC_SG_NOM,  # Мужской род, ед. число, именительный падеж
+        "Sing_Fem": FEM_SG_NOM,  # Женский род, ед. число, именительный падеж
+        "Sing_Neut": NEUT_SG_NOM,  # Средний род, ед. число, именительный падеж
+        "Plur": PLUR_NOM  # Множественное число, именительный падеж
+    },
+    "Gen": {
+        "Sing_Masc": MASC_SG_GEN,  # Мужской род, ед. число, родительный падеж
+        "Sing_Fem": FEM_SG_GEN,  # Женский род, ед. число, родительный падеж
+        "Sing_Neut": NEUT_SG_GEN,  # Средний род, ед. число, родительный падеж
+        "Plur": PLUR_GEN  # Множественное число, родительный падеж
+    },
+    "Dat": {
+        "Sing_Masc": MASC_SG_DAT,  # Мужской род, ед. число, дательный падеж
+        "Sing_Fem": FEM_SG_DAT,  # Женский род, ед. число, дательный падеж
+        "Sing_Neut": NEUT_SG_DAT,  # Средний род, ед. число, дательный падеж
+        "Plur": PLUR_DAT  # Множественное число, дательный падеж
+    },
+    "Acc": {
+        "Sing_Masc": MASC_SG_ACC,  # Мужской род, ед. число, винительный падеж
+        "Sing_Fem": FEM_SG_ACC,  # Женский род, ед. число, винительный падеж
+        "Sing_Neut": NEUT_SG_ACC,  # Средний род, ед. число, винительный падеж
+        "Plur": PLUR_ACC  # Множественное число, винительный падеж
+    }
+}
+
+german_definite_article_transcription_dict = {
+    'der': '[deːɐ̯]',
+    'die': '[diː]',
+    'das': '[das]',
+    'des': '[dɛs]',
+    'dem': '[deːm]',
+    'den': '[deːn]'
+}
+
+exceptional_proper_nouns_with_articles = ['die Schweiz', 'die Türkei', 'die USA', 'die Niederlande', 'die Slowakei',
+                                          'die Ukraine', 'der Iran', 'der Irak', 'der Sudan', 'der Libanon', 'die EU']
+
+class GermanDefiniteArticleService:
+    def __init__(self):
+        self.morphologyParser = MorphologyParser()
+        self.germanVocabularyExcelDao = GermanExcelDao()
+        self.spaCyPosResolver = SpaCyPosResolver()
+
+    def add_definite_article_to_lemma(self, lemma: str, pos: str, morph):
+        # Чтобы не потерять lemma в перипетиях алгоритма, сразу записываем её в result и в худшем случае её же
+        # и вернём в качестве результата.
+        result = lemma
+
+        # Самое первое действие здесь - это проверить, не содержится ли token в Excel-листе manual_lemmas, т. к.
+        # spaCy не может правильно лемматизировать и определить морфологию некоторых слов. И если это так, то просто
+        # возвращаем hard-coded лемму для соответствующего токена.
+        manual_lemmas_dict = self.germanVocabularyExcelDao.get_manual_lemmas_dict()
+        if lemma in manual_lemmas_dict:
+            result = manual_lemmas_dict[lemma]
+        # Ветка для работы с СОБСТВЕННЫМ именем существительным
+        elif self.spaCyPosResolver.is_proper_noun(pos):
+            # В первую очередь ищем СОБСТВЕННОЕ имя существительное среди специального списка исключений.
+            # Если оно нашло себя в этом списке, возвращаем результат с артиклем, в противном случае - без артикля.
+            search_res = self._search_among_exceptional_proper_nouns_with_articles(token)
+            if search_res:
+                result = search_res
+            else:
+                result = lemma
+
+
+        # Искать артикль для леммы - это значит искать артикль всегда имея в виду только именительный падеж.
+        # Род и число существительного остаются без изменения.
+        gender = self.morphologyParser.parse(morph, "Gender")
+        number = self.morphologyParser.parse(morph, "Number")
+
+        # Если поле Gender не пустое, значит форма ед. ч. для слова существует и для поиска артикля именно для леммы
+        # нужно передавать number='Sing'. Если же поле Gender - пустое, значит форма ед. ч. для слова не существует, и
+        # слово употребляется только во мн.ч. В этом случае передаём тот Number, кот. пришёл от spaCy.
+        new_number = number
+        if gender:
+            new_number = 'Sing'
+
+        new_morph = {"Case": ["Nom"], "Gender": [gender], "Number": [new_number]}
+
+        result = self.add_definite_article_to_token(lemma, pos, new_morph)
+        return result
+
+
+    def add_definite_article_to_token(self, token: str, pos: str, morph):
+        # Чтобы не потерять token в перипетиях алгоритма, сразу записываем его в result и в худшем случае его же
+        # и вернём в качестве результата.
+        result = token
+        definite_article = ''
+        error_msg = ''
+
+        # Если token начинается с маленькой буквы, то делаем первую букву заглавной, т. к. немецкие существительные
+        # должны начинаться с большой буквы.
+        if token[0].islower():
+            token = token.capitalize()
+
+
+        # Ветка для работы с НАРИЦАТЕЛЬНЫМ именем существительным
+        else:
+            # Парсим морфологию, напр.:
+            # - для сущ. в ед.ч.: Case=Nom|Gender=Neut|Number=Sing
+            # - для сущ. во мн.ч.: Case=Nom|Number=Plur (для Plur-сущ. морфология в SpaCy обычно не указывается)
+            case = self.morphologyParser.parse(morph, "Case")
+            number = self.morphologyParser.parse(morph, "Number")
+            gender = self.morphologyParser.parse(morph, "Gender")
+
+            if case and number:
+                if number == 'Sing':
+                    # Определяем ключ для вложенного словаря
+                    number_gender_key = f"{number}_{gender}"
+                    definite_article = definite_articles_dict.get(case).get(number_gender_key)
+                elif number == 'Plur':  # для сущ. во мн.ч. spaCy, скорей всего, не укажет поле 'Gender' в морфологии
+                    definite_article = definite_articles_dict.get(case).get('Plur')
+                else:
+                    result = f"Can't find appropriate definite article for word '{token}' with number = '{number}'"
+
+            if definite_article:
+                result = f'{definite_article} {token}'
+
+        return result
+
+    def _search_among_exceptional_proper_nouns_with_articles(self, token):
+        result = ''
+        for proper_noun in exceptional_proper_nouns_with_articles:
+            # Разбиваем только по первому пробелу (параметр maxsplit=1) на случай, если название имени собственного
+            # будет состоять из нескольких частей, разделённых пробелом. Пример привести сложно, но в целом это будет
+            # более правильным подходом.
+            article, bare_proper_noun = proper_noun.split(' ', 1)
+            if bare_proper_noun == token:
+                result = proper_noun
+                break
+        return result
+
+    def strip_definite_article(self, articled_noun):
+        # если немецкое слово содержит артикль - удалить его
+
+        # формула регулярного выражения для удаления артикля:
+        # - возможный пробел(ы) перед артиклем из-за погрешностей копирования/вставки слова в ячейку Excel
+        # - возможная открывающая круглая скобка (для артиклей перед географическими названиями, фамилиями и т. д.)
+        # - буква d (как первая буква определённого артикля) и затем ещё 2 буквы
+        # - возможная закрывающая круглая скобка
+        # - пробел (между артиклем и словом)
+        regex = r'^\s*\(?d[a-z]{2}\)?\s'
+
+        bare_noun = re.sub(regex, '', articled_noun)
+        return bare_noun
+
+    def get_definite_article_transcription(self, definite_article):
+        result = ''
+        if definite_article in german_definite_article_transcription_dict:
+            result = german_definite_article_transcription_dict[definite_article]
+        return result
+
+
+#################################################################
+
+if __name__ == '__main__':
+
+    germanDefiniteArticleService = GermanDefiniteArticleService()
+
+    morph = {'Case': ['Nom'], 'Gender': ['Masc'], 'Number': ['Sing']}
+    morph = {'Case': ['Dat'], 'Gender': ['Masc'], 'Number': ['Sing']}
+
+    res = germanDefiniteArticleService.add_definite_article_to_token('Moment', 'NOUN', morph)
+    print(res)

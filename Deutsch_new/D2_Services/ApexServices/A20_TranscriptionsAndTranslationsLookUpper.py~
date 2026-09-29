@@ -1,0 +1,163 @@
+import GermanTextTranscriber
+import GermanWiktionaryService
+import Utils
+from AnkiCardEntity import AnkiCardEntity
+from GermanAnkiService import GermanAnkiService
+from GermanOOWriterService import GermanOOWriterService
+from OOWriterCopyPasteTableDao import OOWriterCopyPasteTableDao
+from OOWriterOdtFileTableDao import OOWriterOdtFileTableDao
+
+
+class A20_TranscriptionsAndTranslationsLookUpper:
+
+    def __init__(self):
+        self.ooWriterOdtFileTableDao = OOWriterOdtFileTableDao()
+        self.ooWriterCopyPasteTableDao = OOWriterCopyPasteTableDao()
+
+        self.germanOOWriterService = GermanOOWriterService()
+        self.germanAnkiService = None
+
+    def look_up(self, input_text):
+        # 'last (by name) [Vocab]-file' combo box option selected
+        # if combo_box_item_index == 0:
+        #     vocab_filename = self.ooWriterOdtFileTableDao.get_all_vocab_filenames()[-1]
+        #     data_rows = self.ooWriterOdtFileTableDao.read_single_file_all_tables_data(vocab_filename)
+        # # 'text lines' combo box option selected
+        # elif combo_box_item_index == 1:
+        #     # data_rows = self.ooWriterCopyPasteTableDao.parse_html_table(html_str)
+        #     data_rows = Utils.split_by(input_text, '\n')
+
+        data_rows = Utils.split_by(input_text, '\n')
+
+        output = self.process_data(data_rows)
+        return output
+
+    # Данный метод используется не только в текущем UC#2, но и может вызываться из UC#3
+    def process_data(self, data_rows):
+        results = []
+
+        for i in range(0, len(data_rows)):
+            table_row = data_rows[i]
+            # Вычитываем и анализируем содержимое первого столбца каждой строки
+            first_column_data = table_row.split('|')[0]
+            # if first_column_data:
+            # Если первый столбец содержит немецкое предложение - просто добавляем его в результаты!
+            if Utils.is_sentence(first_column_data):
+                # Стараемся по максимуму получить транскрипцию предложения (флаг установлен в True)
+                sentence_unknown_words, sentence_transcription = GermanTextTranscriber.transcribe_single_sentence(
+                    first_column_data, True)
+                result = f'{first_column_data}||{sentence_transcription}\n'
+                results.append(result)
+            # если же столбец содержит не предложение (а слово), пробуем найти его среди настоящих Анки-карточек
+            else:
+                # Поскольку first_column_data не является предложением, значит оно является словом
+                word = first_column_data
+
+                # Инициализируем сервис только тогда, когда он реально становится нужным, чтобы из-за ошибки
+                # дизайна классов не было преждевременного обращения к Анки
+                if self.germanAnkiService is None:
+                    self.germanAnkiService = GermanAnkiService()
+                # Ищем Анки-карточку, соответствующую слову первого столбца
+                found_regular_card = self.germanAnkiService.search_among_main_regular_cards(word)
+                if found_regular_card:
+                    front_stripes = found_regular_card.front
+
+                    # Если карточка является многополосной, нужно определить нуждаются ли во вставке в таблицу
+                    # (выше текущего слова) её полосы (кроме последней) в качестве отдельных слов-строк.
+                    # Для каждой полосы (кроме последней) сложного/составного слова проверить отсутствует ли она:
+                    # 1) выше по таблице(-ам) в текущем [Vocab]-файле
+                    # 2) во всех предыдущих [Vocab]-файлах
+                    # 3) в деке Гёте-института
+                    # и если отсутствует, добавить её в результирующий набор перед сложным/составным словом
+                    if len(front_stripes) > 1:
+                        # цикл по всем полосам, кроме последней
+                        for j in range(0, len(front_stripes) - 1):
+                            front_stripe = front_stripes[j]
+                            if self._can_stripe_be_added_to_table(front_stripe, data_rows[:i]):
+                                # Здесь не нужно брать поля front_comment & back_comment у сложной/составной
+                                # карточки, т. к. эти комменты относятся к сложному/составному слову в целом,
+                                # а не к конкретной не-последней полосе.
+                                stripe_str = found_regular_card.to_str_by_stripe_index_front_transcription_back(
+                                    stripe_index=j)
+                                stripe_str_pieces = stripe_str.split('|')
+                                front = stripe_str_pieces[0]
+                                front_comment = ''
+                                transcription = stripe_str_pieces[1]
+                                back = stripe_str_pieces[2]
+                                back_comment = ''
+                                result = '|'.join([front, front_comment, transcription, back, back_comment])
+                                results.append(result)
+
+                    # Добавляем в результирующий набор и само сложное/составное слово, но после возможного добавления
+                    # его полос в качестве отдельных слов-строк
+                    found_regular_card_str = found_regular_card.to_str(
+                        format_type="front_transcription_back_with_comments")
+                    results.append(found_regular_card_str)
+                else:
+                    # Если слово не найдено в Анки, попробовать заполнить хотя бы транскрипцию для него
+                    transcription = GermanWiktionaryService.get_word_transcription(word, True)
+                    result = f'{word}||{transcription}'
+                    results.append(result)
+            # else:
+            #     # Просто переносим пустую строку в результаты
+            #     results.append(first_column_data)
+
+        output = '\n'.join(results)
+        return output
+
+    def _can_stripe_be_added_to_table(self, front_stripe, data_rows_slice):
+        result = False
+
+        front_stripe_ready_token = AnkiCardEntity.parse_front_stripe(front_stripe)
+
+        # 1) Ищем выше по таблице(-ам) в текущем [Vocab]-файле, т. е. в срезе data_rows[:i]
+        is_present = self._is_word_present_in_table_rows(front_stripe_ready_token, data_rows_slice)
+
+        # 2) Если полоса отсутствует выше по таблице, ищем её среди предыдущих [Vocab]-файлов
+        if not is_present:
+            is_absent = self.germanOOWriterService.is_word_absent_from_vocabulary_of_all_files_but_last(front_stripe_ready_token)
+            if is_absent:
+                result = True
+
+            # В деке Гёте-института не ищем, т. к. там будет находиться, в лучшем случае, та же самая информация,
+            # что и в [Vocab]-файлах (если все они были заимпортированы в Анки)
+            # # 3) Если полоса отсутствует среди предыдущих [Vocab]-файлов, ищем её в деке Гёте-института
+            # if not is_present:
+            #     student_regular_card = self.germanAnkiService.search_among_student_regular_cards(front_stripe_ready_token)
+            #     # Если полоса отсутствует в деке Гёте-института, добавляем её в таблицу выше текущей записи
+            #     if student_regular_card is None:
+            #         result = True
+
+        return result
+
+    def _is_word_present_in_table_rows(self, word_to_search, table_rows):
+        result = False
+
+        for table_row in table_rows:
+            first_col_stripes_str = table_row.split('|')[0]
+            first_col_stripes = [stripe for stripe in first_col_stripes_str.split('^') if stripe]
+            if word_to_search in first_col_stripes:
+                result = True
+                break
+
+        return result
+
+
+###########################
+
+input_str = 'abholen'
+
+# input_str = """
+# der Unterricht
+# gleich
+# Der Unterricht fängt gleich an.
+#
+# der Anfang
+# Sie wohnt am Anfang der Straße.
+# """
+
+if __name__ == "__main__":
+    a20_TranscriptionsAndTranslationsLookUpper = A20_TranscriptionsAndTranslationsLookUpper()
+    results = a20_TranscriptionsAndTranslationsLookUpper.look_up(1, input_str)
+    print(results)
+

@@ -1,0 +1,70 @@
+# -*- coding: utf-8 -*-
+
+import re
+
+# Здесь можно узнать код символа
+# https://www.babelstone.co.uk/Unicode/whatisit.html
+EN_DASH = "–"  # U+2013 : EN DASH
+EM_DASH = "—"  # U+2014 : EM DASH
+HORIZONTAL_BAR = "―"  # U+2015 : HORIZONTAL BAR {quotation dash}
+
+# Получаем весь текст из текущей вкладки
+# text = editor.getText()
+
+# Определяем стиль строк: CRLF (\r\n), LF (\n), или CR (\r)
+# if '\r\n' in text:
+#     line_ending = '\r\n'
+# elif '\r' in text:
+#     line_ending = '\r'
+# else:
+#     line_ending = '\n'
+
+text = """
+
+
+привет – мир
+
+    **gasdf **
+bbb *************  
+
+"""
+
+# Словарь правил замены
+find_and_replace_dict = {
+    # Заменить табуляцию на пробел
+    r'\t': ' ',
+
+    # Заменить 2 и более пробелов на один пробел
+    r'[ ]{2,}': ' ',
+
+    # Заменить длинное тире, HORIZONTAL_BAR или "--" на обычное тире
+    r'|'.join([EM_DASH, HORIZONTAL_BAR, '--']): EN_DASH,
+
+    # Заменить пробел-дефис-пробел на пробел–тире–пробел
+    r' - ': ' – ',
+
+    # Удалить символ '*'
+    r'[*]': '',
+
+    # Удалить символы [ \t\n\r\f\v] в начале и конце каждой строки
+    # r'^.*$': lambda m: m.group().strip(),
+    # r'^[ \t]+': ''
+    # r'^[ \t]+|[ \t]+(?=\r?\n|$)': '',
+    r'^[ \t]+|([ \t]+$|\r\n)': ''
+
+}
+
+# Выполняем все замены
+for pattern, replacement in find_and_replace_dict.items():
+    # Если replacement — строка, она интерпретируется буквально, включая спецсимволы (\1, \g<name> и т.п.).
+    # Если replacement — функция, она вызывается с объектом Match, и программист должен сам вернуть нужную строку.
+    text = re.sub(pattern, replacement, text, flags=re.MULTILINE)
+
+# Приводим все строки к исходному типу переноса строк
+# Сначала разбиваем на строки по '\n', затем соединяем нужным разделителем
+# text = line_ending.join(text.split('\n'))
+
+# Устанавливаем обновлённый текст в редактор
+# editor.setText(text)
+
+print(text)

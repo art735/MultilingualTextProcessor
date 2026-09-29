@@ -1,0 +1,34 @@
+import re
+
+SPACE = ' '
+
+personal_pronouns_dict = {
+    "ich": "[ɪç]",
+    "du": "[duː]",
+    "er/sie/es": "[eːɐ/ziː/ɛs̯]",  # Это визуальный обман, что перед закрывающей скобкой есть пробел, его там нет!
+    "wir": "[viːɐ̯]",
+    "ihr": "[iːɐ̯]",
+    "sie/Sie": "[ziː/ziː]"
+}
+
+def add_personal_pronoun_to_transcription(word, transcription):
+    output = transcription
+    for key, val in personal_pronouns_dict.items():
+        if word.startswith(key):
+            output = "[{0} {1}]".format(val[1:-1].strip(), transcription[1:-1].strip())
+            break
+    return output
+
+
+def strip_personal_pronoun_before_verb(word, transcription):
+    pure_verb_form = word
+    for pronoun in personal_pronouns_dict.keys():
+        # Заменяем (удаляем) в цикле все возможные личные местоимения перед формой глагола
+        if pure_verb_form.startswith(f'{pronoun}{SPACE}'):
+            pure_verb_form = re.sub(f'^{pronoun}{SPACE}', '', pure_verb_form)
+            break
+
+    # актуально для форм императива: приводим pure_verb_form к нижнему регистру и удаляем восклицательный знак
+    # в конце, а также в целом для всех форм делаем strip() на всякий случай
+    pure_verb_form = pure_verb_form.lower().replace('!', '').strip()
+

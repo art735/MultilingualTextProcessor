@@ -1,0 +1,99 @@
+import sys
+
+from PyQt6 import QtWidgets
+from PyQt6 import uic
+
+import VerbService
+
+
+class View(QtWidgets.QMainWindow):
+    def __init__(self):
+        super(QtWidgets.QMainWindow, self).__init__()
+        ### User code ###
+        uic.loadUi("ModGrk_D1_ViewController/ModGrk_View.ui", self)
+        self.internetToExcelVerbConjugationsRadioButton.setChecked(True)
+
+        self.conjugationSourceComboBox.addItem("ModGrkverbs.com")
+        self.conjugationSourceComboBox.addItem("el.wiktionary.org")
+        self.conjugationSourceComboBox.addItem("en.wiktionary.org")
+        # self.formatEbibleRadioButton.setChecked(True)
+        # self.formatEbibleRadioButton.clicked.connect(self.formatEbibleRadioButton_Clicked)
+
+        # self.helperLogicRadioButton.clicked.connect(self.helperLogicRadioButton_Clicked)
+        # self.formatExcelVerbsForAnkiRadioButton.clicked.connect(self.formatExcelVerbsForAnkiRadioButton_Clicked)
+        # self.formatExcelVerbsForAwesomeTTSRadioButton.clicked.connect(self.formatExcelVerbsForAwesomeTTSRadioButton_Clicked)
+        # self.nounInlectionsFromWiktionaryRadioButton.clicked.connect(self.nounInlectionsFromWiktionaryRadioButton_Clicked)
+
+        self.processButton.clicked.connect(self.processButton_Clicked)
+        self.reloadDataFromExcelButton.clicked.connect(self.reloadDataFromExcelButton_Clicked)
+
+        # TODO
+        # Validation
+        # main_window_title = Validator.validateExcel1stColWordsUniqueness()
+        # self.setWindowTitle(main_window_title)
+
+    def processButton_Clicked(self):
+        input_text = self.inputTextEdit.toPlainText()
+        output_text = ""
+
+        if self.internetToExcelVerbConjugationsRadioButton.isChecked():
+            if self.conjugationSourceComboBox.currentText() == 'ModGrkverbs.com':
+                output_text = VerbService.format_wiktionary_to_excel_conjugations(input_text, 'ModGrkverbs.com')
+            elif self.conjugationSourceComboBox.currentText() == 'el.wiktionary.org':
+                output_text = VerbService.format_wiktionary_to_excel_conjugations(input_text, 'el.wiktionary.org')
+            elif self.conjugationSourceComboBox.currentText() == 'en.wiktionary.org':
+                output_text = VerbService.format_wiktionary_to_excel_conjugations(input_text, 'en.wiktionary.org')
+
+        elif self.excelToAnkiVerbConjugationsRadioButton.isChecked():
+            output_text = VerbService.parse_verbs_from_Anki(input_text)
+
+        # elif self.formatRecognizedNewmansDictionaryRadioButton.isChecked():
+        #     output_text = RecognizedNewmansDictionaryFormatter.run(input_text)
+
+        # elif self.formatExcelVerbsForAwesomeTTSRadioButton.isChecked():
+        #     output_text = ExcelToAnkiVerbService.getFormsForAwesomeTTS(input_text)
+        #
+        # elif self.nounInlectionsFromWiktionaryRadioButton.isChecked():
+        #     output_text = NounInflectionService.getNounInflections(input_text)
+
+        self.outputTextEdit.setText(output_text)
+
+    def reloadDataFromExcelButton_Clicked(self):
+        # GreekDao.reload_data_from_excel()
+        self.processButton_Clicked()
+
+    # **********************
+
+    # def mainWrkflwRadioButton_Clicked(self):
+    #     self.dashSeparatorCheckBox.setEnabled(True)
+    #     self.reloadDataFromExcelButton.setEnabled(True)
+    #
+    # def helperLogicRadioButton_Clicked(self):
+    #     self.dashSeparatorCheckBox.setEnabled(False)
+    #     self.reloadDataFromExcelButton.setEnabled(False)
+    #
+    # def formatExcelVerbsForAnkiRadioButton_Clicked(self):
+    #     self.dashSeparatorCheckBox.setEnabled(False)
+    #     self.reloadDataFromExcelButton.setEnabled(False)
+    #
+    # def formatExcelVerbsForAwesomeTTSRadioButton_Clicked(self):
+    #     self.dashSeparatorCheckBox.setEnabled(False)
+    #     self.reloadDataFromExcelButton.setEnabled(False)
+    #
+    # def nounInlectionsFromWiktionaryRadioButton_Clicked(self):
+    #     self.dashSeparatorCheckBox.setEnabled(False)
+    #     self.reloadDataFromExcelButton.setEnabled(False)
+
+
+#####################################################################################
+
+def run():
+    # if __name__ == '__main__':
+    app = QtWidgets.QApplication(sys.argv)
+
+    # создание экземпляра пользовательского класса и вызов его метода
+    view = View()
+    view.show()
+    view.inputTextEdit.setFocus()  # place cursor into this field upon app startup
+
+    sys.exit(app.exec())

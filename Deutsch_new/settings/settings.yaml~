@@ -1,0 +1,29 @@
+# YAML, в отличие от json, поддерживает комментарии!
+# YAML нативно НЕ поддерживает нотацию ${...}, поэтому требуется доп. программная обработка такого синтаксиса.
+
+# Для выбора сокращений названий иностранных языков в файле конфигурации обычно используют стандартные коды, такие как:
+# - ISO 639-1 (двухбуквенные коды)
+# - ISO 639-2 (трёхбуквенные коды).
+
+resources_dir: "E:\\Languages\\English\\SVN repo\\Python software\\MultilingualTextProcessor\\resources"
+
+German:
+  # общепринятый трёхбуквенный код (ISO 639-2) для немецкого языка
+  lang_code: deu
+  # базовая директория для поиска .odt-файлов ([!Vocab], [Portrait], [Sentences & Inflections] файлы)
+  base_dir: "${resources_dir}\\German\\Goethe-Institut\\"
+  regular_cards_deck: "!Deutsch. !Словарь"
+  aggregate_cards_deck: "!Deutsch. Агрегаты"
+
+Modern Greek:
+  lang_code: ell  # общепринятый трёхбуквенный код (ISO 639-2) для новогреческого языка
+  base_dir: "${resources_dir}\\Modern Greek\\Ευτυχισμένοι Μαζί"
+  # regular_cards_deck: "Languages. Greek Modern::!Словарь"
+  regular_cards_deck: "Languages. Greek !Words::!Regular"
+  aggregate_cards_deck: "Languages. Greek Modern::Aggregates"
+
+Ancient Greek:
+  lang_code: grc  # общепринятый трёхбуквенный код (ISO 639-2) для древнегреческого языка
+  base_dir: "${resources_dir}\\Ancient Greek"
+  regular_cards_deck: "!Ancient Greek. !Словарь"
+  aggregate_cards_deck: "!Ancient Greek. Агрегаты"

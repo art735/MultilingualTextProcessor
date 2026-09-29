@@ -1,0 +1,125 @@
+from Base.BaseWorksheetReader import BaseWorksheetReader
+from GermanVocabularyEntity import GermanVocabularyEntity
+
+class MultilingualFirstColumnWorksheetReader(BaseWorksheetReader):  # наследуется от BaseWorksheetReader
+
+    def __init__(self):
+        columns_dict = {
+            0: 'FIRST_COLUMN_INDEX',
+        }
+        super().__init__(columns_dict)
+
+    def get_data_from_worksheet(self, worksheet):
+        sheet_data = super().get_data_from_worksheet(worksheet)
+        results = []
+        for row in sheet_data:
+            word = row[0].strip()
+            # Игнорируем "шапку" таблицы
+            if word == 'Ignored token':
+                continue
+
+            if word:  # берём в дальнейшую работу только непустые строки
+                results.append(word)
+
+        return results
+
+
+#########################################
+
+class MultilingualFirstTwoColumnsWorksheetReader(BaseWorksheetReader):  # наследуется от BaseWorksheetReader
+
+    def __init__(self):
+        columns_dict = {
+            0: 'FIRST_COLUMN_INDEX',
+            1: 'SECOND_COLUMN_INDEX',
+        }
+        super().__init__(columns_dict)
+
+    def get_data_from_worksheet(self, worksheet):
+        sheet_data = super().get_data_from_worksheet(worksheet)
+        results = []
+        for row in sheet_data:
+            token = row[0].strip()
+            lemma = row[1].strip()
+            # Игнорируем "шапку" таблицы
+            if token == 'Sentence token' and lemma == 'Manual lemma':
+                continue
+
+            if token and lemma:  # берём в дальнейшую работу только непустые строки
+                result = (token, lemma)
+                results.append(result)
+
+        return results
+
+
+#########################################
+
+class MultilingualFirstThreeColumnsWorksheetReader(BaseWorksheetReader):  # наследуется от BaseWorksheetReader
+
+    def __init__(self):
+        columns_dict = {
+            0: 'FIRST_COLUMN_INDEX',
+            1: 'SECOND_COLUMN_INDEX',
+            2: 'THIRD_COLUMN_INDEX',
+        }
+        super().__init__(columns_dict)
+
+    def get_data_from_worksheet(self, worksheet):
+        sheet_data = super().get_data_from_worksheet(worksheet)
+        results = []
+        for row in sheet_data:
+            token_grammaticized = row[0].strip()
+            inflections = row[1].strip()
+            grammar_hint = row[2].strip()
+            # Игнорируем "шапку" таблицы
+            if token_grammaticized == 'Токен с грамматикой' and inflections == 'Словоформы' and \
+                    grammar_hint == 'Грамматическая подсказка':
+                continue
+
+            # token_grammaticized должен обязательно присутствовать, остальные 2 столбца могут отсутствовать (в
+            # зависимости от части речи)
+            if token_grammaticized:
+                piped_row = f'{token_grammaticized}|{inflections}|{grammar_hint}'
+                result = (token_grammaticized, piped_row)
+                results.append(result)
+
+        return results
+
+
+#################################################
+
+# class GermanVocabularyWorksheetReader(BaseWorksheetReader):  # наследуется от BaseWorksheetReader
+#
+#     def __init__(self):
+#         columns_dict = {
+#             0: 'LEMMA_COLUMN_INDEX',
+#             # 1: 'LEMMA_OCCURRENCES_COUNT_COLUMN_INDEX',
+#             # 1: 'MORPHOLOGICAL_FORMS_COLUMN_INDEX',
+#             # 2: 'WORD_ARTICLE_COLUMN_INDEX',
+#             # 3: 'TRANSLATION_COLUMN_INDEX'
+#         }
+#         super().__init__(columns_dict)
+#
+#     def get_data_from_worksheet(self, worksheet):
+#         sheet_data = super().get_data_from_worksheet(worksheet)
+#
+#         # В результате склейки столбцов получаем следующие индексы данных:
+#         # 0 - lemma
+#         # 1 - morphological forms
+#         # 2 - word article
+#         # 3 - translation
+#
+#         # KEY - lemma
+#         # VALUE - all the consecutive Excel rows related to KEY
+#         results = []
+#         for row in sheet_data:
+#             lemma = row[0]
+#             # lemma_occurrences_count = row[1]
+#             # lemma_occurrences_count = -1  # фиксированное значение просто как заполнитель
+#             # morphological_forms_str = row[1]
+#             # word_article = row[2]
+#             # translation = row[3]
+#             # results.append(DictionaryVocabularyEntity(lemma, morphological_forms_str, word_article, translation))
+#             results.append(GermanVocabularyEntity(lemma))
+#
+#         return results

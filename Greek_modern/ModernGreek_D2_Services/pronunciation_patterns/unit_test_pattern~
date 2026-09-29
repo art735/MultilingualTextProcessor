@@ -1,0 +1,12 @@
+if all(remove_html_underlining(input_val) == er for input_val, er in zip(test1_input, test1_er)):
+    print("test1 - ok")
+else:
+    print("test1 - failed")
+    # Print detailed comparison for debugging
+    for i, (input_val, er) in enumerate(zip(test1_input, test1_er)):
+        result = remove_html_underlining(input_val)
+        if result != er:
+            print(f"Mismatch at index {i}:")
+            print(f"Input:    {input_val}")
+            print(f"Expected: {er}")
+            print(f"Got:      {result}")

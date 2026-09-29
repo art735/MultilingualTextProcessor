@@ -1,0 +1,163 @@
+import re
+
+import AnkiFieldHtmlIntoStripesAndLinesSplitter
+import AnkiProcessorConstants
+from CharConstants import SPACE, NBSP_html
+
+html_tag_name = "[^>]+?"  # non-greedy
+# regex для захвата html-тега (неважно открывающего или закрывающего)
+html_tag_pattern = fr"<{html_tag_name}>"
+
+# regex для захвата только открывающего html-тега
+# после открывающей угловой скобки идёт не-слеш - в этом ключевое отличие открывающего тега от закрывающего
+html_opening_tag_pattern = fr"<(?!/){html_tag_name}>"  # '<' + negative lookahead of / +  html_tag_name
+
+# regex для захвата только закрывающего html-тега
+html_closing_tag_pattern = fr"</{html_tag_name}>"
+
+
+def fix_problems(html_str):
+    find_and_replace_dict = {
+
+        # TODO temp
+        # Если перед открывающим тегом нет пробела, поставить его там
+        # fr'(?<! ){html_opening_tag_pattern}': r' \g<0>',
+        # Если после закрывающего тега нет пробела, поставить его там
+        # fr'{html_closing_tag_pattern}(?! )': r'\g<0> ',
+
+        # replace newline with whitespace
+        r'\n': SPACE,
+
+        # replace 2+ whitespaces with a single whitespace
+        # (additional whitespaces may apper after previous replace \n -> \s)
+        r'\s\s+': SPACE,
+
+        # fr'({NBSP_html})+': NBSP_html,
+        fr'({NBSP_html})+': SPACE,
+
+        # NBSP в окружении обычных пробелов заменяется на NBSP, т. е. обычные пробелы возле него удаляются
+        # Технически здесь NBSP окружён позитивными lookarounds
+        fr'{SPACE}{NBSP_html}|{NBSP_html}{SPACE}': fr'{NBSP_html}',
+
+        # Удалить обычный пробел перед неразрывным пробелом
+        # обычный пробел + positive lookahead неразрывного пробела
+        # ' (?=\u00A0)': '',
+        fr'{SPACE}(?={NBSP_html})': '',
+
+        # Удалить пробелы между соседними тегами.
+        # Нельзя удалять пробелы между любыми соседними тегами, это точно цепляет основной текст!
+        # Можно попробовать удалять пробелы между двумя открывающими тегами, идущими подряд или между двумя закрывающими
+        # тегами, идущими подряд, но не между соседними открывающим и закрывающим тегами!
+        fr'({html_opening_tag_pattern})\s+({html_opening_tag_pattern})': r'\g<1>\g<2>',
+        fr'({html_closing_tag_pattern})\s+({html_closing_tag_pattern})': r'\g<1>\g<2>',
+
+        # Пробелы вокруг <br> в обычном тексте смысла не имеют
+        # (но, возможно, имеют смысл при форматировании текста исходного кода, особенно пробел ПОСЛЕ <br>)
+        # Вокруг <br> пробелы удалять можно, вокруг других тегов - лучше не рисковать, можно задеть основной текст
+        r'\s?(<br>)\s?': '<br>',
+
+        # Удалить подряд идущие открывающий и закрывающий теги с пустым содержимым между ними.
+        # <(\w+)[^>]*> — захватывает открывающий тег, где (\w+) захватывает имя тега (например, div, p, a),
+        # [^>]* захватывает любые атрибуты внутри тега.
+        # </\1> — это закрывающий тег, где \1 ссылается на имя тега, захваченное в первой группе (\w+).
+        # Это гарантирует, что открывающий и закрывающий теги совпадают.
+        r'<div></div>': '<br>',  # остальные пустые теги, наверное, можно удалять просто так, но не <div></div> (его
+        # нужно обязательно заменять на <br> для сохранения структуры текста
+        fr"<({html_tag_name})></\1>": '',
+
+        # Гарантирует ровно два <br> с обеих сторон от "- - -" независимо от того,
+        # были там раньше <br> или нет и сколько штук
+        r'(<br>)*- - -(<br>)*': '<br><br>- - -<br><br>',
+
+        # Найти любое количество закрывающих тегов между <br> и <br> и поставить их перед первым <br>
+        # Это нужно для того, чтобы два тега <br> шли рядом один за другим, и между ними не мешались другие закрывающие
+        # теги. Двойной <br> является логическим разделителем между словами в Anki-карточках и важно иметь его
+        # в рафинированном виде, а не вперемешку с другими тегами.
+        fr'(<br>)((?:{html_closing_tag_pattern})+)(<br>)': lambda m: f"{m.group(2)}{m.group(1)}{m.group(3)}",
+
+        # <br> может быть обёрнут в жирный или курсив (особенно часто встречается в самом начале и самом конце строки).
+        # Удалить эту обёртку вокруг <br>
+        r'<([biu])>((?:<br>)+)</\1>': r'\g<2>',
+
+        # Три и более <br> заменить на два <br>
+        # Такую ситуацию нужно чинить и до стрипания <div>-ов, и, тем более, после стрипания:
+        # т. к. алгоритм не всегда правильно отрабатывает и, бывает, появляется лишний <br>.
+        # Визуально 3+ <br> будут выглядеть как 2+ пустых строки между соседними строками с текстом, чего, в принципе,
+        # по моим правилам оформления карточек быть не должно
+        r'(<br>){3,}': '<br><br>',
+
+        # remove any leading and trailing <br>-s and whitespaces
+        r'^(<br>|\s)+|(<br>|\s)+$': '',
+
+        # Неразрывный пробел в эти выражения не добавлять, а процессить его отдельным пунктом.
+        # Он содержит «;» в своей html-записи и это неожиданно и негативно сказывается на результате, если поместить
+        # его в эти выражения.
+
+        # Удалить пробел ПОСЛЕ следующих символов
+        fr'([\(\[]) ': r'\g<1>',
+        # Удалить пробел ПЕРЕД следующими символами
+        fr' ([\)\],.;])': r'\g<1>'
+    }
+
+    result = html_str
+
+    # На момент написания комментария весь словарь паттернов поиска и замены прогоняется дважды (no_of_loops = 2) и
+    # в рамках каждого такого прогона отдельно взятый паттерн применяется тоже дважды (counter <= 2)!
+    # Итого получается замен: no_of_loops * max(counter) = 4. Такой подход более-менее гарантирует, что запускать
+    # скрипт более одного раза практически никогда не придётся.
+    # Кроме этого в основном методе проекта MainProcessor.process тоже есть цикл с подобной задачей: несколько раз
+    # запускать прогон всей бизнес-логики по отношению к тексту поля. Это сделано для того, чтобы вручную не запускать
+    # приложение несколько раз подряд, т. к. одного раунда замен часто не достаточно.
+    no_of_loops = 2
+    for i in range(0, no_of_loops):
+        for pattern, repl in find_and_replace_dict.items():
+            # result = re.sub(pattern, repl, result)
+            # Используем цикл для повторного применения замены до тех пор, пока есть совпадения.
+            # Пришлось ввести counter для предотвращения зацикливания.
+            counter = 1
+            while re.search(pattern, result) and counter <= 2:
+                result = re.sub(pattern, repl, result)
+                counter += 1
+
+    # Стрипаем html-строки от окружающих их символов пробельного типа [ \t\n\r\f\v]
+    result = _strip_lines_and_stripes(result)
+
+    # if result != html_str:
+    #     if mode == Mode.SEARCH_ONLY:
+    #         print("Common formatting problems (newlines, redundant spaces, etc) are detected in '{0}'".format(html_str))
+    #         return html_str
+    # elif mode == Mode.FIND_AND_REPLACE:
+    #     print("Common formatting problems are solved for '{0}'".format(html_str))
+
+    return result
+
+# Удаляет символы пробельного типа [ \t\n\r\f\v] в начале и конце html-строк
+def _strip_lines_and_stripes(html_str):
+    def _process(html_line):
+        # Удаляем символы пробельного типа [ \t\n\r\f\v] и неразрывные пробелы в начале и конце html-строк
+        processed_html_line = html_line.strip().removeprefix(NBSP_html).removesuffix(NBSP_html)
+        return processed_html_line
+
+    processed_html_str = AnkiFieldHtmlIntoStripesAndLinesSplitter.split_into_stripes_and_lines(html_str, _process)
+    return processed_html_str
+
+
+####################################################################
+
+if __name__ == '__main__':
+    test_html_str = r'     x   y    z  '
+    test_html_str = r'</i><i> </i><br><br><i> </i><br><i> </i><br><i>'
+    # test_html_str = r'abc<br></font><i></i><br>xyz'
+    # test_html_str = r"<div></div>Some text <p></p>More text <a href='link'></a>"
+    # test_html_str = r"aaa<b><br><br><br></b>zzz"
+    test_html_str = r"<b>die</b> Ukraine"
+    test_html_str = "<div> Text </div> <span> More text </span>"
+    test_html_str = r"<div> <span> <div> <span>"
+    test_html_str = r"<div></div>"
+    test_html_str = r"(<i>Mount</i>)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Athos&nbsp;"
+    actual_result = fix_problems(test_html_str)
+    # print(actual_result)
+
+    test_html_str = "\n stripe1\t<br><br>  line21<br>    line22 <br><br>       stripe3       \t\n"
+    print(_strip_lines_and_stripes(test_html_str))
+
