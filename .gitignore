@@ -1,5 +1,39 @@
-# Python bytecode
+# Python bytecode / cache
+__pycache__/
 *.py[cod]
+*$py.class
 
-# Backup files created by editors
+# Distribution / packaging
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Environment / secrets
+.env
+.env.*
+
+# Editor / IDE
+# .vscode/
+# .idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Backup files
 *~
+
+# Test / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Type checking
+.mypy_cache/
+.pyright/
