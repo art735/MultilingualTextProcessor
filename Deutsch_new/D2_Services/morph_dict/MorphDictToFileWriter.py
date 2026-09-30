@@ -1,6 +1,7 @@
 from datetime import datetime
 
 import AppContext
+from MorphDictFromFileReader import MorphDictFromFileReader
 from MorphDictToStrConverter import MorphDictToStrConverter
 from View_enums import CurrentLanguageComboBoxEnum
 
@@ -8,6 +9,8 @@ from View_enums import CurrentLanguageComboBoxEnum
 class MorphDictToFileWriter:
     def __init__(self):
         self.morphDictToStrConverter = MorphDictToStrConverter()
+        # self.morphDictToStrConverter = morphDictToStrConverter
+        # self.morphDictFromFileReader = MorphDictFromFileReader()
 
     def write_to_file(self, morph_dict):
         # Преобразовываем morph_dict в строковое представление
@@ -59,12 +62,15 @@ test_dict = {
 }
 
 if __name__ == '__main__':
+    from BusinessObjectFactory import BusinessObjectFactory
+
     language = CurrentLanguageComboBoxEnum.GERMAN.value
     # language = CurrentLanguageComboBoxEnum.MODERN_GREEK.value
     # language = CurrentLanguageComboBoxEnum.ANCIENT_GREEK.value
     AppContext.switch_language(language)
 
     morphDictToFileWriter = MorphDictToFileWriter()
+    # morphDictToFileWriter = BusinessObjectFactory.get_morphDictToFileWriter()
     # res = morphDictToFileWriter.write_to_file(test_dict)
     # print(res)
 

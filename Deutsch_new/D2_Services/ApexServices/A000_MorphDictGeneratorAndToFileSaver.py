@@ -1,13 +1,14 @@
 import AppContext
+from MorphDictService import MorphDictService
 from MorphDictToFileWriter import MorphDictToFileWriter
 from View_enums import CurrentLanguageComboBoxEnum
 
 
 class A000_MorphDictGeneratorAndToFileSaver:
-    def __init__(self):
-        from BusinessObjectFactory import BusinessObjectFactory
+    def __init__(self, morphDictService: MorphDictService):
+        # from BusinessObjectFactory import BusinessObjectFactory
         # self.morphDictService = MorphDictService()
-        self.morphDictService = BusinessObjectFactory.get_MorphDictService()
+        self.morphDictService = morphDictService
         self.morphDictToFileWriter = MorphDictToFileWriter()
 
     def perform(self, input_text):
@@ -28,12 +29,15 @@ input_str = """
 """
 
 if __name__ == '__main__':
+    from BusinessObjectFactory import BusinessObjectFactory
+
     # language = CurrentLanguageComboBoxEnum.GERMAN.value
     language = CurrentLanguageComboBoxEnum.MODERN_GREEK.value
     # language = CurrentLanguageComboBoxEnum.ANCIENT_GREEK.value
     AppContext.switch_language(language)
 
-    a000_MorphDictGeneratorAndToFileSaver = A000_MorphDictGeneratorAndToFileSaver()
+    # a000_MorphDictGeneratorAndToFileSaver = A000_MorphDictGeneratorAndToFileSaver()
+    a000_MorphDictGeneratorAndToFileSaver = BusinessObjectFactory.create_a000_MorphDictGeneratorAndToFileSaver()
 
     res = a000_MorphDictGeneratorAndToFileSaver.perform(input_str)
     print(res)

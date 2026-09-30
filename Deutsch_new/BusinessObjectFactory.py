@@ -1,4 +1,5 @@
 import AppContext
+from A000_MorphDictGeneratorAndToFileSaver import A000_MorphDictGeneratorAndToFileSaver
 from A010_NewLemmasFinder import A010_NewLemmasFinder
 from DeuLemmaResolver import DeuLemmaResolver
 from DeuSpaCyOrStanzaWrapper import DeuSpaCyOrStanzaWrapper
@@ -6,6 +7,8 @@ from EllLemmaResolver import EllLemmaResolver
 from EllSpaCyOrStanzaWrapper import EllSpaCyOrStanzaWrapper
 from GrcSpaCyEngineWrapper import GrcSpaCyOrStanzaWrapper
 from MorphDictService import MorphDictService
+from MorphDictToFileWriter import MorphDictToFileWriter
+from MorphDictToStrConverter import MorphDictToStrConverter
 
 
 class BusinessObjectFactory:
@@ -19,15 +22,33 @@ class BusinessObjectFactory:
     #         raise ValueError(f"Unknown option: {option}")
 
     @staticmethod
-    def create_a010_NewLemmasFinder():
+    def create_a000_MorphDictGeneratorAndToFileSaver():
         morphDictService = BusinessObjectFactory.get_MorphDictService()
-        lemmaResolver = BusinessObjectFactory.get_lemmaResolver()
-        return A010_NewLemmasFinder(morphDictService, lemmaResolver)
+        return A000_MorphDictGeneratorAndToFileSaver(morphDictService)
 
     @staticmethod
     def get_MorphDictService():
         spaCyEngineWrapper = BusinessObjectFactory.get_spaCyOrStanzaWrapper()
         return MorphDictService(spaCyEngineWrapper)
+
+    # @staticmethod
+    # def get_morphDictToFileWriter():
+    #     morphDictToStrConverter = BusinessObjectFactory.get_MorphDictToStrConverter()
+    #     morphDictToFileWriter = MorphDictToFileWriter(morphDictToStrConverter)
+    #     return morphDictToFileWriter
+
+    # @staticmethod
+    # def get_MorphDictToStrConverter():
+    #     return MorphDictToStrConverter()
+
+
+    @staticmethod
+    def create_a010_NewLemmasFinder():
+        morphDictService = BusinessObjectFactory.get_MorphDictService()
+        lemmaResolver = BusinessObjectFactory.get_lemmaResolver()
+        return A010_NewLemmasFinder(morphDictService, lemmaResolver)
+
+
 
     @staticmethod
     def get_spaCyOrStanzaWrapper():
