@@ -5,10 +5,10 @@ from DeuLemmaResolver import DeuLemmaResolver
 from DeuSpaCyOrStanzaWrapper import DeuSpaCyOrStanzaWrapper
 from EllLemmaResolver import EllLemmaResolver
 from EllSpaCyOrStanzaWrapper import EllSpaCyOrStanzaWrapper
+from EngSpaCyOrStanzaWrapper import EngSpaCyOrStanzaWrapper
 from GrcSpaCyEngineWrapper import GrcSpaCyOrStanzaWrapper
+from MD1_MorphDictWithoutLemmasMaker import MD1_MorphDictWithoutLemmasMaker
 from MorphDictService import MorphDictService
-from MorphDictToFileWriter import MorphDictToFileWriter
-from MorphDictToStrConverter import MorphDictToStrConverter
 
 
 class BusinessObjectFactory:
@@ -20,6 +20,12 @@ class BusinessObjectFactory:
     #         return BusinessObjectB()
     #     else:
     #         raise ValueError(f"Unknown option: {option}")
+
+    @staticmethod
+    def create_md1_MorphDictWithoutLemmasMaker():
+        morphDictService = BusinessObjectFactory.get_MorphDictService()
+        spaCyOrStanzaWrapper = BusinessObjectFactory.get_spaCyOrStanzaWrapper()
+        return MD1_MorphDictWithoutLemmasMaker(morphDictService, spaCyOrStanzaWrapper)
 
     @staticmethod
     def create_a000_MorphDictGeneratorAndToFileSaver():
@@ -58,6 +64,8 @@ class BusinessObjectFactory:
             spaCyOrStanzaWrapper = EllSpaCyOrStanzaWrapper()
         elif AppContext.is_language_ancient_greek():
             spaCyOrStanzaWrapper = GrcSpaCyOrStanzaWrapper()
+        elif AppContext.is_language_english():
+            spaCyOrStanzaWrapper = EngSpaCyOrStanzaWrapper()
         else:
             raise Exception(f"Current language is not supported.")
         return spaCyOrStanzaWrapper

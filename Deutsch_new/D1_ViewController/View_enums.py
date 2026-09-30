@@ -5,6 +5,7 @@ class CurrentLanguageComboBoxEnum(Enum):
     GERMAN = 'German'
     MODERN_GREEK = 'Modern Greek'
     ANCIENT_GREEK = 'Ancient Greek'
+    ENGLISH = 'English'
 
 
 class MorphDictPolicyComboBoxEnum(Enum):

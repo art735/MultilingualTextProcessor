@@ -17,8 +17,8 @@ class BaseSpaCyOrStanzaWrapper:
             # `mwt`: (Multi-Word Token) Критически важен для греческого языка (например, для разделения слитных артиклей и предлогов).
             # `pos`: Определяет части речи (UPOS, XPOS) и морфологические признаки (UFeats).
             self.nlp = spacy_stanza.load_pipeline(
-                name="el",  # обязательный аргумент: имя модели/конвейера
-                lang=lang_model,
+                name=lang_model,  # код языка для spaCy (например: "en", "de", "el")
+                lang=lang_model,  # код языка для Stanza; определяет, какую языковую модель загрузить
                 processors="tokenize,mwt,pos,lemma",
                 use_gpu=False
             )

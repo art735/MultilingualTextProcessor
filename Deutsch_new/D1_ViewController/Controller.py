@@ -278,7 +278,7 @@ class View(QMainWindow):
             if current_tab == "morph_dict":
                 if self.makeMorphDictRadioButton.isChecked():
                     if self.md1_MorphDictWithoutLemmasMaker is None:
-                        self.md1_MorphDictWithoutLemmasMaker = MD1_MorphDictWithoutLemmasMaker()
+                        self.md1_MorphDictWithoutLemmasMaker = BusinessObjectFactory.create_md1_MorphDictWithoutLemmasMaker()
                     output_text = self.md1_MorphDictWithoutLemmasMaker.process(input_text_as_plain_text)
                 elif self.integrateLlmLemmasIntoMorphDictRadioButton.isChecked():
                     if self.md2_LlmLemmasIntoMorphDictIntegrator is None:

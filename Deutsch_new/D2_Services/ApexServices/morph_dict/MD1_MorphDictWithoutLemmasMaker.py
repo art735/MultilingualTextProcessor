@@ -3,11 +3,11 @@ from MorphDictToStrConverter import MorphDictToStrConverter
 from View_enums import CurrentLanguageComboBoxEnum
 
 llm_prompt = """
-\nТы – эксперт по морфологии и лемматизации иностранных языков.
+\n\nТы – эксперт по морфологии и лемматизации иностранных языков.
 
-Твоя задача: для каждого токена определить правильную лемму слова на предоставленном языке.
+Твоя задача: для каждого токена определить правильную лемму слова на предоставленном иностранном языке.
 
-Тебе предоставляется Python-словарь, ключами которого являются предложения иностранного языка,
+Тебе даётся Python-словарь, ключами которого являются предложения иностранного языка,
 а значениями - список (token, pos, morph) некоторых слов этого предложения, где:
 - token: точная словоформа
 - pos: часть речи, предсказанная внешним парсером (может быть ошибочной)
@@ -47,18 +47,15 @@ llm_prompt = """
 """
 
 class MD1_MorphDictWithoutLemmasMaker:
-    def __init__(self):
-        pass
+    def __init__(self, morphDictService, spaCyOrStanzaWrapper):
+        self.morphDictService = morphDictService
+        self.spaCyOrStanzaWrapper = spaCyOrStanzaWrapper
 
     def process(self, text_sentences):
-        morphDictService = BusinessObjectFactory.get_MorphDictService()
-        token_pos_tuples_from_all_morph_dict_files = morphDictService.read_and_merge_morph_dicts_from_all_files()
-
-        spaCyOrStanzaWrapper = BusinessObjectFactory.get_spaCyOrStanzaWrapper()
-
+        token_pos_tuples_from_all_morph_dict_files = self.morphDictService.read_and_merge_morph_dicts_from_all_files()
         result_dict = {}
         for sentence in text_sentences.strip().split('\n'):
-            tuples = spaCyOrStanzaWrapper.get_doc_object_tuples(sentence)
+            tuples = self.spaCyOrStanzaWrapper.get_doc_object_tuples(sentence)
             for current_token, current_lemma, current_pos, current_morph in tuples:
 
                 # Если токен представляет собой знак пунктуации, игнорируем его
@@ -113,17 +110,23 @@ text = """
 # Gestern haben sie einen neuen Hund adoptiert.
 # """
 
+text = """
+The children were running quickly through the fields.
+The leaves were falling quickly from the highest trees.
+"""
+
 
 if __name__ == '__main__':
     from BusinessObjectFactory import BusinessObjectFactory
 
     # language = CurrentLanguageComboBoxEnum.GERMAN.value
-    language = CurrentLanguageComboBoxEnum.MODERN_GREEK.value
+    # language = CurrentLanguageComboBoxEnum.MODERN_GREEK.value
+    language = CurrentLanguageComboBoxEnum.ENGLISH.value
     # language = CurrentLanguageComboBoxEnum.ANCIENT_GREEK.value
 
     AppContext.switch_language(language)
 
-    md1_MorphDictWithoutLemmasMaker = MD1_MorphDictWithoutLemmasMaker()
+    md1_MorphDictWithoutLemmasMaker = BusinessObjectFactory.create_md1_MorphDictWithoutLemmasMaker()
     res = md1_MorphDictWithoutLemmasMaker.process(text)
 
     # если вдруг вывод "пустой", убедиться, что язык входного текста соответствует языку, который выбран в комбобоксе

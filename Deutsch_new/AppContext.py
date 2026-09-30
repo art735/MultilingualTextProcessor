@@ -35,6 +35,8 @@ def switch_language_by_lang_code(lang_code):
         language = CurrentLanguageComboBoxEnum.MODERN_GREEK.value
     elif is_language_ancient_greek(lang_code):
         language = CurrentLanguageComboBoxEnum.ANCIENT_GREEK.value
+    elif is_language_english(lang_code):
+        language = CurrentLanguageComboBoxEnum.ENGLISH.value
     else:
         raise Exception(f"Language with code '{lang_code}' is not supported.")
     CONTAINER.settingsManager().switch_language(language)
@@ -74,6 +76,13 @@ def is_language_ancient_greek(lang_code=None):
     else:
         is_ancient_greek = get_lang_code() == 'grc'
     return is_ancient_greek
+
+def is_language_english(lang_code=None):
+    if lang_code:
+        is_english = lang_code == 'eng'
+    else:
+        is_english = get_lang_code() == 'eng'
+    return is_english
 
 
 def get_lang_code():
