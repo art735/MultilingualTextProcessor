@@ -3,7 +3,7 @@ import sys
 
 # Данный скрипт добавляет в classpath пути к бизнес-сервисам, у которых веб-сервер вызывает методы.
 # Скрипт вызывается из задачи 'Office macro http server' программы Task Scheduler следующей командой:
-# python "E:\Languages\English\SVN repo\Python software\MultilingualTextProcessor\Macros\MainMacro\http_client_server\http_server\start_server.py"
+# python "E:\Languages\[Git repo] MultilingualTextProcessor\Macros\MainMacro\http_client_server\http_server\start_server.py"
 # Задача 'Office macro http server', в свою очередь, запускается при старте системы (подробности настройки смотреть
 # в документе текущей папки).
 

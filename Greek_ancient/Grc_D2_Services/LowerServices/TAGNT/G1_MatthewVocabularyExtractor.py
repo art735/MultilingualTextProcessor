@@ -38,7 +38,7 @@ matthew_chapters = {
 # TODO: удалить этот метод и воспользоваться утилитным из модуля FileContentsReader
 def get_file_text():
     lines = []
-    base_dir = r'E:\Languages\English\SVN repo\Python software\MultilingualTextProcessor\resources\Greek\\'
+    base_dir = r'E:\Languages\[Git repo] MultilingualTextProcessor\resources\Greek\\'
     filename = 'TAGNT (Matt).txt'
     file_path = base_dir + filename
     try:

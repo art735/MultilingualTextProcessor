@@ -10,7 +10,7 @@ import FileContentsReader
 # Идея состоит в том, чтобы такая строка была в каждом файле и данный скрипт помогает найти файлы, в которых
 # эта строка по ошибке отсутствует.
 
-folder_path = r'E:\Languages\English\SVN repo\Python software\MultilingualTextProcessor\Deutsch_new'
+folder_path = r'E:\Languages\[Git repo] MultilingualTextProcessor\Deutsch_new'
 
 
 def get_file_paths():

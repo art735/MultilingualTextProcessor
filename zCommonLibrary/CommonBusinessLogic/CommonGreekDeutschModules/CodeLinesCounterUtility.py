@@ -28,6 +28,6 @@ def count_code_lines(directory):
     return total_lines
 
 
-directory = r'E:\Languages\English\SVN repo\Python software\MultilingualTextProcessor\Deutsch_new'
+directory = r'E:\Languages\[Git repo] MultilingualTextProcessor\Deutsch_new'
 no_of_lines = count_code_lines(directory)
 print(no_of_lines)

@@ -2,7 +2,7 @@ import MethodExecutionTimeLogger
 from GrammarEnums import ConversionMode
 from N2_NounGrammarConverter import NounGrammarConverter
 
-base_dir = r'E:\Languages\English\SVN repo\Python software\MultilingualTextProcessor\resources\Greek\\'
+base_dir = r'E:\Languages\[Git repo] MultilingualTextProcessor\resources\Greek\\'
 
 
 class GospelStatisticsProcessor:

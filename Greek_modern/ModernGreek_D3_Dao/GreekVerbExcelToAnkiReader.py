@@ -10,7 +10,7 @@ import ExcelDaoUtils
 ########################### ---=== GLOBAL VARIABLES ===--- ###################################################
 # Сформировать объекты КНИГИ файла Excel
 # workbookFilename = '../../resources/Deutsch.xls'
-greek_dictionary_excel_filename = 'E:/Languages/English/SVN repo/Python software/MultilingualTextProcessor/resources/Greek/Verb conjugations.xls'
+greek_dictionary_excel_filename = 'E:/Languages/[Git repo] MultilingualTextProcessor/resources/Greek/Verb conjugations.xls'
 
 # all_excel_filenames = [deutsch_lexikon_popov_excel_filename, Politik_excel_filename]
 # all_excel_filenames = [Politik_excel_filename]

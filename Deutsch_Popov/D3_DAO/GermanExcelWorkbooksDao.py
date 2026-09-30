@@ -17,12 +17,12 @@ from SlashContainingCellSplitter import SlashContainingCellSplitter
 ########################### ---=== GLOBAL VARIABLES ===--- ###################################################
 # Сформировать объекты КНИГИ файла Excel
 # workbookFilename = '../../resources/Deutsch.xls'
-base_folder = r'E:\Languages\English\SVN repo\Python software\MultilingualTextProcessor\resources\German'
+base_folder = r'E:\Languages\[Git repo] MultilingualTextProcessor\resources\German'
 deutsch_lexikon_popov_excel_filename = fr'{base_folder}\Deutsch Lexikon (!Popov).xls'
 deutsch_lexikon_other_excel_filename = fr'{base_folder}\Deutsch Lexikon (other).xls'
 
 
-# test_excel_filename = 'E:/Languages/English/SVN repo/Python software/MultilingualTextProcessor/resources/test.xls'
+# test_excel_filename = 'E:/Languages/[Git repo] MultilingualTextProcessor/resources/test.xls'
 
 
 class GermanExcelWorkbooksDao:

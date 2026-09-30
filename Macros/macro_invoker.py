@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
 
-# base_path = r'E:\Languages\English\SVN repo\Python software\MultilingualTextProcessor\Macros'
+# base_path = r'E:\Languages\[Git repo] MultilingualTextProcessor\Macros'
 #
 # def import_paths(self):
 #     subfolders = self._get_subfolders(base_path)
@@ -22,7 +22,7 @@ import sys
 #                 subfolders.append(subfolder_name)
 #     return subfolders
 
-base_path = r'E:\Languages\English\SVN repo\Python software\MultilingualTextProcessor\Macros'
+base_path = r'E:\Languages\[Git repo] MultilingualTextProcessor\Macros'
 
 sys.path.append(base_path + r'\MainMacro')
 sys.path.append(base_path + r'\SimpleNppAndOfficeMacro\Presentation_office')

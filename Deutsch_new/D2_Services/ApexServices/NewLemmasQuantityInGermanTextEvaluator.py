@@ -37,7 +37,7 @@ class NewLemmasQuantityInGermanTextEvaluator:
         # Для самопроверки алгоритма (или в будущем юнит-тестирования) хорошей техникой является брать в качестве
         # исходного текста и в качестве предложений из [Vocab]-файлов один и тот же текст. Если алгоритм не находит
         # ни одной новой леммы - это хороший признак того, что он работает правильно!
-        # base_path = r'E:\Languages\English\SVN repo\Python software\MultilingualTextProcessor\resources\German'
+        # base_path = r'E:\Languages\[Git repo] MultilingualTextProcessor\resources\German'
         # vocab_files_sentences = FileContentsReader.get_file_text_as_lines(f'{base_path}\A2 sentences.txt')
         # vocab_files_sentences = FileContentsReader.get_file_text_as_lines(f'{base_path}\B1 sentences.txt')
 
@@ -168,10 +168,10 @@ subtitle_filename = r'C:\Users\user\Desktop\Subtitles\Shrek 1 (2001)-de.srt'
 subtitle_filename = r'C:\Users\user\Desktop\Subtitles\Groundhog Day-de.srt'
 subtitle_filename = r'C:\Users\user\Desktop\Subtitles\The Terminal-de.srt'
 
-subtitle_filename = r'E:\Languages\English\SVN repo\Python software\MultilingualTextProcessor\Deutsch_new\D2_Services\zConsoleUtils\NicosWeg\Nicos Weg (A1) subtitles-de.txt'  # 1690 слов
+subtitle_filename = r'E:\Languages\[Git repo] MultilingualTextProcessor\Deutsch_new\D2_Services\zConsoleUtils\NicosWeg\Nicos Weg (A1) subtitles-de.txt'  # 1690 слов
 
 # # Goethe-Institut A1, A2, B1 sentences
-german_folder = r'E:\Languages\English\SVN repo\Python software\MultilingualTextProcessor\resources\German'
+german_folder = r'E:\Languages\[Git repo] MultilingualTextProcessor\resources\German'
 subtitle_filename = fr'{german_folder}\A1 sentences.txt'
 subtitle_filename = fr'{german_folder}\A2 sentences.txt'
 # subtitle_filename = fr'{german_folder}\A2+B1 sentences.txt'

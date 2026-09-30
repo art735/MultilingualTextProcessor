@@ -75,7 +75,7 @@ def get_transcription(word, delay_between_requests):
 
 # words = ["cat", "schedule", "encompass", "from"]
 # words = ["from"]
-# words = TxtDao.readLinesFromFile(r'e:\Languages\English\SVN repo\Python software\MultilingualTextProcessor\resources\numerals.txt')
+# words = TxtDao.readLinesFromFile(r'E:\Languages\[Git repo] MultilingualTextProcessor\resources\numerals.txt')
 #
 # delay_between_requests = 2  # delay between requests (in seconds)
 #

@@ -2,7 +2,7 @@
 import os
 import sys
 
-base_path = r'E:\Languages\English\SVN repo\Python software\MultilingualTextProcessor'
+base_path = r'E:\Languages\[Git repo] MultilingualTextProcessor'
 
 
 def import_paths():

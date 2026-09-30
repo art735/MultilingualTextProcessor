@@ -11,11 +11,11 @@ WORDS_PRIMARY_COLUMN_INDEX = 1
 ########################### ---=== GLOBAL VARIABLES ===--- ###################################################
 # Сформировать объекты КНИГИ файла Excel
 # workbookFilename = '../../resources/Deutsch.xls'
-workbookFilename = 'E:/Languages/English/SVN repo/Python software/MultilingualTextProcessor/resources/English/EnglishVocabulary.xls'
+workbookFilename = 'E:/Languages/[Git repo] MultilingualTextProcessor/resources/English/EnglishVocabulary.xls'
 
 # специально здесь идёт ссылка на EnglishDictionary (а не EnglishVocabulary как должно быть в идеале), чтобы пока временно работать сразу
 # со всеми словами без необходимости их перетаскивать порциями из файла EnglishDictionary в файл EnglishVocabulary
-# workbookFilename = 'E:/Languages/English/SVN repo/Python software/MultilingualTextProcessor/resources/English/EnglishDictionary.xls'
+# workbookFilename = 'E:/Languages/[Git repo] MultilingualTextProcessor/resources/English/EnglishDictionary.xls'
 
 
 englishVocabulary_workbook = xlrd.open_workbook(workbookFilename)

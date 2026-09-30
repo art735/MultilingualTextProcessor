@@ -17,7 +17,7 @@ LANG_CODE = 'en'
 # words = ['schedule', 'box']
 # words = ['twenty']
 words = ['one']
-# words = TxtDao.readLinesFromFile(r'e:\Languages\English\SVN repo\Python software\MultilingualTextProcessor\resources\numerals.txt')
+# words = TxtDao.readLinesFromFile(r'E:\Languages\[Git repo] MultilingualTextProcessor\resources\numerals.txt')
 
 for word in words:
     transcription = WiktionaryTranscriptionReader.get_word_transcription(LANG_CODE, word)

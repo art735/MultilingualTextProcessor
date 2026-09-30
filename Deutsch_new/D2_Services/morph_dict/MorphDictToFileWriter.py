@@ -23,7 +23,7 @@ class MorphDictToFileWriter:
             f.write(morph_dict_str)
 
         shorted_filename_for_info_msg = filename.replace(
-            'E:\Languages\English\SVN repo\Python software\MultilingualTextProcessor', '')
+            'E:\Languages\[Git repo] MultilingualTextProcessor', '')
         output = f'morph_dict is dumped to "{shorted_filename_for_info_msg}"'
 
         # Проверяем, что файл на диске действительно создался и словарь, записанный в него, равен исходному

@@ -13,7 +13,7 @@ WORDS_TERTIARY_COLUMN_INDEX = WORDS_SECONDARY_COLUMN_INDEX + 2  # столбец
 ########################### ---=== GLOBAL VARIABLES ===--- ###################################################
 # Сформировать объекты КНИГИ файла Excel
 # workbookFilename = '../../resources/Deutsch.xls'
-workbookFilename = 'E:/Languages/English/SVN repo/Python software/MultilingualTextProcessor/resources/English/EnglishDictionary.xls'
+workbookFilename = 'E:/Languages/[Git repo] MultilingualTextProcessor/resources/English/EnglishDictionary.xls'
 englishDictionary_workbook = xlrd.open_workbook(workbookFilename)
 
 # На основании объекта КНИГИ файла Excel, сформировать объекты ЛИСТОВ файла Excel

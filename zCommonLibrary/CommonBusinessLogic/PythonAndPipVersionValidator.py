@@ -6,7 +6,7 @@ from jproperties import Properties
 
 
 def _get_recommended_version_from_config(option_name):
-    app_config_filename = r'E:\Languages\English\SVN repo\Python software\MultilingualTextProcessor\app-config.properties'
+    app_config_filename = r'E:\Languages\[Git repo] MultilingualTextProcessor\app-config.properties'
 
     app_config = Properties()
     with open(app_config_filename, 'rb') as config_file:

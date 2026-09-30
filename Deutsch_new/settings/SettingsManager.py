@@ -1,5 +1,6 @@
 import os
 import re
+from pathlib import Path
 from pprint import pprint
 
 import yaml
@@ -7,7 +8,10 @@ import yaml
 import AppContext
 from View_enums import CurrentLanguageComboBoxEnum
 
-SETTINGS_FILE = r"E:\Languages\English\SVN repo\Python software\MultilingualTextProcessor\Deutsch_new\settings\settings.yaml"
+# SETTINGS_FILE = r"E:\Languages\[Git repo] MultilingualTextProcessor\Deutsch_new\settings\settings.yaml"
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+SETTINGS_FILE = PROJECT_ROOT / "settings" / "settings.yaml"
 
 class SettingsManager:
     def __init__(self, settings_file=SETTINGS_FILE):

@@ -5,7 +5,7 @@
 # - ISO 639-1 (двухбуквенные коды)
 # - ISO 639-2 (трёхбуквенные коды).
 
-resources_dir: "E:\\Languages\\English\\SVN repo\\Python software\\MultilingualTextProcessor\\resources"
+resources_dir: "E:\\Languages\\[Git repo] MultilingualTextProcessor\\resources"
 
 German:
   # общепринятый трёхбуквенный код (ISO 639-2) для немецкого языка

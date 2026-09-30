@@ -24,7 +24,7 @@ def get_word_transcription(word, ignore_definite_article=True):
 
 # words = ['der', 'die', 'das', 'die Katze', 'der Hund ', 'das     Getriebe   ', ' macht', ' (das) Berlin', '(der) Hans ']
 # words = ['zuza', '', '???']
-# # words = TxtDao.readLinesFromFile(r'e:\Languages\English\SVN repo\Python software\MultilingualTextProcessor\resources\german_words.txt')
+# # words = TxtDao.readLinesFromFile(r'E:\Languages\[Git repo] MultilingualTextProcessor\resources\german_words.txt')
 # for word in words:
 #     transcription = get_word_transcription(word, True)
 #     res = f'{word.strip()}|{transcription.strip()}'

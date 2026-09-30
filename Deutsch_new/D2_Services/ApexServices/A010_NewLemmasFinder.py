@@ -162,7 +162,7 @@ class A010_NewLemmasFinder:
 
 #############################################################
 
-# resources_dir = r'E:\Languages\English\SVN repo\Python software\MultilingualTextProcessor\resources'
+# resources_dir = r'E:\Languages\[Git repo] MultilingualTextProcessor\resources'
 # input_str = FileContentsReader.get_file_text(fr'{resources_dir}\German\all_text.txt')
 
 # input_str = "1Das ist ein Test-Text mit deutschen Wörtern wie Fußgängerübergang und E-Mail2."

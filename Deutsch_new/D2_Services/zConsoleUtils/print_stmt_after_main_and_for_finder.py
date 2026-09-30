@@ -65,7 +65,7 @@ def find_target_line(lines):
 #################################################################
 
 # Укажите путь к директории с Python-файлами
-directory_path = r"E:\Languages\English\SVN repo\Python software\MultilingualTextProcessor\Deutsch_new"
+directory_path = r"E:\Languages\[Git repo] MultilingualTextProcessor\Deutsch_new"
 result = find_matching_files(directory_path)
 
 # Вывод результата

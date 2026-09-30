@@ -6,7 +6,7 @@ import subprocess
 import UnoUtils
 
 python3_path = r"C:\Program Files\Python311\python.exe"
-multilingual_text_processor = r'E:\Languages\English\SVN repo\Python software\MultilingualTextProcessor'
+multilingual_text_processor = r'E:\Languages\[Git repo] MultilingualTextProcessor'
 
 methods_and_paths_dict = {
     "find_in_text_bracketed_transcriptions_and_process_them": multilingual_text_processor + r'\zCommonLibrary\CommonBusinessLogic\transcription_modifiers\processors\T0_TranscriptionProcessorsController.py'

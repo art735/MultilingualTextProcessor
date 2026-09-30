@@ -2,7 +2,7 @@ import xlrd
 
 class BaseExcelDao:
     def __init__(self, workbook_filename, worksheet_reader):
-        self.path_to_folder = 'E:/Languages/English/SVN repo/Python software/MultilingualTextProcessor/resources/'
+        self.path_to_folder = 'E:/Languages/[Git repo] MultilingualTextProcessor/resources'
         self.workbook_filename = self.path_to_folder + workbook_filename
         self.workbook = xlrd.open_workbook(self.workbook_filename)
         self.ALL_DATA_DICT = dict()  # глобальный словарь, в который вычитаны все данные из Excel-файла
