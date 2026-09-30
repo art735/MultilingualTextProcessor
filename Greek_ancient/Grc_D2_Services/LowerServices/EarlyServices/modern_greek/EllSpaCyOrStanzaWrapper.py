@@ -7,7 +7,7 @@ class EllSpaCyOrStanzaWrapper(BaseSpaCyOrStanzaWrapper):
         # Stanza показывает большую точность при определении pos & morph для новогреческого языка по сравнению со spaCy.
         # Факт того, что Stanza лучше spaCy для определения морфологии новогреческого языка подтверждают все ключевые LLM.
         super().__init__('Stanza', 'el', GrcTextPreprocessor())
-        # Для переключения на spaCy - просто раскоментировать ctor, расположенный ниже
+        # Для переключения на spaCy - просто раскомментировать ctor, расположенный ниже
         # super().__init__('spaCy', 'el_core_news_lg', GrcTextPreprocessor())
         self.grcRegExFinder = GrcRegExFinder()
 

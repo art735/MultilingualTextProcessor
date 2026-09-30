@@ -1,5 +1,0 @@
-
-cards = ['a', 'b', 'c']
-
-for c in cards:
-    print(c)

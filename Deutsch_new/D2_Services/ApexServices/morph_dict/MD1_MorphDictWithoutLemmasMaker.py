@@ -3,20 +3,21 @@ from MorphDictToStrConverter import MorphDictToStrConverter
 from View_enums import CurrentLanguageComboBoxEnum
 
 llm_prompt = """
-Ты – эксперт по морфологии и лемматизации новогреческого языка.
+\nТы – эксперт по морфологии и лемматизации иностранных языков.
 
-Твоя задача: для каждого токена определить правильную лемму слова в новогреческом языке.
+Твоя задача: для каждого токена определить правильную лемму слова на предоставленном языке.
 
-Тебе предоставляется Python-словарь, ключами которого являются греческие предложения, а значениями - список (token, pos, morph) некоторых слов этого предложения.
+Тебе предоставляется Python-словарь, ключами которого являются предложения иностранного языка,
+а значениями - список (token, pos, morph) некоторых слов этого предложения, где:
 - token: точная словоформа
 - pos: часть речи, предсказанная внешним парсером (может быть ошибочной)
-- morph: морфологические признаки, предсказанные внешним парсером (могут быть ошибочными)
+- morph: морфологические признаки, предсказанные внешним парсером (могут быть ошибочными).
 
 Правила:
-1. Всегда отдавай приоритет фактической греческой словоформе токена.
+1. Всегда отдавай приоритет фактической словоформе токена.
 2. Рассматривай POS и MORPH только как ориентировочные подсказки.
    - Если они противоречат форме, игнорируй их.
-3. Используй свои знания морфологии новогреческого языка, чтобы определить:
+3. Используй свои знания морфологии, чтобы определить:
    - является ли токен глаголом, существительным, прилагательным, частицей, местоимением, наречием и т. д.;
    - возможную парадигму словоизменения;
    - корректную лемму, от которой могла произойти данная форма.
@@ -39,40 +40,25 @@ llm_prompt = """
 
 и т. д.
 
-Вывод должен быть оформлен так, чтобы кластер «предложение и список его токен|лемма-строк» отделялся бы пустой строкой от аналогичных кластеров на базе других предложений с их токен|лемма-строками
+Вывод должен быть оформлен так, чтобы кластер «предложение и список его токен|лемма-строк» отделялся бы пустой строкой
+от аналогичных кластеров на базе других предложений с их токен|лемма-строками.
 
 Теперь обработай следующий Python-словарь:
 """
 
 class MD1_MorphDictWithoutLemmasMaker:
     def __init__(self):
-
-        from BusinessObjectFactory import BusinessObjectFactory
-
-        language = CurrentLanguageComboBoxEnum.MODERN_GREEK.value
-        AppContext.switch_language(language)
-
-        morphDictService = BusinessObjectFactory.get_MorphDictService()
-        self.token_pos_tuples_from_all_morph_dict_files = morphDictService.read_and_merge_morph_dicts_from_all_files()
-
-        self.ellSpaCyOrStanzaWrapper = BusinessObjectFactory.get_spaCyOrStanzaWrapper()
-
-
-    # def _get_token_pos_tuples_from_all_morph_dict_files(self):
-    #     from BusinessObjectFactory import BusinessObjectFactory
-    #
-    #     language = CurrentLanguageComboBoxEnum.MODERN_GREEK.value
-    #     AppContext.switch_language(language)
-    #
-    #     morphDictService = BusinessObjectFactory.get_MorphDictService()
-    #
-    #     token_pos_tuples_from_all_morph_dict_files = morphDictService.read_and_merge_morph_dicts_from_all_files()
-    #     return token_pos_tuples_from_all_morph_dict_files
+        pass
 
     def process(self, text_sentences):
+        morphDictService = BusinessObjectFactory.get_MorphDictService()
+        token_pos_tuples_from_all_morph_dict_files = morphDictService.read_and_merge_morph_dicts_from_all_files()
+
+        spaCyOrStanzaWrapper = BusinessObjectFactory.get_spaCyOrStanzaWrapper()
+
         result_dict = {}
         for sentence in text_sentences.strip().split('\n'):
-            tuples = self.ellSpaCyOrStanzaWrapper.get_doc_object_tuples(sentence)
+            tuples = spaCyOrStanzaWrapper.get_doc_object_tuples(sentence)
             for current_token, current_lemma, current_pos, current_morph in tuples:
 
                 # Если токен представляет собой знак пунктуации, игнорируем его
@@ -80,14 +66,17 @@ class MD1_MorphDictWithoutLemmasMaker:
                     continue
 
                 # Если токен не является именем собственным, приводим его к нижнему регистру
-                if current_pos != 'PROPN':
-                    current_token = current_token.lower()
+                # if current_pos != 'PROPN':
+                #     current_token = current_token.lower()
 
                 # Берём в дальнейшую работу только такие токены, которые не встречались ранее:
                 # 1) ни в словаре result_dict (текущая сессия)
                 # 2) ни в других morph_dict-файлах (предыдущие сессии)
                 is_token_absent_from_result_dict = not any(
-                    current_token == token and current_pos == pos
+                    # casefold() предназначен для регистронезависимого сравнения строк и работает корректнее lower()
+                    # для некоторых языков. Сравниваем здесь токены без учёта регистра, это универсальный способ для всех
+                    # языков, в т.ч. и для немецких существительных, которые всегда пишутся с большой буквы.
+                    current_token.casefold() == token.casefold() and current_pos == pos
                     for tuples in result_dict.values()
                     for token, pos, morph in tuples
                 )
@@ -97,7 +86,7 @@ class MD1_MorphDictWithoutLemmasMaker:
                     #  чтобы убедиться, что 2-й прогон формирует пустой словарь, т. к. все кортежи уже и так есть в
                     #  существующих (последнем) morph_dict-файле.
                     # Проверить отсутствие токена во всех предыдущих morph_dict-файлах (при условии, что у них и POS-теги совпадают)
-                    if (current_token, current_pos) not in self.token_pos_tuples_from_all_morph_dict_files:
+                    if (current_token, current_pos) not in token_pos_tuples_from_all_morph_dict_files:
                         new_tup = (current_token, current_pos, current_morph)
                         if sentence not in result_dict:
                             result_dict[sentence] = []
@@ -119,7 +108,23 @@ text = """
 Η Μαρία διαβάζει ένα βιβλίο.
 """
 
+# text = """
+# Sie ist sehr freundlich und hilfsbereit.
+# Gestern haben sie einen neuen Hund adoptiert.
+# """
+
+
 if __name__ == '__main__':
+    from BusinessObjectFactory import BusinessObjectFactory
+
+    # language = CurrentLanguageComboBoxEnum.GERMAN.value
+    language = CurrentLanguageComboBoxEnum.MODERN_GREEK.value
+    # language = CurrentLanguageComboBoxEnum.ANCIENT_GREEK.value
+
+    AppContext.switch_language(language)
+
     md1_MorphDictWithoutLemmasMaker = MD1_MorphDictWithoutLemmasMaker()
     res = md1_MorphDictWithoutLemmasMaker.process(text)
+
+    # если вдруг вывод "пустой", убедиться, что язык входного текста соответствует языку, который выбран в комбобоксе
     print(res)
