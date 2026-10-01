@@ -1,11 +1,11 @@
 {
 	"I am Ann.": [
-		("I", "I", "PRON", "Case=Nom|Number=Sing|Person=1|PronType=Prs"),
+		("i", "I", "PRON", "Case=Nom|Number=Sing|Person=1|PronType=Prs"),
 		("am", "be", "AUX", "Mood=Ind|Number=Sing|Person=1|Tense=Pres|VerbForm=Fin"),
 		("Ann", "Ann", "PROPN", "Number=Sing")
 	],
 	"My name is Jill.": [
-		("My", "my", "PRON", "Case=Gen|Number=Sing|Person=1|Poss=Yes|PronType=Prs"),
+		("my", "my", "PRON", "Case=Gen|Number=Sing|Person=1|Poss=Yes|PronType=Prs"),
 		("name", "name", "NOUN", "Number=Sing"),
 		("is", "be", "AUX", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"),
 		("Jill", "Jill", "PROPN", "Number=Sing")
@@ -20,16 +20,19 @@
 		("Mike", "Mike", "PROPN", "Number=Sing")
 	],
 	"Hi! I am Jake.": [
-		("Hi", "hi", "INTJ", ""),
+		("hi", "hi", "INTJ", ""),
 		("Jake", "Jake", "PROPN", "Number=Sing")
 	],
 	"He is Bill.": [
-		("He", "he", "PRON", "Case=Nom|Gender=Masc|Number=Sing|Person=3|PronType=Prs"),
+		("he", "he", "PRON", "Case=Nom|Gender=Masc|Number=Sing|Person=3|PronType=Prs"),
 		("Bill", "Bill", "PROPN", "Number=Sing")
 	],
 	"She is Pam.": [
-		("She", "she", "PRON", "Case=Nom|Gender=Fem|Number=Sing|Person=3|PronType=Prs"),
+		("she", "she", "PRON", "Case=Nom|Gender=Fem|Number=Sing|Person=3|PronType=Prs"),
 		("Pam", "Pam", "PROPN", "Number=Sing")
+	],
+	"She is fine.": [
+
 	],
 	"I am Kate.": [
 		("Kate", "Kate", "PROPN", "Number=Sing")
@@ -37,8 +40,11 @@
 	"He is Alf.": [
 		("Alf", "Alf", "PROPN", "Number=Sing")
 	],
+	"He is fine.": [
+
+	],
 	"We are fine.": [
-		("We", "we", "PRON", "Case=Nom|Number=Plur|Person=1|PronType=Prs"),
+		("we", "we", "PRON", "Case=Nom|Number=Plur|Person=1|PronType=Prs"),
 		("are", "be", "AUX", "Mood=Ind|Number=Plur|Person=1|Tense=Pres|VerbForm=Fin")
 	],
 	"I am Cliff.": [
@@ -57,7 +63,7 @@
 		("Bab", "Bab", "PROPN", "Number=Sing")
 	],
 	"His name is Tib.": [
-		("His", "his", "PRON", "Case=Gen|Gender=Masc|Number=Sing|Person=3|Poss=Yes|PronType=Prs"),
+		("his", "his", "PRON", "Case=Gen|Gender=Masc|Number=Sing|Person=3|Poss=Yes|PronType=Prs"),
 		("Tib", "Tib", "PROPN", "Number=Sing")
 	],
 	"Hi! My name is Alf. My family is fine.": [
@@ -66,14 +72,35 @@
 	"Hi! My name is Sam. My family is fine.": [
 		("Sam", "Sam", "PROPN", "Number=Sing")
 	],
+	"His name is Billy. His family is fine.": [
+
+	],
+	"Bob – he": [
+
+	],
+	"Jill – she": [
+
+	],
 	"Billy and I – we": [
 		("and", "and", "CCONJ", "")
+	],
+	"Ann – she": [
+
 	],
 	"Jane and I – we": [
 		("Jane", "Jane", "PROPN", "Number=Sing")
 	],
+	"Willy – he": [
+
+	],
+	"Kate – she": [
+
+	],
 	"Dave – he": [
 		("Dave", "Dave", "PROPN", "Number=Sing")
+	],
+	"He is Sam.": [
+
 	],
 	"Jill and I are friends.": [
 		("friends", "friend", "NOUN", "Number=Plur")
@@ -81,28 +108,102 @@
 	"Kate is my friend.": [
 		("friend", "friend", "NOUN", "Number=Sing")
 	],
-	"He is Al. She is Bab. I am Pam.": [
+	"My friend is fine.": [
+
+	],
+	"He is Billy.": [
+
+	],
+	"She is Jane.": [
+
+	],
+	"I am Sam.": [
+
+	],
+	"He is Dave.": [
+
+	],
+	"He is Al.": [
 		("Al", "Al", "PROPN", "Number=Sing")
 	],
-	"She is Nan. I am Jake. He is Bat.": [
-		("Nan", "Nan", "PROPN", "Number=Sing"),
+	"She is Bab.": [
+
+	],
+	"I am Pam.": [
+
+	],
+	"He is Mike.": [
+
+	],
+	"She is Liz.": [
+
+	],
+	"She is Nan.": [
+		("Nan", "Nan", "PROPN", "Number=Sing")
+	],
+	"I am Jake.": [
+
+	],
+	"He is Bat.": [
 		("Bat", "Bat", "PROPN", "Number=Sing")
+	],
+	"My name is Jake.": [
+
+	],
+	"His name is Willy.": [
+
+	],
+	"We are friends.": [
+
+	],
+	"Bob is my friend.": [
+
 	],
 	"Fred and Meg are friends.": [
 		("Fred", "Fred", "PROPN", "Number=Sing"),
 		("Meg", "Meg", "PROPN", "Number=Sing")
 	],
+	"He and she are fine.": [
+
+	],
+	"Bob and I are friends.": [
+
+	],
 	"She is Kitty.": [
 		("Kitty", "Kitty", "PROPN", "Number=Sing")
 	],
-	"Is Pam fine? Yes, she is.": [
-		("Yes", "yes", "INTJ", "")
+	"Meg is his friend.": [
+
+	],
+	"– Is Pam fine?": [
+
+	],
+	"– Yes, she is.": [
+		("yes", "yes", "INTJ", "")
+	],
+	"– Are we friends?": [
+
+	],
+	"– Yes, we are.": [
+
+	],
+	"– Is Willy his friend?": [
+
+	],
+	"– Yes, he is.": [
+
 	],
 	"Is your name Billy?": [
 		("your", "your", "PRON", "Case=Gen|Person=2|Poss=Yes|PronType=Prs")
 	],
+	"Is his family fine?": [
+
+	],
 	"Is his name Tim?": [
 		("Tim", "Tim", "PROPN", "Number=Sing")
+	],
+	"– Is Tim his friend?": [
+
 	],
 	"Are Ted and Peg friends?": [
 		("Ted", "Ted", "PROPN", "Number=Sing"),
@@ -116,16 +217,31 @@
 	"Dave has got a friend.": [
 		("has", "have", "AUX", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin")
 	],
+	"Meg and I have got a friend.": [
+
+	],
 	"Cliff and Brett have got a family.": [
 		("Brett", "Brett", "PROPN", "Number=Sing")
 	],
+	"My friend has got a family.": [
+
+	],
+	"Sam and Alf have got friends.": [
+
+	],
+	"Jill has got a friend.": [
+
+	],
+	"We have got a friend.": [
+
+	],
 	"Hello! My name is Ted. I am from America. Bill and I are friends.": [
-		("Hello", "hello", "INTJ", ""),
+		("hello", "hello", "INTJ", ""),
 		("from", "from", "ADP", ""),
 		("America", "America", "PROPN", "Number=Sing")
 	],
 	"She is Jane and I am Ted. We are from Great Britain.": [
-		("Great", "great", "ADJ", "Degree=Pos"),
+		("great", "great", "ADJ", "Degree=Pos"),
 		("Britain", "Britain", "PROPN", "Number=Sing")
 	],
 	"My family is fine. I am from Africa. I am a driver.": [
@@ -136,14 +252,32 @@
 		("pilot", "pilot", "NOUN", "Number=Sing"),
 		("doctor", "doctor", "NOUN", "Number=Sing")
 	],
+	"We are friends. I am from America. He is from Africa.": [
+
+	],
 	"Bab is a driver and Tom is a doctor. Bab and Tom are from Great Britain.": [
 		("Tom", "Tom", "PROPN", "Number=Sing")
+	],
+	"Sam and Kate are my friends. We are from America.": [
+
+	],
+	"His doctor is from Africa. His doctor and we are friends.": [
+
+	],
+	"Is he from Africa?": [
+
 	],
 	"We are not from Great Britain.": [
 		("not", "not", "PART", "")
 	],
+	"Is Tim his friend?": [
+
+	],
 	"I am from Ukraine.": [
 		("Ukraine", "Ukraine", "PROPN", "Number=Sing")
+	],
+	"He is a pilot.": [
+
 	],
 	"We are not pilots.": [
 		("pilots", "pilot", "NOUN", "Number=Plur")
@@ -157,8 +291,23 @@
 	"I am a pupil.": [
 		("pupil", "pupil", "NOUN", "Number=Sing")
 	],
+	"Ted is not my friend.": [
+
+	],
+	"Is he fine?": [
+
+	],
+	"Is Alf his friend?": [
+
+	],
+	"Are we friends?": [
+
+	],
+	"Kitty and Willy are pupils.": [
+
+	],
 	"Her name is Abby.": [
-		("Her", "her", "PRON", "Case=Gen|Gender=Fem|Number=Sing|Person=3|Poss=Yes|PronType=Prs"),
+		("her", "her", "PRON", "Case=Gen|Gender=Fem|Number=Sing|Person=3|Poss=Yes|PronType=Prs"),
 		("Abby", "Abby", "PROPN", "Number=Sing")
 	],
 	"Bob and Tom are drivers.": [
@@ -167,8 +316,17 @@
 	"– Are you from Great Britain?": [
 		("you", "you", "PRON", "Case=Nom|Person=2|PronType=Prs")
 	],
-	"His friend is not from Russia.": [
-		("Russia", "Russia", "PROPN", "Number=Sing")
+	"– Yes, I am.": [
+
+	],
+	"His friend is not from Ukraine.": [
+
+	],
+	"His friends are from Africa.": [
+
+	],
+	"Is her name Ann?": [
+
 	],
 	"– Are your names Jack and John?": [
 		("names", "name", "NOUN", "Number=Plur"),
@@ -179,10 +337,10 @@
 		("they", "they", "PRON", "Case=Nom|Number=Plur|Person=3|PronType=Prs")
 	],
 	"Where is she from?": [
-		("Where", "where", "ADV", "PronType=Int")
+		("where", "where", "ADV", "PronType=Int")
 	],
 	"What is your name?": [
-		("What", "what", "PRON", "PronType=Int")
+		("what", "what", "PRON", "PronType=Int")
 	],
 	"My brothers are pilots.": [
 		("brothers", "brother", "NOUN", "Number=Plur")
@@ -191,6 +349,12 @@
 		("an", "a", "DET", "Definite=Ind|PronType=Art"),
 		("engineer", "engineer", "NOUN", "Number=Sing")
 	],
+	"– Is he a doctor?": [
+
+	],
+	"They are not Pam and Liz.": [
+
+	],
 	"I have got a sister and a brother.": [
 		("sister", "sister", "NOUN", "Number=Sing"),
 		("brother", "brother", "NOUN", "Number=Sing")
@@ -198,14 +362,59 @@
 	"I have got a sister but I have not got a brother.": [
 		("but", "but", "CCONJ", "")
 	],
+	"I am from Ukraine and he is from Ukraine.": [
+
+	],
+	"He has got a friend but he has not got a brother.": [
+
+	],
+	"Alf has got a family but he has not got a friend.": [
+
+	],
 	"I am a pupil and he is a pupil, too.": [
 		("too", "too", "ADV", "")
+	],
+	"She is a pupil but her friend is not a pupil.": [
+
+	],
+	"He is a doctor but he is not my friend.": [
+
+	],
+	"His name is Ted.": [
+
+	],
+	"Her friend is Peg.": [
+
+	],
+	"His family is from Africa.": [
+
+	],
+	"His brother is a pilot.": [
+
+	],
+	"Her friend is from Great Britain.": [
+
+	],
+	"My family is fine.": [
+
+	],
+	"My sister is a teacher. She is a teacher.": [
+
+	],
+	"Bob is my friend. He is a pilot.": [
+
 	],
 	"My father is a driver. He is a driver.": [
 		("father", "father", "NOUN", "Number=Sing")
 	],
+	"My sister and I are from America. We are from America.": [
+
+	],
 	"The pupil is from Africa. She is from Africa.": [
-		("The", "the", "DET", "Definite=Def|PronType=Art")
+		("the", "the", "DET", "Definite=Def|PronType=Art")
+	],
+	"Ted and Mike are fine. They are fine.": [
+
 	],
 	"My grandfather and grandmother are from Kyiv. They are from Kyiv.": [
 		("grandfather", "grandfather", "NOUN", "Number=Sing"),
@@ -219,8 +428,14 @@
 	"Your mother is not an engineer. She is not an engineer.": [
 		("mother", "mother", "NOUN", "Number=Sing")
 	],
+	"My grandfather is fine. He is fine.": [
+
+	],
 	"My sisters and I are pupils. We are pupils.": [
 		("sisters", "sister", "NOUN", "Number=Plur")
+	],
+	"My brother is a teacher. He is fine.": [
+
 	],
 	"Her son is fine. He is fine.": [
 		("son", "son", "NOUN", "Number=Sing")
@@ -230,30 +445,142 @@
 		("engineers", "engineer", "NOUN", "Number=Plur"),
 		("doctors", "doctor", "NOUN", "Number=Plur")
 	],
+	"Have you got a sister?": [
+
+	],
+	"Has he got a friend?": [
+
+	],
+	"Has she got a family?": [
+
+	],
+	"Have we got brothers?": [
+
+	],
+	"Have they got a son?": [
+
+	],
 	"Have Jill and I got a father and a mother?": [
-		("Have", "have", "VERB", "Mood=Ind|VerbForm=Fin")
+		("have", "have", "VERB", "Mood=Ind|VerbForm=Fin")
+	],
+	"Has Kate got a son?": [
+
+	],
+	"Has my friend got a sister and a brother?": [
+
+	],
+	"Have you got a friend?": [
+
+	],
+	"Have they got a grandmother?": [
+
 	],
 	"– Who is she?": [
-		("Who", "who", "PRON", "PronType=Int")
+		("who", "who", "PRON", "PronType=Int")
 	],
-	"I see a cat and 3 dogs.": [
+	"– She is my mother.": [
+
+	],
+	"– What is she?": [
+
+	],
+	"– She is a doctor.": [
+
+	],
+	"– Where is she from?": [
+
+	],
+	"– She is from America.": [
+
+	],
+	"– What is her name?": [
+
+	],
+	"– Her name is Abby.": [
+
+	],
+	"– Who is he?": [
+
+	],
+	"– He is my son.": [
+
+	],
+	"– What is he?": [
+
+	],
+	"– He is a pupil.": [
+
+	],
+	"– Where is he from?": [
+
+	],
+	"– He is from Africa.": [
+
+	],
+	"Tom and Bob are pupils.": [
+
+	],
+	"Liz is a pilot.": [
+
+	],
+	"I have got three brothers.": [
+		("three", "three", "NUM", "NumForm=Word|NumType=Card")
+	],
+	"I see a cat and three dogs.": [
 		("see", "see", "VERB", "Mood=Ind|Number=Sing|Person=1|Tense=Pres|VerbForm=Fin"),
 		("cat", "cat", "NOUN", "Number=Sing"),
 		("dogs", "dog", "NOUN", "Number=Plur")
 	],
-	"He is a worker. They are doctors. Alf is an engineer. Jane and Kate are teachers.": [
-		("worker", "worker", "NOUN", "Number=Sing"),
+	"My father is a driver.": [
+
+	],
+	"I am a pupil. My brothers are pupils. My sister is not a pupil.": [
+
+	],
+	"He is a worker.": [
+		("worker", "worker", "NOUN", "Number=Sing")
+	],
+	"They are doctors.": [
+
+	],
+	"Alf is an engineer.": [
+
+	],
+	"Jane and Kate are teachers.": [
 		("teachers", "teacher", "NOUN", "Number=Plur")
 	],
-	"My uncle is a driver. My friend and I are pupils. Kate is her daughter.": [
-		("uncle", "uncle", "NOUN", "Number=Sing"),
+	"My uncle is a driver.": [
+		("uncle", "uncle", "NOUN", "Number=Sing")
+	],
+	"My friend and I are pupils.": [
+
+	],
+	"Kate is her daughter.": [
 		("daughter", "daughter", "NOUN", "Number=Sing")
+	],
+	"He has got two uncles.": [
+		("two", "two", "NUM", "NumForm=Word|NumType=Card")
+	],
+	"Al is a teacher and Tom is a doctor.": [
+
+	],
+	"They are not engineers.": [
+
+	],
+	"Who is a pilot?": [
+
+	],
+	"Are your aunts from Africa?": [
+
 	],
 	"His friends are not cosmonauts.": [
 		("cosmonauts", "cosmonaut", "NOUN", "Number=Plur")
 	],
+	"Where is her daughter?": [
+
+	],
 	"How are his sons?": [
-		("How", "how", "ADV", "PronType=Int"),
+		("how", "how", "ADV", "PronType=Int"),
 		("sons", "son", "NOUN", "Number=Plur")
 	],
 	"He likes his dog.": [
@@ -269,6 +596,9 @@
 		("want", "want", "VERB", "Mood=Ind|Number=Plur|Person=3|Tense=Pres|VerbForm=Fin"),
 		("work", "work", "VERB", "VerbForm=Inf")
 	],
+	"My teacher likes her pupils.": [
+
+	],
 	"She wants to have a friend.": [
 		("wants", "want", "VERB", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin")
 	],
@@ -278,8 +608,14 @@
 	"His brother wants to be a pupil.": [
 		("be", "be", "AUX", "VerbForm=Inf")
 	],
+	"Ann and Sam want to have a dog.": [
+
+	],
 	"Ann’s father likes his work.": [
 		("work", "work", "NOUN", "Number=Sing")
+	],
+	"You want to be a doctor.": [
+
 	],
 	"I do not like his friends.": [
 		("do", "do", "AUX", "Mood=Ind|Number=Sing|Person=1|Tense=Pres|VerbForm=Fin")
@@ -288,22 +624,67 @@
 		("book", "book", "NOUN", "Number=Sing")
 	],
 	"Does your sister want to be a doctor?": [
-		("Does", "do", "AUX", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin")
+		("does", "do", "AUX", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin")
+	],
+	"Do you want to be a driver?": [
+
+	],
+	"He does not like her sister.": [
+
+	],
+	"Her sister does not like my friend.": [
+
+	],
+	"Do they like my teacher?": [
+
 	],
 	"My aunt does not want to be a worker.": [
 		("aunt", "aunt", "NOUN", "Number=Sing")
+	],
+	"They do not like to be his friends.": [
+
+	],
+	"Does he want to be a pilot?": [
+
+	],
+	"Do they want to be pupils?": [
+
+	],
+	"Do you like her book?": [
+
+	],
+	"My teacher does not like his book.": [
+
 	],
 	"I do not want to do it.": [
 		("do", "do", "VERB", "VerbForm=Inf"),
 		("it", "it", "PRON", "Case=Acc|Gender=Neut|Number=Sing|Person=3|PronType=Prs")
 	],
+	"He does not want to be a pilot.": [
+
+	],
 	"I do not like to have many friends.": [
 		("many", "many", "ADJ", "Degree=Pos")
+	],
+	"I see a doctor.": [
+
+	],
+	"My father is an engineer.": [
+
+	],
+	"Bob has got a brother.": [
+
+	],
+	"She has got an uncle.": [
+
 	],
 	"I have got an apple, an orange and a banana.": [
 		("apple", "apple", "NOUN", "Number=Sing"),
 		("orange", "orange", "NOUN", "Number=Sing"),
 		("banana", "banana", "NOUN", "Number=Sing")
+	],
+	"a: sister, family, driver, worker, cat": [
+
 	],
 	"an: orange, ear, engineer, apple, elephant": [
 		("orange", "orange", "ADJ", "Degree=Pos"),
@@ -313,23 +694,89 @@
 	"Is it a banana or an apple?": [
 		("or", "or", "CCONJ", "")
 	],
+	"Is your mother a teacher or a doctor?": [
+
+	],
+	"His brother is not an engineer.": [
+
+	],
 	"Do you want to be a cosmonaut?": [
 		("cosmonaut", "cosmonaut", "NOUN", "Number=Sing")
 	],
 	"I have got a sister. Her name is Jenny. She has got a cat. She has got a dog, too. Jenny is not an engineer.": [
 		("Jenny", "Jenny", "PROPN", "Number=Sing")
 	],
+	"Tom has got a family. He has got a mother, a father, a sister and two brothers.": [
+
+	],
+	"Have you got a family? Is your name Tom? Have you got a brother? Is he an engineer?": [
+
+	],
+	"I am a pupil. My father is an engineer.": [
+
+	],
+	"I have got an uncle. His name is Tom.": [
+
+	],
+	"I have got a brother. He is a pupil.": [
+
+	],
+	"Billy and Willy are friends.": [
+
+	],
+	"Is he your brother?": [
+
+	],
+	"– Are you a pilot?": [
+
+	],
 	"– No, I am not.": [
-		("No", "no", "INTJ", "Polarity=Neg")
+		("no", "no", "INTJ", "Polarity=Neg")
 	],
 	"He has got two brothers. They have got friends.": [
-		("two", "two", "NUM", "NumForm=Word|NumType=Card")
+
+	],
+	"I have got a family. We have got a dog.": [
+
+	],
+	"Do you want to be a pilot?": [
+
 	],
 	"Does she like to play with her cat?": [
 		("with", "with", "ADP", "")
 	],
+	"Does Sam want to be a doctor?": [
+
+	],
 	"Do you love your family?": [
 		("love", "love", "VERB", "VerbForm=Inf")
+	],
+	"– Where is Mike from?": [
+
+	],
+	"– He is from Ukraine.": [
+
+	],
+	"– What is his name?": [
+
+	],
+	"– His name is Jack.": [
+
+	],
+	"– She is my sister.": [
+
+	],
+	"– What is Ann?": [
+
+	],
+	"– Ann is a teacher.": [
+
+	],
+	"She has got a grandmother and a grandfather.": [
+
+	],
+	"Are you from America or from Africa?": [
+
 	],
 	"I have got a sister but I haven’t got a brother.": [
 		("haven", "have", "VERB", "Mood=Ind|Number=Sing|Person=1|Tense=Pres|VerbForm=Fin"),
@@ -337,9 +784,18 @@
 	],
 	"I love my sister and she loves me.": [
 		("loves", "love", "VERB", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"),
-		("me", "I", "PRON", "Case=Acc|Number=Sing|Person=1|PronType=Prs")
+		("me", "me", "PRON", "Case=Acc|Number=Sing|Person=1|PronType=Prs")
 	],
-	"We have got 2 cats.": [
+	"I have got a dog.": [
+
+	],
+	"We have got two cats.": [
 		("cats", "cat", "NOUN", "Number=Plur")
+	],
+	"She has got three brothers.": [
+
+	],
+	"Kate has got a sister.": [
+
 	]
 }
