@@ -64,11 +64,10 @@ class MD1_MorphDictWithoutLemmasMaker:
         #    │
         #    └─ да
         #        │
-        #        └─ каждый token + POS
+        #        └─ бизнес-ключ token + POS
         #              │
-        #              ├─ уже в текущем предложении → skip
-        #              ├─ уже в текущей сессии    → skip
-        #              ├─ уже в старых morph_dict → skip
+        #              ├─ встречается в текущей сессии    → skip
+        #              ├─ встречается в существующих morph_dict-файлах → skip
         #              └─ иначе → добавить
         #        │
         #        └─ предложение добавить ВСЕГДА
@@ -83,6 +82,10 @@ class MD1_MorphDictWithoutLemmasMaker:
             for sentence_tuples in all_morph_dict_files_merged_dict.values()
             for existing_token, *_, existing_pos, _ in sentence_tuples
         }
+
+        # Текущий язык не меняется в процессе работы метода, поэтому получаем его один раз до циклов,
+        # вместо многократного вызова в цикле AppContext.get_current_language() для каждого токена.
+        current_language = AppContext.get_current_language()
 
         result_dict = {}
 
@@ -107,12 +110,9 @@ class MD1_MorphDictWithoutLemmasMaker:
             # Список кортежей (token, POS, morph) текущего предложения
             sentence_tuples = []
 
-            # Множество уникальных пар (token, POS), уже добавленных в текущее предложение.
-            seen_token_pos_from_current_sentence = set()
-
             tuples = self.spaCyOrStanzaWrapper.get_doc_object_tuples(sentence)
 
-            # current_lemma здесь намеренно игнорируется с помощью _, т. к. она здесь нигде не используется.
+            # current_lemma здесь намеренно игнорируется с помощью `_`, т. к. она здесь нигде не используется.
             for current_token, _, current_pos, current_morph in tuples:
 
                 # Если токен представляет собой знак пунктуации,
@@ -124,11 +124,10 @@ class MD1_MorphDictWithoutLemmasMaker:
                 current_token = self._normalize_token_case(
                     current_token,
                     current_pos,
-                    AppContext.get_current_language()
+                    current_language
                 )
 
-                # Единый ключ для всех проверок token + POS.
-                #
+                # Формируем составной бизнес-ключ для всех проверок token + POS.
                 # casefold() вызывается внутри _token_pos_key(), поэтому в остальных местах программы повторять
                 # current_token.casefold() / existing_token.casefold() не нужно.
                 token_pos_key = self._token_pos_key(
@@ -138,27 +137,18 @@ class MD1_MorphDictWithoutLemmasMaker:
 
                 # Поиск через оператор in внутри set() работает за O(1), что намного эффективнее, чем искать в списках.
 
-                # Token check #1. Есть ли такой token + POS в текущем предложении? Если да, то пропускаем его.
-                if token_pos_key in seen_token_pos_from_current_sentence:
-                    continue
-
-                # Token check #2. Есть ли такой token + POS в result_dict текущей сессии? Если да, то пропускаем его.
-                if token_pos_key in seen_token_pos_from_current_session:
-                    continue
-
-                # Token check #3. Есть ли такой token + POS в предыдущих morph_dict-файлах? Если да, то пропускаем его.
-                if token_pos_key in seen_token_pos_from_all_morph_dicts:
+                # Встречался ли такой составной бизнес-ключ `token + POS` в текущей сессии или в предыдущих morph_dict-файлах?
+                # Если да, то пропускаем его, такой токен нас больше не интересует, т. к. он точно не сможет дать новую лемму в будущем.
+                if token_pos_key in seen_token_pos_from_current_session or \
+                        token_pos_key in seen_token_pos_from_all_morph_dicts:
                     continue
 
                 # В данной точке кода очевидно, что token + POS отсутствует во всех существующих наборах данных
-                # (текущего предложения, текущей сессии и во всех morph_dict-файлах). Значит добавляем его в результаты.
+                # (текущей сессии и во всех morph_dict-файлах). Значит добавляем его в результаты.
                 new_tup = (current_token, current_pos, current_morph)
                 sentence_tuples.append(new_tup)
 
-                # Фиксируем токен как уже использованный и в текущем предложении, и в текущей сессии.
-                seen_token_pos_from_current_sentence.add(token_pos_key)
-                # Обязательно нужно добавлять token_pos_key и в результат текущей сессии, т. к. по завершении
-                # внутреннего цикла все накопленные пары текущего предложения будут очищены.
+                # Фиксируем токен как уже использованный в текущей сессии.
                 seen_token_pos_from_current_session.add(token_pos_key)
 
             # Предложение добавляется в результат НЕЗАВИСИМО от того, имеет ли оно хотя бы один новый токен.
