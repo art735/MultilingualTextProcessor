@@ -56,15 +56,17 @@ class MorphDictService:
         # Вычитываем имена всех morph_dict файлов
         all_morph_dict_filenames = self.filenameUtils.get_all_morph_dict_filenames()
 
+        # Не получилось сделать result множеством (set) (чтобы оно подстраховывало от дубликатов), потому что morph
+        # представляет собой словарь, который является unhashable
         result = []
         for morph_dict_filename in all_morph_dict_filenames:
             # Вычитываем из файла строковое представление morph_dict и преобразуем его в Python-объект.
             morph_dict = self.morphDictFromFileReader.read_from_file(morph_dict_filename)
 
-            # Перебираем все кортежи в словаре и формируем из них список кортежей вида (token, pos)
+            # Перебираем все кортежи в словаре и формируем из них результирующий список кортежей
             for lst in morph_dict.values():
-                for token, lemma, pos, morph in lst:
-                    result.append((token, pos))
+                for tup in lst:
+                    result.append(tup)
 
         return result
 

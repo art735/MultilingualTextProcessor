@@ -46,55 +46,137 @@ llm_prompt = """
 Теперь обработай следующий Python-словарь:
 """
 
+
 class MD1_MorphDictWithoutLemmasMaker:
+
     def __init__(self, morphDictService, spaCyOrStanzaWrapper):
         self.morphDictService = morphDictService
         self.spaCyOrStanzaWrapper = spaCyOrStanzaWrapper
+        # простой утилитный класс, пока не стал его передавать через DI, хотя ChatGPT советует так сделать для
+        # поддержания общей архитектуры передачи зависимостей через ctor
+        self.morphDictToStrConverter = MorphDictToStrConverter()
 
     def process(self, text_sentences):
-        token_pos_tuples_from_all_morph_dict_files = self.morphDictService.read_and_merge_morph_dicts_from_all_files()
+
+        tuples_from_all_morph_dict_files = (
+            self.morphDictService.read_and_merge_morph_dicts_from_all_files()
+        )
+
         result_dict = {}
-        for sentence in text_sentences.strip().split('\n'):
+
+        # `splitlines()` надёжнее, чем `text_sentences.split('\n')`, т. к. splitlines() корректно работает с разными
+        # вариантами перевода строк (\n, \r\n и т. д.).
+        for sentence in (s.strip() for s in text_sentences.splitlines() if s.strip()):
+
             tuples = self.spaCyOrStanzaWrapper.get_doc_object_tuples(sentence)
+
             for current_token, current_lemma, current_pos, current_morph in tuples:
 
                 # Если токен представляет собой знак пунктуации, игнорируем его
                 if current_pos == 'PUNCT':
                     continue
 
-                # Если токен не является именем собственным, приводим его к нижнему регистру
-                # if current_pos != 'PROPN':
-                #     current_token = current_token.lower()
+                # Приводим токен к нужному регистру в зависимости
+                # от языка и POS.
+                current_token = self._normalize_token_case(
+                    current_token,
+                    current_pos,
+                    AppContext.get_current_language()
+                )
 
                 # Берём в дальнейшую работу только такие токены, которые не встречались ранее:
                 # 1) ни в словаре result_dict (текущая сессия)
                 # 2) ни в других morph_dict-файлах (предыдущие сессии)
-                is_token_absent_from_result_dict = not any(
-                    # casefold() предназначен для регистронезависимого сравнения строк и работает корректнее lower()
-                    # для некоторых языков. Сравниваем здесь токены без учёта регистра, это универсальный способ для всех
-                    # языков, в т.ч. и для немецких существительных, которые всегда пишутся с большой буквы.
-                    current_token.casefold() == token.casefold() and current_pos == pos
-                    for tuples in result_dict.values()
-                    for token, pos, morph in tuples
+
+                # Сравнение токенов выполняется без учёта регистра как подстраховка на случай, когда регистр токена
+                # в словаре был  подправлен в ручную как исправление ошибки работы Stanza (теоретически она может
+                # неверно определить POS слова: посчитать слово PROPN, когда оно таким не является или же наоборот
+                # не заметить настоящее PROPN и присвоить ему NOUN и т. д.).
+                # POS должен совпадать.
+                is_token_absent_from_result_dict = all(
+                    self._is_token_pos_absent(
+                        current_token,
+                        current_pos,
+                        sentence_tuples
+                    )
+                    for sentence_tuples in result_dict.values()
                 )
 
-                if is_token_absent_from_result_dict:
-                    # TODO: прогнать алгоритм 2 раза подряд (сохранив после 1-го раза результаты в morph_dict-файл),
-                    #  чтобы убедиться, что 2-й прогон формирует пустой словарь, т. к. все кортежи уже и так есть в
-                    #  существующих (последнем) morph_dict-файле.
-                    # Проверить отсутствие токена во всех предыдущих morph_dict-файлах (при условии, что у них и POS-теги совпадают)
-                    if (current_token, current_pos) not in token_pos_tuples_from_all_morph_dict_files:
-                        new_tup = (current_token, current_pos, current_morph)
-                        if sentence not in result_dict:
-                            result_dict[sentence] = []
-                        result_dict[sentence].append(new_tup)
+                # Проверяем отсутствие токена во всех предыдущих
+                # morph_dict-файлах.
+                #
+                # Здесь также используется регистронезависимое сравнение.
+                is_token_absent_from_morph_dict_files = (
+                    self._is_token_pos_absent(
+                        current_token,
+                        current_pos,
+                        tuples_from_all_morph_dict_files
+                    )
+                )
 
-        morphDictToStrConverter = MorphDictToStrConverter()
-        result_dict_str = morphDictToStrConverter.morph_dict_to_str(result_dict)
+                if is_token_absent_from_result_dict and is_token_absent_from_morph_dict_files:
+                    new_tup = (current_token, current_pos, current_morph)
+                    # метод setdefault() нужен для того, чтобы получить значение по ключу,
+                    # а если такого ключа ещё нет — одновременно создать его со значением по умолчанию.
+                    result_dict.setdefault(sentence, []).append(new_tup)
 
+        result_dict_str = self.morphDictToStrConverter.morph_dict_to_str(result_dict)
         result = f'{llm_prompt}\n{result_dict_str}'.strip()
-        # result = f'{result_dict_str}'
         return result
+
+    @staticmethod
+    def _normalize_token_case(token, pos, language):
+        """
+        Приводит токен к нижнему регистру с учётом языка и POS.
+
+        Немецкий:
+            PROPN и NOUN сохраняют исходный регистр.
+
+        Остальные языки:
+            PROPN сохраняет исходный регистр.
+            Все остальные токены приводятся к нижнему регистру.
+        """
+
+        if language == CurrentLanguageComboBoxEnum.GERMAN.value:
+            if pos in {'PROPN', 'NOUN'}:
+                return token
+        else:
+            if pos == 'PROPN':
+                return token
+
+        return token.lower()
+
+    @staticmethod
+    def _is_token_pos_absent(token, pos, morph_dict_tuples):
+        """
+        Проверяет, отсутствует ли в переданном наборе токенов
+        токен с таким же POS.
+
+        Сравнение токенов выполняется без учёта регистра.
+        Это необходимо, например, для:
+            The / the
+            Μαρία / μαρία
+
+        POS при этом должен совпадать.
+        """
+
+        # casefold() предназначен для регистронезависимого сравнения строк и работает корректнее lower() для некоторых языков.
+        # Сравниваем здесь токены без учёта регистра, это универсальный способ для всех языков.
+
+        # any() отвечает на вопрос: Есть ли хотя бы один такой элемент?
+        # Тогда: not any(...) читается как: Нет ни одного такого элемента.
+        # Это практически дословно соответствует названию функции _is_token_pos_absent().
+        # И семантически not any(...) здесь лучше чем all()
+
+        # В данный метод передаются кортежи двух разных форматов:
+        # 1) кортежи в result_dict: (existing_token, existing_pos, morph)
+        # 2) кортежи из morph_diсt-файлов: (existing_token, EXISTING_LEMMA, existing_pos, morph)
+        # Из кортежей обоих типов нужно взять только existing_token и existing_pos, поэтому применяется синтаксис *_ для existing_lemma
+        return not any(
+            token.casefold() == existing_token.casefold() and pos == existing_pos
+            for existing_token, *_, existing_pos, morph in morph_dict_tuples
+        )
+
 
 ####################################################################
 
