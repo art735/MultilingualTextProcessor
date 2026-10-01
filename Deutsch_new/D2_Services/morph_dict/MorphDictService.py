@@ -56,19 +56,13 @@ class MorphDictService:
         # Вычитываем имена всех morph_dict файлов
         all_morph_dict_filenames = self.filenameUtils.get_all_morph_dict_filenames()
 
-        # Не получилось сделать result множеством (set) (чтобы оно подстраховывало от дубликатов), потому что morph
-        # представляет собой словарь, который является unhashable
-        result = []
+        all_morph_dict_files_merged_dict = dict()
         for morph_dict_filename in all_morph_dict_filenames:
             # Вычитываем из файла строковое представление morph_dict и преобразуем его в Python-объект.
             morph_dict = self.morphDictFromFileReader.read_from_file(morph_dict_filename)
+            all_morph_dict_files_merged_dict.update(morph_dict)
 
-            # Перебираем все кортежи в словаре и формируем из них результирующий список кортежей
-            for lst in morph_dict.values():
-                for tup in lst:
-                    result.append(tup)
-
-        return result
+        return all_morph_dict_files_merged_dict
 
     # Business method #2. Generates a morphological dictionary for a given text on the fly.
     def generate_morph_dict_on_the_fly(self, input_text):

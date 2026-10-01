@@ -1,3 +1,5 @@
+from itertools import chain
+
 import AppContext
 from MorphDictToStrConverter import MorphDictToStrConverter
 from View_enums import CurrentLanguageComboBoxEnum
@@ -24,7 +26,7 @@ llm_prompt = """
 4. Если форма морфологически неоднозначна, используй контекст для разрешения.
 5. Если контекст отсутствует, выбирай лемму, наиболее совместимую с морфологией и наиболее распространённую.
 6. Не давай объяснений, если они явно не запрошены.
-7. Выводи результат строго в следующем формате JSON:
+7. Выводи результат строго в следующем текстовом формате:
 
 предложение1
 токен11|лемма11
@@ -58,9 +60,9 @@ class MD1_MorphDictWithoutLemmasMaker:
 
     def process(self, text_sentences):
 
-        tuples_from_all_morph_dict_files = (
-            self.morphDictService.read_and_merge_morph_dicts_from_all_files()
-        )
+        all_morph_dict_files_merged_dict = self.morphDictService.read_and_merge_morph_dicts_from_all_files()
+        # сквозной список всех кортежей
+        tuples_from_all_morph_dict_files = list(chain.from_iterable(all_morph_dict_files_merged_dict.values()))
 
         result_dict = {}
 
@@ -68,9 +70,25 @@ class MD1_MorphDictWithoutLemmasMaker:
         # вариантами перевода строк (\n, \r\n и т. д.).
         for sentence in (s.strip() for s in text_sentences.splitlines() if s.strip()):
 
+            # Уровень 1: встречалось ли ранее само предложение?
+            #        ↓
+            #      да → вообще не добавляем предложение
+            #      нет → добавляем предложение
+            #
+            # Уровень 2: какие токены этого предложения нужны внутри него?
+            #        ↓
+            #   только те токены, которые не встречались ранее (учитывая и связанный с ними POS)
+
+            # Если предложение ранее встречалось, игнорируем его и переходим к следующему предложению
+            if sentence in result_dict or sentence in all_morph_dict_files_merged_dict:
+                continue
+
+            sentence_with_tuples = {sentence: []}
+
             tuples = self.spaCyOrStanzaWrapper.get_doc_object_tuples(sentence)
 
-            for current_token, current_lemma, current_pos, current_morph in tuples:
+            # current_lemma здесь намеренно игнорируется с помощью _, т. к. она здесь нигде не используется
+            for current_token, _, current_pos, current_morph in tuples:
 
                 # Если токен представляет собой знак пунктуации, игнорируем его
                 if current_pos == 'PUNCT':
@@ -85,14 +103,26 @@ class MD1_MorphDictWithoutLemmasMaker:
                 )
 
                 # Берём в дальнейшую работу только такие токены, которые не встречались ранее:
-                # 1) ни в словаре result_dict (текущая сессия)
-                # 2) ни в других morph_dict-файлах (предыдущие сессии)
+                # 1) ни в списке токенов текущего предложения
+                # 2) ни в словаре result_dict (текущая сессия)
+                # 3) ни в других morph_dict-файлах (предыдущие сессии)
 
                 # Сравнение токенов выполняется без учёта регистра как подстраховка на случай, когда регистр токена
-                # в словаре был  подправлен в ручную как исправление ошибки работы Stanza (теоретически она может
+                # в словаре был подправлен вручную как исправление ошибки работы Stanza (теоретически она может
                 # неверно определить POS слова: посчитать слово PROPN, когда оно таким не является или же наоборот
                 # не заметить настоящее PROPN и присвоить ему NOUN и т. д.).
                 # POS должен совпадать.
+
+                # Token check #1. Есть ли токен в списке токенов текущего предложения. Если да, то пропукаем его.
+                is_token_absent_from_current_sentence = self._is_token_pos_absent(
+                    current_token,
+                    current_pos,
+                    sentence_with_tuples[sentence]  # токены текущего предложения
+                )
+                if not is_token_absent_from_current_sentence:
+                    continue
+
+                # Token check #2. Есть ли токен в result_dict (текущая сессия). Если да, то пропукаем его.
                 is_token_absent_from_result_dict = all(
                     self._is_token_pos_absent(
                         current_token,
@@ -101,24 +131,27 @@ class MD1_MorphDictWithoutLemmasMaker:
                     )
                     for sentence_tuples in result_dict.values()
                 )
+                if not is_token_absent_from_result_dict:
+                    continue
 
-                # Проверяем отсутствие токена во всех предыдущих
-                # morph_dict-файлах.
-                #
-                # Здесь также используется регистронезависимое сравнение.
-                is_token_absent_from_morph_dict_files = (
-                    self._is_token_pos_absent(
+                # Token check #3. Есть ли токен в других morph_dict-файлах (предыдущие сессии). Если да, то пропукаем его.
+                is_token_absent_from_morph_dict_files = self._is_token_pos_absent(
                         current_token,
                         current_pos,
                         tuples_from_all_morph_dict_files
                     )
-                )
+                if not is_token_absent_from_morph_dict_files:
+                    continue
 
-                if is_token_absent_from_result_dict and is_token_absent_from_morph_dict_files:
-                    new_tup = (current_token, current_pos, current_morph)
-                    # метод setdefault() нужен для того, чтобы получить значение по ключу,
-                    # а если такого ключа ещё нет — одновременно создать его со значением по умолчанию.
-                    result_dict.setdefault(sentence, []).append(new_tup)
+                # В данной точке кода очевидно, что токена нет во всех существующих наборах данных, поэтому добавляем
+                # его в результирующий набор.
+                new_tup = (current_token, current_pos, current_morph)
+                sentence_with_tuples[sentence].append(new_tup)
+                # end of loop over tuples
+
+            # update() добавляет новые ключи в конец словаря, сохраняя их порядок
+            result_dict.update(sentence_with_tuples)
+            # end of loop over sentences
 
         result_dict_str = self.morphDictToStrConverter.morph_dict_to_str(result_dict)
         result = f'{llm_prompt}\n{result_dict_str}'.strip()
@@ -174,7 +207,7 @@ class MD1_MorphDictWithoutLemmasMaker:
         # Из кортежей обоих типов нужно взять только existing_token и existing_pos, поэтому применяется синтаксис *_ для existing_lemma
         return not any(
             token.casefold() == existing_token.casefold() and pos == existing_pos
-            for existing_token, *_, existing_pos, morph in morph_dict_tuples
+            for existing_token, *_, existing_pos, _ in morph_dict_tuples
         )
 
 
@@ -194,9 +227,10 @@ text = """
 
 text = """
 The children were running quickly through the fields.
+The children were running through the fields quickly.
 The leaves were falling quickly from the highest trees.
+The leaves were falling from the highest trees quickly.
 """
-
 
 if __name__ == '__main__':
     from BusinessObjectFactory import BusinessObjectFactory
