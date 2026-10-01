@@ -1,18 +1,16 @@
+import AppContext
 from EllDefiniteArticleService import EllDefiniteArticleService
 from ExcelService import ExcelService
 from SpaCyPosResolver import SpaCyPosResolver
+from View_enums import CurrentLanguageComboBoxEnum
 
 
-# осенью 2024 - зимой 2025 обрабатывал материалы уровня A1 из Гёте-методички следующими версиями библиотек:
-# spaCy: 3.7.5
-# de_dep_news_trf: 3.7.2
-
-class EllLemmaResolver:
+class EngLemmaResolver:
 
     def __init__(self):
         self.excelService = ExcelService()
         self.spaCyPosResolver = SpaCyPosResolver()
-        self.ellDefiniteArticleService = EllDefiniteArticleService()
+        # self.ellDefiniteArticleService = EllDefiniteArticleService()
         # self.germanPronounLemmaService = GermanPronounLemmaService()
         # self.determinerService = DeterminerService()
         # self.auxiliaryVerbService = AuxiliaryVerbService()
@@ -49,13 +47,13 @@ class EllLemmaResolver:
         # в строгом смысле слова леммой уже считаться не может.
         current_word = lemma
 
-        if self.spaCyPosResolver.is_noun(pos):
-            current_word = self.ellDefiniteArticleService.add_definite_article_to_lemma(lemma, pos, morph)
+        # if self.spaCyPosResolver.is_noun(pos):
+        #     current_word = self.ellDefiniteArticleService.add_definite_article_to_lemma(lemma, pos, morph)
 
         # Для прилагательных добавляем "ADJ", чтобы на следующих этапах с помощью этой метки добавить им окончания
         # в поле Front_comment
-        if self.spaCyPosResolver.is_adjective(pos):
-            current_word = f'{current_word}|ADJ'
+        # if self.spaCyPosResolver.is_adjective(pos):
+        #     current_word = f'{current_word}|ADJ'
 
         # Снова ищем current_word среди manual_lemmas и в случае успеха возвращаем костыль из Excel
         # В частности, данный подход нужен для слов erste, zweite, etc. для которых spaCy считает леммой формы erster,
@@ -63,9 +61,12 @@ class EllLemmaResolver:
         # Поэтому здесь нужен симбиоз обоих подходов: сначала spaCy находит свой вариант леммы, а потом я её в Excel
         # подменяю на нужный мне вариант.
         # "Jacken im ersten, Jeans im zweiten Stock."
-        manual_lemma = self.excelService.search_among_excel_manual_lemmas(current_word)
-        if manual_lemma:
-            current_word = manual_lemma
+        # manual_lemma = self.excelService.search_among_excel_manual_lemmas(current_word)
+        # if manual_lemma:
+        #     current_word = manual_lemma
+
+        if self.spaCyPosResolver.is_aux_or_verb(pos):
+            current_word = f'to {current_word}'
 
         return current_word
 
@@ -79,7 +80,16 @@ class EllLemmaResolver:
 #################################################
 
 if __name__ == '__main__':
-    ellLemmaResolver = EllLemmaResolver()
-    res = ellLemmaResolver.get_single_lemma('νομός', 'νομός', 'NOUN',
-                                            {'Case': ['Nom'], 'Gender': ['Masc'], 'Number': ['Sing']})
+
+    from BusinessObjectFactory import BusinessObjectFactory
+
+    # language = CurrentLanguageComboBoxEnum.GERMAN.value
+    # language = CurrentLanguageComboBoxEnum.MODERN_GREEK.value
+    language = CurrentLanguageComboBoxEnum.ENGLISH.value
+    # language = CurrentLanguageComboBoxEnum.ANCIENT_GREEK.value
+    AppContext.switch_language(language)  # выбор языка должен происходить в самую первую очередь, даже ДО импорта
+
+    engLemmaResolver = EngLemmaResolver()
+    res = engLemmaResolver.get_single_lemma("am", "be",
+                                            "AUX", "Mood=Ind|Number=Sing|Person=1|Tense=Pres|VerbForm=Fin")
     print(res)

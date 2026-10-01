@@ -779,8 +779,7 @@
 
 	],
 	"I have got a sister but I haven’t got a brother.": [
-		("haven", "have", "VERB", "Mood=Ind|Number=Sing|Person=1|Tense=Pres|VerbForm=Fin"),
-		("t", "not", "AUX", "Mood=Ind|Number=Sing|Tense=Pres|VerbForm=Fin")
+
 	],
 	"I love my sister and she loves me.": [
 		("loves", "love", "VERB", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"),

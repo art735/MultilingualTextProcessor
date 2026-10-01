@@ -5,6 +5,7 @@ from DeuLemmaResolver import DeuLemmaResolver
 from DeuSpaCyOrStanzaWrapper import DeuSpaCyOrStanzaWrapper
 from EllLemmaResolver import EllLemmaResolver
 from EllSpaCyOrStanzaWrapper import EllSpaCyOrStanzaWrapper
+from EngLemmaResolver import EngLemmaResolver
 from EngSpaCyOrStanzaWrapper import EngSpaCyOrStanzaWrapper
 from GrcSpaCyEngineWrapper import GrcSpaCyOrStanzaWrapper
 from MD1_MorphDictWithoutLemmasMaker import MD1_MorphDictWithoutLemmasMaker
@@ -79,6 +80,8 @@ class BusinessObjectFactory:
         elif AppContext.is_language_ancient_greek():
             # TODO
             lemmaResolver = None
+        elif AppContext.is_language_english():
+            lemmaResolver = EngLemmaResolver()
         else:
             raise Exception(f"Current language is not supported.")
         return lemmaResolver
