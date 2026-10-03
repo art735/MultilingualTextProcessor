@@ -2,6 +2,7 @@ import re
 import requests
 from bs4 import BeautifulSoup
 
+from anki_stripped_html_field_search import FIELD_NAME
 
 ANKICONNECT_URL = "http://127.0.0.1:8765"
 
@@ -23,6 +24,8 @@ ANKI_QUERY = 'note:"Basic (and reversed card) (with additional fields)"'
 # [A-Za-z]+ = одна или более английских букв подряд.
 # PATTERN = re.compile(r"[A-Za-z]{2,}")
 PATTERN = re.compile("&")
+
+FIELD_NAMES_TO_SEARCH_IN = ["Front", "Transcription", "Back"]
 
 # Английские последовательности, которые не должны считаться результатом поиска.
 ALLOWED_AMPERSAND_WORDS = {
@@ -104,7 +107,8 @@ def main():
 
         for card in cards:
             for field_name in card["fields"].keys():
-                if field_name in ["Front", "Transcription", "Back"]:
+                # Содержимое списка названий полей для поиска можно менять в зависимости от конкретной задачи
+                if field_name in FIELD_NAMES_TO_SEARCH_IN:
                     field_html = card["fields"][field_name]["value"]
 
                     # 3. Убираем HTML и оставляем видимый текст.
