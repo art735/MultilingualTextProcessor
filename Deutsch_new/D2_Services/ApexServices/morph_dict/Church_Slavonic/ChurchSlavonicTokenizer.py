@@ -10,10 +10,13 @@ class ChurchSlavonicTokenizer:
     Ответственность класса:
         - разбить предложение на token;
         - сохранить церковнославянские диакритики;
-        - считать буквы, цифры и combining marks частью token;
+        - считать буквы Unicode частью token;
+        - считать combining marks частью уже начатого token;
+        - игнорировать цифры и числа;
         - считать пунктуацию и whitespace разделителями;
         - корректно обрабатывать внутренние апострофы;
-        - перед выдачей token выполнить его нормализацию.
+        - нормализовать token;
+        - приводить все token к нижнему регистру.
 
     Класс НЕ занимается:
         - дедупликацией;
@@ -33,21 +36,22 @@ class ChurchSlavonicTokenizer:
 
         Пример:
 
-            "2 но в зако́не Госпо́дни во́ля его́."
+            "2 но в зако́не Госпо́дни во́ля Его́."
 
         ->
 
             [
-                "2",
                 "но",
                 "в",
                 "зако́не",
-                "Госпо́дни",
+                "госпо́дни",
                 "во́ля",
                 "его́"
             ]
 
+        Числа и цифры полностью игнорируются.
         Пунктуация не попадает в результат.
+        Все token приводятся к нижнему регистру.
         """
 
         if not isinstance(sentence, str):
@@ -60,10 +64,33 @@ class ChurchSlavonicTokenizer:
 
         for index, char in enumerate(sentence):
 
-            if self._is_token_char(char):
+            # ----------------------------------------------------------
+            # Буква начинает или продолжает token.
+            # ----------------------------------------------------------
+            if char.isalpha():
                 current_token.append(char)
                 continue
 
+            # ----------------------------------------------------------
+            # Combining mark является частью token только если
+            # перед ним уже есть буква.
+            #
+            # Например:
+            #
+            #   о + U+0301 = о́
+            #
+            # не должен потеряться при токенизации.
+            # ----------------------------------------------------------
+            if (
+                current_token
+                and self._is_combining_mark(char)
+            ):
+                current_token.append(char)
+                continue
+
+            # ----------------------------------------------------------
+            # Апостроф внутри слова.
+            # ----------------------------------------------------------
             if self._is_internal_apostrophe(
                     sentence,
                     index,
@@ -72,6 +99,17 @@ class ChurchSlavonicTokenizer:
                 current_token.append(char)
                 continue
 
+            # ----------------------------------------------------------
+            # Любой другой символ является разделителем.
+            #
+            # В том числе:
+            #   - цифры;
+            #   - знаки препинания;
+            #   - пробелы;
+            #   - дефисы;
+            #   - тире;
+            #   - скобки и т. д.
+            # ----------------------------------------------------------
             self._flush_current_token(
                 current_token,
                 tokens,
@@ -85,26 +123,14 @@ class ChurchSlavonicTokenizer:
         return tokens
 
     @classmethod
-    def _is_token_char(cls, char):
+    def _is_combining_mark(cls, char):
         """
-        Определяет, является ли символ частью token.
-
-        Поддерживаются:
-            - буквы Unicode;
-            - цифры;
-            - combining marks.
-
-        Благодаря Unicode-подходу корректно обрабатываются
-        древние кириллические символы и церковнославянские
-        диакритические знаки.
+        Проверяет, является ли символ Unicode combining mark.
         """
-
-        category = unicodedata.category(char)
 
         return (
-                char.isalpha()
-                or char.isdigit()
-                or category in cls._COMBINING_MARK_CATEGORIES
+            unicodedata.category(char)
+            in cls._COMBINING_MARK_CATEGORIES
         )
 
     @classmethod
@@ -120,7 +146,7 @@ class ChurchSlavonicTokenizer:
         Апостроф сохраняется только тогда, когда:
 
             1. перед ним уже есть token;
-            2. после него идёт продолжение token.
+            2. после него начинается буква.
 
         Например:
 
@@ -143,7 +169,10 @@ class ChurchSlavonicTokenizer:
         if next_index >= len(sentence):
             return False
 
-        return cls._is_token_char(sentence[next_index])
+        # После апострофа должна идти именно буква.
+        #
+        # Это важно, поскольку цифры token-ами не являются.
+        return sentence[next_index].isalpha()
 
     @staticmethod
     def _flush_current_token(
@@ -152,6 +181,11 @@ class ChurchSlavonicTokenizer:
     ):
         """
         Завершает накопление текущего token.
+
+        На этом этапе:
+            1. token нормализуется;
+            2. token приводится к нижнему регистру;
+            3. token добавляется в результат.
         """
 
         if not current_token:
@@ -159,10 +193,37 @@ class ChurchSlavonicTokenizer:
 
         token = "".join(current_token)
 
+        # --------------------------------------------------------------
+        # Нормализация Latin/Cyrillic homoglyphs и Unicode.
+        # --------------------------------------------------------------
         token = ChurchSlavonicTextNormalizer.normalize_token(
             token
         )
 
+        # --------------------------------------------------------------
+        # Все token должны быть в нижнем регистре.
+        # --------------------------------------------------------------
+        token = token.lower()
+
         tokens.append(token)
 
         current_token.clear()
+
+#########################################################################
+
+text_to_tokenize = """
+1 Блаже́н муж, и́же не и́де на сове́т нечести́вых и на пути́ гре́шных не ста, и на седа́лищи губи́телей не се́де,
+2 но в зако́не Госпо́дни во́ля eго́, и в зако́не Его́ поучи́тся день и нощь.
+"""
+
+if __name__ == "__main__":
+    churchSlavonicTokenizer = ChurchSlavonicTokenizer()
+
+    for line in text_to_tokenize.split("\n"):
+        tokens = churchSlavonicTokenizer.tokenize(line)
+        tokens_str = "\n".join(tokens)
+        output = f'{line}\n{tokens_str}\n'
+        print(output)
+
+
+

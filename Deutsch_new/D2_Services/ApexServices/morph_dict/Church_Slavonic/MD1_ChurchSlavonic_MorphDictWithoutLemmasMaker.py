@@ -9,6 +9,16 @@ llm_prompt = """
 
 Твоя задача: для каждого токена определить правильную лемму и pos-тег (в формате UPOS).
 
+Правила лемматизации:
+- причастия нужно приводить к инфинитиву глагола (наиболее распространённая практика современных NLP),
+- местоименные формы — к именительному падежу мужского рода.
+
+Правила написания лемм:
+1. УДАРЕНИЯ: леммы должны иметь ударения (кроме односложных слов);
+2. СОВРЕМЕННАЯ ОРФОГРАФИЯ:
+2.1) не используй бездумно буву «ѣ» вместо «е» (возможно есть слова, где нужна именно «ѣ», но этих слов меньшинство, а для большинства случаев используй обычную русскую букву «е»)
+2.2) не ставь просто так твёрдый знак в конце слов, заканчивающихся на согласный.
+
 Формат входного текста:
 
 Предложение1:
@@ -57,13 +67,9 @@ llm_prompt = """
 
 class MD1_ChurchSlavonic_MorphDictWithoutLemmasMaker:
 
-    def __init__(
-        self,
-        morphDictService,
-        tokenizer=None,
-    ):
+    def __init__(self, morphDictService):
         self.morphDictService = morphDictService
-        self.tokenizer = tokenizer or ChurchSlavonicTokenizer()
+        self.tokenizer = ChurchSlavonicTokenizer()
 
     def process(self, text_sentences):
         """
@@ -83,36 +89,27 @@ class MD1_ChurchSlavonic_MorphDictWithoutLemmasMaker:
         # ==============================================================
         # 1. Нормализуем весь исходный текст.
         # ==============================================================
-        normalized_text = (
-            ChurchSlavonicTextNormalizer.normalize_text(
-                text_sentences
-            )
-        )
+        normalized_text = ChurchSlavonicTextNormalizer.normalize_text(text_sentences)
 
         # ==============================================================
         # 2. Читаем существующие morph_dict.
         # ==============================================================
-        all_morph_dict_files_merged_dict = (
-            self.morphDictService
-            .read_and_merge_morph_dicts_from_all_files()
-        )
+        all_morph_dict_files_merged_dict = self.morphDictService.read_and_merge_morph_dicts_from_all_files()
 
         # ==============================================================
-        # 3. Собираем уже известные token.
+        # 3. Собираем уже известные tokens.
         #
-        # Для сравнения используется тот же нормализатор,
-        # что и для входного текста.
+        # Для сравнения используется тот же нормализатор, что и для входного текста.
         # ==============================================================
         seen_tokens_from_all_morph_dicts = {
             self._token_key(sentence_tuple[0])
-            for sentence_tuples
-            in all_morph_dict_files_merged_dict.values()
+            for sentence_tuples in all_morph_dict_files_merged_dict.values()
             for sentence_tuple in sentence_tuples
             if sentence_tuple
         }
 
         # ==============================================================
-        # 4. Token текущей сессии.
+        # 4. Tokens текущей сессии.
         # ==============================================================
         seen_tokens_from_current_session = set()
 
@@ -130,15 +127,11 @@ class MD1_ChurchSlavonic_MorphDictWithoutLemmasMaker:
 
             # ----------------------------------------------------------
             # Предложение должно быть представлено в result_dict
-            # даже тогда, когда в нём нет новых token.
+            # даже тогда, когда в нём нет новых tokens.
             # ----------------------------------------------------------
             result_dict.setdefault(sentence, [])
 
-            # ----------------------------------------------------------
-            # Токенизация полностью делегирована отдельному классу.
-            # ----------------------------------------------------------
             tokens = self.tokenizer.tokenize(sentence)
-
             for token in tokens:
 
                 token_key = self._token_key(token)
@@ -155,7 +148,7 @@ class MD1_ChurchSlavonic_MorphDictWithoutLemmasMaker:
                 # ------------------------------------------------------
                 # Новый token.
                 # ------------------------------------------------------
-                result_dict.setdefault(sentence, []).append(token)
+                result_dict[sentence].append(token)
 
                 # ------------------------------------------------------
                 # Запоминаем token как уже использованный.
@@ -222,7 +215,6 @@ text = """
 5 Сего́ ра́ди не воскре́снут нечести́вии на суд, ниже́ гре́шницы в сове́т пра́ведных.
 6 Я́ко весть Госпо́дь путь пра́ведных, и путь нечести́вых поги́бнет.
 """
-
 
 if __name__ == "__main__":
     from BusinessObjectFactory import BusinessObjectFactory
