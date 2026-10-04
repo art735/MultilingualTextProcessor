@@ -1,6 +1,7 @@
-import unicodedata
-
 import AppContext
+
+from ChurchSlavonicTextNormalizer import ChurchSlavonicTextNormalizer
+from ChurchSlavonicTokenizer import ChurchSlavonicTokenizer
 from View_enums import CurrentLanguageComboBoxEnum
 
 llm_prompt = """
@@ -56,92 +57,109 @@ llm_prompt = """
 
 class MD1_ChurchSlavonic_MorphDictWithoutLemmasMaker:
 
-    def __init__(self, morphDictService):
+    def __init__(
+        self,
+        morphDictService,
+        tokenizer=None,
+    ):
         self.morphDictService = morphDictService
+        self.tokenizer = tokenizer or ChurchSlavonicTokenizer()
 
     def process(self, text_sentences):
         """
         Формирует входные данные для LLM.
 
-        Правила обработки:
+        Весь входной текст сначала нормализуется через
+        ChurchSlavonicTextNormalizer.
 
-        1. Существующий morph_dict используется только для определения уже
-           встречавшихся token.
-        2. POS, lemma и morph полностью игнорируются при дедупликации.
-        3. Если token уже встречался в morph_dict-файлах, он пропускается.
-        4. Если token уже встречался в рамках текущего вызова process(),
-           он пропускается.
-        5. Пунктуация не является token и не попадает в результат.
-        6. Каждое предложение добавляется в результат всегда, даже если
-           после фильтрации в нём не осталось ни одного token.
+        После этого:
+
+        1. Уже встречавшиеся token из morph_dict пропускаются.
+        2. Уже встречавшиеся token текущей сессии пропускаются.
+        3. POS не участвует в дедупликации.
+        4. Каждое предложение сохраняется в result_dict.
         """
 
-        # Все ранее сохранённые morph_dict.
-        all_morph_dict_files_merged_dict = (
-            self.morphDictService.read_and_merge_morph_dicts_from_all_files()
+        # ==============================================================
+        # 1. Нормализуем весь исходный текст.
+        # ==============================================================
+        normalized_text = (
+            ChurchSlavonicTextNormalizer.normalize_text(
+                text_sentences
+            )
         )
 
-        # ------------------------------------------------------------------
-        # Token, которые уже встречались в существующих morph_dict-файлах.
+        # ==============================================================
+        # 2. Читаем существующие morph_dict.
+        # ==============================================================
+        all_morph_dict_files_merged_dict = (
+            self.morphDictService
+            .read_and_merge_morph_dicts_from_all_files()
+        )
+
+        # ==============================================================
+        # 3. Собираем уже известные token.
         #
-        # В старом варианте ключ строился как (token, POS).
-        # Теперь POS полностью исключён: ключом является только token.
-        # ------------------------------------------------------------------
+        # Для сравнения используется тот же нормализатор,
+        # что и для входного текста.
+        # ==============================================================
         seen_tokens_from_all_morph_dicts = {
             self._token_key(sentence_tuple[0])
-            for sentence_tuples in all_morph_dict_files_merged_dict.values()
+            for sentence_tuples
+            in all_morph_dict_files_merged_dict.values()
             for sentence_tuple in sentence_tuples
             if sentence_tuple
         }
 
-        # Token, которые уже встретились внутри текущего process().
+        # ==============================================================
+        # 4. Token текущей сессии.
+        # ==============================================================
         seen_tokens_from_current_session = set()
 
         result_dict = {}
 
-        # Каждая непустая строка входа считается отдельным предложением.
-        # Это соответствует текущему контракту process(text_sentences).
-        for sentence in (s.strip() for s in text_sentences.splitlines() if s.strip()):
+        # ==============================================================
+        # 5. Обрабатываем уже нормализованный текст.
+        # ==============================================================
+        for raw_sentence in normalized_text.splitlines():
 
-            # Уровень 1: встречалось ли ранее данное предложение?
-            #
-            # Если предложение уже есть либо в morph_dict-файлах,
-            # либо уже было добавлено в текущий result_dict,
-            # полностью пропускаем его.
-            if sentence in result_dict or sentence in all_morph_dict_files_merged_dict:
+            sentence = raw_sentence.strip()
+
+            if not sentence:
                 continue
 
-            # --------------------------------------------------------------
-            # Ручная токенизация.
-            # Stanza / spaCy больше не нужны.
-            # --------------------------------------------------------------
-            tokens = self._tokenize_sentence(sentence)
+            # ----------------------------------------------------------
+            # Предложение должно быть представлено в result_dict
+            # даже тогда, когда в нём нет новых token.
+            # ----------------------------------------------------------
+            result_dict.setdefault(sentence, [])
+
+            # ----------------------------------------------------------
+            # Токенизация полностью делегирована отдельному классу.
+            # ----------------------------------------------------------
+            tokens = self.tokenizer.tokenize(sentence)
 
             for token in tokens:
 
-                # Нормализованный ключ нужен только для поиска совпадений.
-                # Сам token в результат передаётся в исходном написании.
                 token_key = self._token_key(token)
 
-                # ----------------------------------------------------------
-                # Token уже встречался:
-                #
-                #   1) либо в существующих morph_dict;
-                #   2) либо ранее в текущем process().
-                #
-                # В обоих случаях token больше не нужен.
-                # ----------------------------------------------------------
+                # ------------------------------------------------------
+                # Token уже встречался?
+                # ------------------------------------------------------
                 if (
                     token_key in seen_tokens_from_all_morph_dicts
                     or token_key in seen_tokens_from_current_session
                 ):
                     continue
 
-                # Новый token берём в работу.
-                # setdefault() создаст для sentence пустой список, если ключа ещё нет, и сразу добавит в него token.
+                # ------------------------------------------------------
+                # Новый token.
+                # ------------------------------------------------------
                 result_dict.setdefault(sentence, []).append(token)
 
-                # Фиксируем его как уже использованный в текущей сессии.
+                # ------------------------------------------------------
+                # Запоминаем token как уже использованный.
+                # ------------------------------------------------------
                 seen_tokens_from_current_session.add(token_key)
 
         return self._build_llm_input(result_dict)
@@ -149,109 +167,21 @@ class MD1_ChurchSlavonic_MorphDictWithoutLemmasMaker:
     @staticmethod
     def _token_key(token):
         """
-        Возвращает нормализованный ключ token для дедупликации.
+        Канонический ключ для дедупликации token.
 
-        Используется только для сравнения.
-        В LLM при этом передаётся исходное написание token.
-
-        casefold() обеспечивает регистронезависимое Unicode-сравнение.
+        Вся логика нормализации token находится
+        в ChurchSlavonicTextNormalizer.
         """
 
-        return token.casefold()
-
-    @staticmethod
-    def _tokenize_sentence(sentence):
-        """
-        Ручная токенизация предложения.
-
-        Token представляет собой последовательность букв/цифр Unicode
-        с возможными комбинируемыми знаками.
-
-        Пунктуация и пробелы разделяют token и не попадают в результат.
-
-        Внутренний апостроф ' / ’ сохраняется внутри token, если после него
-        продолжается последовательность букв/цифр.
-
-        Например:
-
-            "Сло́во, и Сло́во."
-
-        превращается в:
-
-            ["Сло́во", "и", "Сло́во"]
-
-        Дефис рассматривается как разделитель.
-        """
-
-        # Приводим предложение к нижнему регистру.
-        sentence = sentence.lower()
-
-        tokens = []
-        current_token = []
-
-        def is_token_char(char):
-            category = unicodedata.category(char)
-
-            return (
-                char.isalpha()
-                or char.isdigit()
-                or category in {"Mn", "Mc", "Me"}
-            )
-
-        def flush_current_token():
-            if current_token:
-                tokens.append("".join(current_token))
-                current_token.clear()
-
-        length = len(sentence)
-
-        for index, char in enumerate(sentence):
-
-            # Обычная буква, цифра или комбинируемый диакритический знак.
-            if is_token_char(char):
-                current_token.append(char)
-                continue
-
-            # Апостроф внутри слова:
-            #
-            # "..." + "'" + "..."
-            #
-            # сохраняем как часть token, только если после него
-            # действительно продолжается token.
-            if (
-                char in {"'", "’"}
-                and current_token
-                and index + 1 < length
-                and is_token_char(sentence[index + 1])
-            ):
-                current_token.append(char)
-                continue
-
-            # Пробел, запятая, точка, двоеточие, точка с запятой,
-            # скобки, кавычки, тире, дефис и т. п.
-            flush_current_token()
-
-        flush_current_token()
-
-        return tokens
+        return (
+            ChurchSlavonicTextNormalizer
+            .normalize_token_key(token)
+        )
 
     @staticmethod
     def _build_llm_input(result_dict):
         """
-        Формирует текст, который будет добавлен после llm_prompt.
-
-        Каждый кластер имеет вид:
-
-            предложение:
-            token1
-            token2
-            token3
-
-        Между кластерами всегда одна пустая строка.
-
-        Если у предложения нет новых token, остаётся только:
-
-            предложение:
+        Формирует вход для LLM.
         """
 
         clusters = []
@@ -260,15 +190,18 @@ class MD1_ChurchSlavonic_MorphDictWithoutLemmasMaker:
 
             cluster_lines = [f"{sentence}:"]
 
-            # Если tokens == [], это специально оставляет только строку
-            # с предложением, что соответствует требованиям llm_prompt.
             cluster_lines.extend(tokens)
 
-            clusters.append("\n".join(cluster_lines))
+            clusters.append(
+                "\n".join(cluster_lines)
+            )
 
         result_dict_str = "\n\n".join(clusters)
 
-        return f"{llm_prompt}\n{result_dict_str}".strip()
+        return (
+            f"{llm_prompt}\n"
+            f"{result_dict_str}"
+        ).strip()
 
 
 ############################################################################
