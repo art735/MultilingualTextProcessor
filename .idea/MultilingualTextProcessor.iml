@@ -136,6 +136,7 @@
       <sourceFolder url="file://$MODULE_DIR$/AnkiAddons" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/AnkiAddons/auto_replace" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Deutsch_new/D2_Services/ApexServices/morph_dict" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Deutsch_new/D2_Services/ApexServices/morph_dict/Church_Slavonic" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/venv" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.11" jdkType="Python SDK" />

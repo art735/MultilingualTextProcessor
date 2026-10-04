@@ -35,3 +35,9 @@ English:
   base_dir: "${resources_dir}\\English"
   regular_cards_deck: "!English. !Словарь"
   aggregate_cards_deck: "!English. Агрегаты"
+
+Church Slavonic:
+  lang_code: chu  # общепринятый трёхбуквенный код (ISO 639-2) для древнегреческого языка
+  base_dir: "${resources_dir}\\Church Slavonic"
+  regular_cards_deck: "!Church Slavonic. !Словарь"
+  aggregate_cards_deck: "!Church Slavonic. Агрегаты"

@@ -8,6 +8,7 @@ from EllSpaCyOrStanzaWrapper import EllSpaCyOrStanzaWrapper
 from EngLemmaResolver import EngLemmaResolver
 from EngSpaCyOrStanzaWrapper import EngSpaCyOrStanzaWrapper
 from GrcSpaCyEngineWrapper import GrcSpaCyOrStanzaWrapper
+from MD1_ChurchSlavonic_MorphDictWithoutLemmasMaker import MD1_ChurchSlavonic_MorphDictWithoutLemmasMaker
 from MD1_MorphDictWithoutLemmasMaker import MD1_MorphDictWithoutLemmasMaker
 from MorphDictService import MorphDictService
 
@@ -27,6 +28,11 @@ class BusinessObjectFactory:
         morphDictService = BusinessObjectFactory.get_MorphDictService()
         spaCyOrStanzaWrapper = BusinessObjectFactory.get_spaCyOrStanzaWrapper()
         return MD1_MorphDictWithoutLemmasMaker(morphDictService, spaCyOrStanzaWrapper)
+
+    @staticmethod
+    def create_md1_ChurchSlavonic_MorphDictWithoutLemmasMaker():
+        morphDictService = BusinessObjectFactory.get_MorphDictService()
+        return MD1_ChurchSlavonic_MorphDictWithoutLemmasMaker(morphDictService)
 
     @staticmethod
     def create_a000_MorphDictGeneratorAndToFileSaver():
@@ -67,6 +73,8 @@ class BusinessObjectFactory:
             spaCyOrStanzaWrapper = GrcSpaCyOrStanzaWrapper()
         elif AppContext.is_language_english():
             spaCyOrStanzaWrapper = EngSpaCyOrStanzaWrapper()
+        elif AppContext.is_language_church_slavonic():
+            spaCyOrStanzaWrapper = None
         else:
             raise Exception(f"Current language is not supported.")
         return spaCyOrStanzaWrapper
@@ -82,6 +90,8 @@ class BusinessObjectFactory:
             lemmaResolver = None
         elif AppContext.is_language_english():
             lemmaResolver = EngLemmaResolver()
+        elif AppContext.is_language_church_slavonic():
+            lemmaResolver = None
         else:
             raise Exception(f"Current language is not supported.")
         return lemmaResolver

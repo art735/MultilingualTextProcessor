@@ -84,6 +84,13 @@ def is_language_english(lang_code=None):
         is_english = get_lang_code() == 'eng'
     return is_english
 
+def is_language_church_slavonic(lang_code=None):
+    if lang_code:
+        is_church_slavonic = lang_code == 'chu'
+    else:
+        is_church_slavonic = get_lang_code() == 'chu'
+    return is_church_slavonic
+
 
 def get_lang_code():
     lang_code = CONTAINER.settingsManager().get("lang_code")
