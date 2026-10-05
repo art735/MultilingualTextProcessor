@@ -33,7 +33,8 @@ class FilenameUtils:
     # Business method #4
     def get_all_morph_dict_filenames(self):
         morph_dict_predicate = lambda filename: (filename.startswith('morph_dict') and filename.endswith('.txt'))
-        morph_dict_filenames = self.get_filenames_recursively(AppContext.get_base_dir(), morph_dict_predicate)
+        base_dir = AppContext.get_base_dir()
+        morph_dict_filenames = self.get_filenames_recursively(base_dir, morph_dict_predicate)
         return morph_dict_filenames
 
     # Business method #5

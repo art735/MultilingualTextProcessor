@@ -8,7 +8,7 @@ from EllSpaCyOrStanzaWrapper import EllSpaCyOrStanzaWrapper
 from EngLemmaResolver import EngLemmaResolver
 from EngSpaCyOrStanzaWrapper import EngSpaCyOrStanzaWrapper
 from GrcSpaCyEngineWrapper import GrcSpaCyOrStanzaWrapper
-from MD1_ChurchSlavonic_MorphDictWithoutLemmasMaker import MD1_ChurchSlavonic_MorphDictWithoutLemmasMaker
+from MD1_ChurchSlavonic_MorphAnalysisPromptBuilder import MD1_ChurchSlavonic_MorphAnalysisPromptBuilder
 from MD1_MorphDictWithoutLemmasMaker import MD1_MorphDictWithoutLemmasMaker
 from MorphDictService import MorphDictService
 
@@ -30,9 +30,9 @@ class BusinessObjectFactory:
         return MD1_MorphDictWithoutLemmasMaker(morphDictService, spaCyOrStanzaWrapper)
 
     @staticmethod
-    def create_md1_ChurchSlavonic_MorphDictWithoutLemmasMaker():
+    def create_md1_ChurchSlavonic_MorphAnalysisPromptBuilder():
         morphDictService = BusinessObjectFactory.get_MorphDictService()
-        return MD1_ChurchSlavonic_MorphDictWithoutLemmasMaker(morphDictService)
+        return MD1_ChurchSlavonic_MorphAnalysisPromptBuilder(morphDictService)
 
     @staticmethod
     def create_a000_MorphDictGeneratorAndToFileSaver():

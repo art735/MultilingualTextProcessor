@@ -23,11 +23,11 @@ class ParseError(ValueError):
 - проверяет пустые поля, неправильное количество |, дублирующиеся предложения;
 - в случае ошибки сообщает номер строки и содержимое проблемной строки.
 """
-class SentenceTokenParser:
+class MD2_ChurchSlavonic_MorphAnalysisParserAndMorphDictMaker:
     def __init__(self):
         self.morphDictToStrConverter = MorphDictToStrConverter()
 
-    def parse_sentences(self, text: str) -> ParsedData:
+    def parse_and_make(self, text: str) -> ParsedData:
         """
         Преобразует текст вида:
 
@@ -180,8 +180,8 @@ text = """
 """
 
 if __name__ == "__main__":
-    sentenceTokenParser = SentenceTokenParser()
-    result = sentenceTokenParser.parse_sentences(text)
+    md2_ChurchSlavonic_MorphAnalysisParserAndMorphDictMaker = MD2_ChurchSlavonic_MorphAnalysisParserAndMorphDictMaker()
+    result = md2_ChurchSlavonic_MorphAnalysisParserAndMorphDictMaker.parse_and_make(text)
     print(result)
 
 # try:

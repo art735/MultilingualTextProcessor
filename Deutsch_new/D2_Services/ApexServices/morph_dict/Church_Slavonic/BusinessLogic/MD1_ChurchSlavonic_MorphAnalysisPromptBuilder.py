@@ -65,7 +65,7 @@ llm_prompt = """
 """
 
 
-class MD1_ChurchSlavonic_MorphDictWithoutLemmasMaker:
+class MD1_ChurchSlavonic_MorphAnalysisPromptBuilder:
 
     def __init__(self, morphDictService):
         self.morphDictService = morphDictService
@@ -118,11 +118,12 @@ class MD1_ChurchSlavonic_MorphDictWithoutLemmasMaker:
         # ==============================================================
         # 5. Обрабатываем уже нормализованный текст.
         # ==============================================================
-        for raw_sentence in normalized_text.splitlines():
+        for sentence in (s.strip() for s in normalized_text.splitlines() if s.strip()):
 
-            sentence = raw_sentence.strip()
-
-            if not sentence:
+            # Если предложение уже есть либо в morph_dict-файлах,
+            # либо уже было добавлено в текущий result_dict,
+            # полностью пропускаем его.
+            if sentence in result_dict or sentence in all_morph_dict_files_merged_dict:
                 continue
 
             # ----------------------------------------------------------
@@ -177,11 +178,14 @@ class MD1_ChurchSlavonic_MorphDictWithoutLemmasMaker:
         Формирует вход для LLM.
         """
 
+        if not result_dict:
+            return "Входной текст не содержит новых предложений, которых бы уже не было в morph_dict-файлах."
+
         clusters = []
 
         for sentence, tokens in result_dict.items():
 
-            cluster_lines = [f"{sentence}:"]
+            cluster_lines = [f"{sentence}"]
 
             cluster_lines.extend(tokens)
 
@@ -221,7 +225,7 @@ if __name__ == "__main__":
     language = CurrentLanguageComboBoxEnum.CHURCH_SLAVONIC.value
     AppContext.switch_language(language)
 
-    md1_MorphDictWithoutLemmasMaker = BusinessObjectFactory.create_md1_ChurchSlavonic_MorphDictWithoutLemmasMaker()
-    res = md1_MorphDictWithoutLemmasMaker.process(text)
+    md1_ChurchSlavonic_MorphAnalysisPromptBuilder = BusinessObjectFactory.create_md1_ChurchSlavonic_MorphAnalysisPromptBuilder()
+    res = md1_ChurchSlavonic_MorphAnalysisPromptBuilder.process(text)
 
     print(res)

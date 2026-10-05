@@ -2,11 +2,10 @@ from DeuDefiniteArticleService import DeuDefiniteArticleService
 import ExcelDaoUtils
 from SlashContainingCellSplitter import SlashContainingCellSplitter
 
-deuDefiniteArticleService = DeuDefiniteArticleService()
-slashContainingCellSplitter = SlashContainingCellSplitter()
-
-
 def _stripDefiniteArticles(tuples):
+    deuDefiniteArticleService = DeuDefiniteArticleService()
+    slashContainingCellSplitter = SlashContainingCellSplitter()
+
     result = list()
 
     # Если кортеж (слово, транскрипция) содержит слеши, например, ("die Worte / die Wörter", "[ˈvɔʁtə] / [ˈvœʁtɐ]"),

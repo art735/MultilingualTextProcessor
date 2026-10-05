@@ -111,8 +111,9 @@ class SettingsManager:
 
 if __name__ == "__main__":
     # language = CurrentLanguageComboBoxEnum.GERMAN.value
-    language = CurrentLanguageComboBoxEnum.MODERN_GREEK.value
+    # language = CurrentLanguageComboBoxEnum.MODERN_GREEK.value
     # language = CurrentLanguageComboBoxEnum.ANCIENT_GREEK.value
+    language = CurrentLanguageComboBoxEnum.CHURCH_SLAVONIC.value
     AppContext.switch_language(language)
 
     base_dir = AppContext.get_base_dir()

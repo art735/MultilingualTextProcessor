@@ -1,4 +1,4 @@
-from MD2_ChurchSlavonic_to_name import SentenceTokenParser
+from MD2_ChurchSlavonic_MorphAnalysisParserAndMorphDictMaker import MD2_ChurchSlavonic_MorphAnalysisParserAndMorphDictMaker
 
 input_text_after_llm = """
 Псалом 1:
@@ -82,6 +82,6 @@ input_text_after_llm = """
 поги́бнет|поги́бнути|VERB
 """
 
-sentenceTokenParser = SentenceTokenParser()
-result = sentenceTokenParser.parse_sentences(input_text_after_llm)
+md2_ChurchSlavonic_MorphAnalysisParserAndMorphDictMaker = MD2_ChurchSlavonic_MorphAnalysisParserAndMorphDictMaker()
+result = md2_ChurchSlavonic_MorphAnalysisParserAndMorphDictMaker.parse_and_make(input_text_after_llm)
 print(result)
