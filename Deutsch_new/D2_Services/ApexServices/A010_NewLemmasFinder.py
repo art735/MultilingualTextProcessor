@@ -235,7 +235,8 @@ if __name__ == '__main__':
 
     # language = CurrentLanguageComboBoxEnum.GERMAN.value
     # language = CurrentLanguageComboBoxEnum.MODERN_GREEK.value
-    language = CurrentLanguageComboBoxEnum.ENGLISH.value
+    # language = CurrentLanguageComboBoxEnum.ENGLISH.value
+    language = CurrentLanguageComboBoxEnum.CHURCH_SLAVONIC.value
     # language = CurrentLanguageComboBoxEnum.ANCIENT_GREEK.value
     AppContext.switch_language(language)  # выбор языка должен происходить в самую первую очередь, даже ДО импорта
     # BusinessObjectFactory
@@ -253,6 +254,14 @@ if __name__ == '__main__':
     #                                            include_even_sentences_without_new_lemmas_in_the_output=False,
     #                                            whole_text_mode=False)
 
+    # res = a010_NewLemmasFinder.find_new_lemmas(input_str,
+    #                                            morph_dict_policy_read_from_last_file=True,
+    #                                            morph_dict_policy_generate_on_the_fly=False,
+    #                                            line_by_line_mode=True,
+    #                                            include_sentences_with_new_lemmas_in_the_output=False,
+    #                                            include_even_sentences_without_new_lemmas_in_the_output=False,
+    #                                            whole_text_mode=False)
+
     res = a010_NewLemmasFinder.find_new_lemmas(input_str,
                                                morph_dict_policy_read_from_last_file=True,
                                                morph_dict_policy_generate_on_the_fly=False,
@@ -260,4 +269,5 @@ if __name__ == '__main__':
                                                include_sentences_with_new_lemmas_in_the_output=False,
                                                include_even_sentences_without_new_lemmas_in_the_output=False,
                                                whole_text_mode=False)
+
     print(res)

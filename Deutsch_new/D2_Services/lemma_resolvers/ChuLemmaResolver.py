@@ -4,7 +4,7 @@ from SpaCyPosResolver import SpaCyPosResolver
 from View_enums import CurrentLanguageComboBoxEnum
 
 
-class EngLemmaResolver:
+class ChuLemmaResolver:
 
     def __init__(self):
         self.excelService = ExcelService()
@@ -64,8 +64,8 @@ class EngLemmaResolver:
         # if manual_lemma:
         #     current_word = manual_lemma
 
-        if self.spaCyPosResolver.is_aux_or_verb(pos):
-            current_word = f'to {current_word}'
+        # if self.spaCyPosResolver.is_aux_or_verb(pos):
+        #     current_word = f'to {current_word}'
 
         return current_word
 
@@ -82,11 +82,10 @@ if __name__ == '__main__':
 
     # language = CurrentLanguageComboBoxEnum.GERMAN.value
     # language = CurrentLanguageComboBoxEnum.MODERN_GREEK.value
-    language = CurrentLanguageComboBoxEnum.ENGLISH.value
+    language = CurrentLanguageComboBoxEnum.CHURCH_SLAVONIC.value
     # language = CurrentLanguageComboBoxEnum.ANCIENT_GREEK.value
     AppContext.switch_language(language)  # выбор языка должен происходить в самую первую очередь, даже ДО импорта
 
-    engLemmaResolver = EngLemmaResolver()
-    res = engLemmaResolver.get_single_lemma("am", "be",
-                                            "AUX", "Mood=Ind|Number=Sing|Person=1|Tense=Pres|VerbForm=Fin")
+    chuLemmaResolver = ChuLemmaResolver()
+    res = chuLemmaResolver.get_single_lemma("блаже́н", "блаже́нный", "ADJ", "")
     print(res)

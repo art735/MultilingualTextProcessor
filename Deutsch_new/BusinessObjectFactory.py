@@ -1,6 +1,7 @@
 import AppContext
 from A000_MorphDictGeneratorAndToFileSaver import A000_MorphDictGeneratorAndToFileSaver
 from A010_NewLemmasFinder import A010_NewLemmasFinder
+from ChuLemmaResolver import ChuLemmaResolver
 from DeuLemmaResolver import DeuLemmaResolver
 from DeuSpaCyOrStanzaWrapper import DeuSpaCyOrStanzaWrapper
 from EllLemmaResolver import EllLemmaResolver
@@ -91,7 +92,7 @@ class BusinessObjectFactory:
         elif AppContext.is_language_english():
             lemmaResolver = EngLemmaResolver()
         elif AppContext.is_language_church_slavonic():
-            lemmaResolver = None
+            lemmaResolver = ChuLemmaResolver()
         else:
             raise Exception(f"Current language is not supported.")
         return lemmaResolver

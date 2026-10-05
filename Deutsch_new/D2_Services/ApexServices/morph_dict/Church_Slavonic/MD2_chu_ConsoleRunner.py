@@ -82,6 +82,7 @@ input_text_after_llm = """
 поги́бнет|поги́бнути|VERB
 """
 
-md2_ChurchSlavonic_MorphAnalysisParserAndMorphDictMaker = MD2_ChurchSlavonic_MorphAnalysisParserAndMorphDictMaker()
-result = md2_ChurchSlavonic_MorphAnalysisParserAndMorphDictMaker.parse_and_make(input_text_after_llm)
-print(result)
+if __name__ == "__main__":
+    md2_ChurchSlavonic_MorphAnalysisParserAndMorphDictMaker = MD2_ChurchSlavonic_MorphAnalysisParserAndMorphDictMaker()
+    result = md2_ChurchSlavonic_MorphAnalysisParserAndMorphDictMaker.parse_and_make(input_text_after_llm)
+    print(result)

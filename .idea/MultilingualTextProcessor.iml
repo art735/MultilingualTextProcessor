@@ -137,6 +137,10 @@
       <sourceFolder url="file://$MODULE_DIR$/AnkiAddons/auto_replace" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Deutsch_new/D2_Services/ApexServices/morph_dict" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Deutsch_new/D2_Services/ApexServices/morph_dict/Church_Slavonic" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Church_Slavonic" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Church_Slavonic/D2_Services" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Church_Slavonic/D2_Services/morph_dict" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Church_Slavonic/Infrastructure" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Deutsch_new/D2_Services/ApexServices/morph_dict/Church_Slavonic/BusinessLogic" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/resources" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/venv" />

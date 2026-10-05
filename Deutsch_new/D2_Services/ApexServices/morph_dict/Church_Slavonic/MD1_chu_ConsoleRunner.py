@@ -1,4 +1,5 @@
-from BusinessObjectFactory import BusinessObjectFactory
+import AppContext
+from View_enums import CurrentLanguageComboBoxEnum
 
 input_text = """
 Псалом 1
@@ -11,7 +12,12 @@ input_text = """
 6 Я́ко весть Госпо́дь путь пра́ведных, и путь нечести́вых поги́бнет.
 """
 
-md1_ChurchSlavonic_MorphAnalysisPromptBuilder = BusinessObjectFactory.create_md1_ChurchSlavonic_MorphAnalysisPromptBuilder()
-res = md1_ChurchSlavonic_MorphAnalysisPromptBuilder.process(input_text)
+if __name__ == "__main__":
+    from BusinessObjectFactory import BusinessObjectFactory
+    language = CurrentLanguageComboBoxEnum.CHURCH_SLAVONIC.value
+    AppContext.switch_language(language)
 
-print(res)
+    md1_ChurchSlavonic_MorphAnalysisPromptBuilder = BusinessObjectFactory.create_md1_ChurchSlavonic_MorphAnalysisPromptBuilder()
+    res = md1_ChurchSlavonic_MorphAnalysisPromptBuilder.process(input_text)
+
+    print(res)
