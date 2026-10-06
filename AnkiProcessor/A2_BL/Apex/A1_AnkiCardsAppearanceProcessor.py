@@ -114,6 +114,17 @@ class AnkiCardsAppearanceProcessor:
         # Цикл по всем полям 'карточки' (более точно - по всем полям note-а)
         for field_name, field_data_dict in note['fields'].items():
 
+            # НОВАЯ ЛОГИКА!
+            # Поле, содержащее background-color, полностью игнорируем:
+            # никакие callback-и и очистка тегов к нему не применяются.
+            # background-color - это ручное выделение жёлтым маркером самой важной информации и не хочется её терять
+            # при очистке html-разметки, т. к. потом это выделение маркером нужно заново делать вручную, автоматически
+            # его никак не восстановить.
+            if strip_all_tags_except_br_and_img_tags:
+                field_value = field_data_dict['value']
+                if isinstance(field_value, str) and 'background-color' in field_value.lower():
+                    continue
+
             # сбрасываем флаг
             is_field_already_stripped = False
 

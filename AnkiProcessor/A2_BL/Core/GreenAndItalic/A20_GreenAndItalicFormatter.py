@@ -9,7 +9,53 @@ from CharConstants import HYPHEN, DASH, SPACE
 from TextColorizer import TextColorizer
 from TextFomatter import TextFormatter
 
+
 HYPHEN_OR_DASH_CLASS = fr'[{HYPHEN}{DASH}]'
+
+
+class RegexFragment(str):
+    """
+    Строка, содержащая уже готовый regex-фрагмент.
+
+    Обычные строки в списках терминов считаются literal-текстом и поэтому
+    автоматически обрабатываются через re.escape(). RegexFragment, наоборот,
+    оставляется без изменений, т. к. его содержимое уже является regex.
+    """
+    pass
+
+
+def regex_fragment(pattern):
+    """
+    Помечает строку как уже готовый regex-фрагмент.
+
+    Это позволяет хранить в одном списке как обычные термины:
+        'амер.'
+
+    так и regex-конструкции:
+        regex_fragment(r'(?:старо)?англ\.')
+    """
+    return RegexFragment(pattern)
+
+
+def build_piped_terms(*term_lists):
+    """
+    Объединяет несколько списков терминов через PIPE_DELIMITER.
+
+    Обычные строки экранируются через re.escape(), чтобы воспринимать их
+    буквально.
+
+    RegexFragment не экранируются, поскольку уже содержат готовый regex.
+    """
+    terms = []
+
+    for term_list in term_lists:
+        for term in term_list:
+            if isinstance(term, RegexFragment):
+                terms.append(term)
+            else:
+                terms.append(re.escape(term))
+
+    return PIPE_DELIMITER.join(terms)
 
 
 # Метасимвол \b в регулярных выражениях определяет границу слова. Граница слова (\b) в основном работает корректно
@@ -39,28 +85,47 @@ def get_optionally_delimited_terms_search_regex(terms, delimiters):
 # Case 1.1 Выделять зелёным цветом и курсивом следующие термины и !их комбинации!, разделённые пробелом или
 # пробел-дефис/тире-пробелом, независимо от того, заключены они в круглые скобки или нет.
 grammar_terms_regex_group = r'(?:[Ss]g[.]|[Pp]l[.]|nom[.]|gen[.]|poss[.]|dat[.]|acc[.]|abl[.]|voc[.]|masc[.]|fem[.]|neut[.])'
+
 # разделители, которыми данные грамматические термины могут отделяться друг от друга
 delimiters1_regex_group = fr'(?:{SPACE}|{SPACE}{HYPHEN_OR_DASH_CLASS}{SPACE})'
-search_regex1 = get_optionally_delimited_terms_search_regex(grammar_terms_regex_group, delimiters1_regex_group)
+
+search_regex1 = get_optionally_delimited_terms_search_regex(
+    grammar_terms_regex_group,
+    delimiters1_regex_group
+)
+
 
 # Case 1.2 Выделять зелёным цветом и курсивом следующие термины и !их комбинации!, разделённые пробелом или
 # пробел-дефис/тире-пробелом, только при условии, что они заключены в тексте в круглые скобки.
 # Konjunktiv II? - означает захват строки "Konjunktiv I" или "Konjunktiv II", причём римские цифры будут захватываться
 # в жадной манере, т. е. сначала по возможности будет стараться захватить "II", и только потом "I"
-grammar_terms = r'(?:Infinitiv|Präsens|Präteritum|Konjunktiv II?|Partizip II?|Perfect|Imperativ|Nominativ|Genitiv|Dativ|Akkusativ|declension)'  # наличие скобок здесь (regex group) обязательно!
-optionally_delimited_terms_search_regex = get_optionally_delimited_terms_search_regex(grammar_terms,
-                                                                                      delimiters1_regex_group)
+grammar_terms = (
+    r'(?:Infinitiv|Präsens|Präteritum|Konjunktiv II?|Partizip II?|Perfect|Imperativ|'
+    r'Nominativ|Genitiv|Dativ|Akkusativ|declension)'
+)  # наличие скобок здесь (regex group) обязательно!
 
-search_regex2 = RegExConstants.parentheses_lookarounds.format(optionally_delimited_terms_search_regex)
+optionally_delimited_terms_search_regex = get_optionally_delimited_terms_search_regex(
+    grammar_terms,
+    delimiters1_regex_group
+)
+
+search_regex2 = RegExConstants.parentheses_lookarounds.format(
+    optionally_delimited_terms_search_regex
+)
+
 
 # CASE 2. Термины !без комбинаций!
 
 # Case 2.1 Форматировать зелёным цветом и курсивом следующие слова/фразы, заключённые в круглые скобки
 
-search_regex_adj_deklination = RegExConstants.parentheses_lookarounds.format(r'(?:Starke|Schwache|Gemischte).*?')
+search_regex_adj_deklination = RegExConstants.parentheses_lookarounds.format(
+    r'(?:Starke|Schwache|Gemischte).*?'
+)
 
 search_regex_parenthesized_phrases = RegExConstants.parentheses_lookarounds.format(
-    r'(?:спряжение в Präsens|склонение по всем падежам|3 степени сравнения)')
+    r'(?:спряжение в Präsens|склонение по всем падежам|3 степени сравнения)'
+)
+
 
 # Case 2.2 Выделять зелёным цветом и курсивом следующие термины (они могут быть как в скобках, так и без них)
 # Эти термины, в основном, ожидаются в словаре (а не фразах)
@@ -73,64 +138,242 @@ search_regex_parenthesized_phrases = RegExConstants.parentheses_lookarounds.form
 # - отдельно (без скобок или в скобках)
 # - в комбинации с другими терминами (комбинации могут быть разделены [,;]?\s - «пробел, перед которым могут стоять
 # запятая или точка с запятой»)
-english = ['англ.', 'амер.', 'брит.', 'ирл.', 'шотл.']
+#
+# В списках ниже обычные строки являются literal-терминами и будут автоматически экранироваться через re.escape().
+# Элементы, обёрнутые в regex_fragment(...), являются готовыми regex-фрагментами и поэтому НЕ экранируются.
+#
+# Например:
+#     'амер.'
+# превращается в:
+#     'амер\.'
+#
+# а:
+#     regex_fragment(r'(?:старо)?англ\.')
+# остаётся:
+#     '(?:старо)?англ\.'
+#
+# Благодаря этому в одном списке можно безопасно использовать как простые термины, так и термины с regex-логикой.
+
+english = [
+    regex_fragment(r'(?:старо)?англ\.'),
+    'амер.',
+    'брит.',
+    'ирл.',
+    'шотл.'
+]
+
 # german = ['древнегерм.', 'старонем.', 'нижненем.', 'сев.-нем.', 'ю-нем.', 'австр.', 'нем.']  # 'старонем.' должно идти первее 'нем.'
-german = ['древнегерм.', '(?:старо|верхне|нижне|сев.-|ю-|)?нем.', 'австр.']
+german = [
+    'древнегерм.',
+    regex_fragment(r'(?:старо|верхне|нижне|сев\.-|ю-)?нем\.'),
+    'австр.'
+]
+
 # greek = ['др.-греч.', 'новогреч.', 'греч.', 'эол.']  # 'др.-греч.' и 'новогреч.' должно идти первее 'греч.'
-greek = ['(?:др.-|ново)?греч.', 'эол.']  # 'др.-греч.' и 'новогреч.' должно идти первее 'греч.'
-italian = ['(?:поздне)?лат.', 'итал.']
+greek = [
+    regex_fragment(r'(?:др\.-|ново)?греч\.'),
+    'эол.'
+]
+
+italian = [
+    regex_fragment(r'(?:поздне)?лат\.'),
+    'итал.'
+]
+
 # slavonic = ['ст.-слав.', 'церк.-слав.', 'слав.']
-slavonic = ['(?:ст.-|церк.-)?слав.']
-other_langs = ['араб.', 'гавайск.', 'датск.', 'ивр.', 'исп.', 'польск.', 'фр.', 'япон.']
-search_terms_langs = [*english, *german, *greek, *italian, *slavonic, *other_langs]
+slavonic = [
+    regex_fragment(r'(?:ст\.-|церк\.-)?слав\.')
+]
+
+other_langs = [
+    'араб.',
+    'гавайск.',
+    'датск.',
+    'ивр.',
+    'исп.',
+    'польск.',
+    'фр.',
+    'япон.'
+]
+
+search_terms_langs = [
+    *english,
+    *german,
+    *greek,
+    *italian,
+    *slavonic,
+    *other_langs
+]
+
 
 # 'pron. pers.' и 'pron. poss.' должны в будущем piped-списке стоять первее, чем просто 'pron.'. Это нужно для того,
 # чтобы движок мог их захватывать, т. к. regex работает только до 1-го захвата
-english_morph_terms = ['adj.', 'adv.', 'pron.\s?(?:pers.|poss.|indef.)?', 'cj.', 'prp.', 'prtc.']
-russian_morph_terms = ['сущ.', 'прил.', 'числ.', 'мест.', 'фраз. гл.', 'мн. ч.', 'прист.', 'межд.', 'сравн. ст.',
-                       'прист.', 'предик.']
-search_terms_med = ['med.-pass.', 'тж. med.', 'med.']
-search_terms_gram = [*english_morph_terms, *russian_morph_terms, *search_terms_med, 'грам.', 'лингв.', 'inv.']
+english_morph_terms = [
+    'adj.',
+    'adv.',
+    regex_fragment(r'pron\.\s?(?:pers\.|poss\.|indef\.)?'),
+    'cj.',
+    'prp.',
+    'prtc.'
+]
+
+russian_morph_terms = [
+    'сущ.',
+    'прил.',
+    'числ.',
+    'мест.',
+    'фраз. гл.',
+    'мн. ч.',
+    'прист.',
+    'межд.',
+    'сравн. ст.',
+    'прист.',
+    'предик.'
+]
+
+search_terms_med = [
+    'med.',
+    regex_fragment(r'med\.-pass\.'),
+    regex_fragment(r'тж\. med\.')
+]
+
+search_terms_gram = [
+    *english_morph_terms,
+    *russian_morph_terms,
+    *search_terms_med,
+    'грам.',
+    'лингв.',
+    'inv.'
+]
+
 
 # Сначала идёт термин со словом 'от', затем этот же термин без слова 'от'. Более длинный термин должен идти раньше,
 # чтобы захват был корректным.
 search_terms_with_optional_from_part = [
     # 'сокр. от', 'сокр.',
     # 'уменьш. от', 'уменьш.',
-    '(?:сокр.|уменьш.)(?: от)?' # 'сокр.', 'уменьш.', 'сокр. от', 'уменьш. от'
+    regex_fragment(r'(?:сокр\.|уменьш\.)(?: от)?')  # 'сокр.', 'уменьш.', 'сокр. от', 'уменьш. от'
 ]
+
 
 search_terms_misc = [
     *search_terms_with_optional_from_part,
-    'colloq.', 'авт.', 'акуст.', 'анат.', 'архит.', 'астр.', 'библ.', 'биол.', 'биотех.', 'бот.', 'бран.',
-    'букв.', 'бухг.', 'вежл.', 'воен.', 'возд.', 'высок.', 'геогр.', 'геол.', 'геральд.', 'горн.',
-    'груб.', 'диал.', 'досл.', 'жарг.', 'зоол.', 'идиом.', 'информ.', 'ирон.', 'ист.', 'карт.',
-    'книжн.', 'комп.', 'косм.', 'крим.', 'кул.', 'лит.', 'лог.', 'мат.', 'матем.', 'мед.', 'миф.', 'мор.',
-    'муз.', 'неодобр.', 'общ.', 'обыкн.', 'охот.', '(?:тж. )?перен.', 'полигр.', 'полит.', 'поэт.', 'презр.',
-    'преим.', 'пренебр.', 'прям.', 'психол.', 'разг.', 'редк.', 'рел.', 'рит.', 'социол.',
-    'спорт.', 'ср.-век.', 'стр.', 'страд.', 'строит.', 'студ.', 'театр.', 'тех.', 'тлв.',
-    'уст.', 'устар.', 'устарев.', 'физ.', 'физиол.', 'филос.', 'фин.', 'хим.', 'церк.', 'шахм.',
-    'шутл.', 'эвф.', 'эк.', 'эл.', 'юр.'
+    'colloq.',
+    'авт.',
+    'акуст.',
+    'анат.',
+    'архит.',
+    'астр.',
+    'библ.',
+    'биол.',
+    'биотех.',
+    'бот.',
+    'бран.',
+    'букв.',
+    'бухг.',
+    'вежл.',
+    'воен.',
+    'возд.',
+    'высок.',
+    'геогр.',
+    'геол.',
+    'геральд.',
+    'горн.',
+    'груб.',
+    'диал.',
+    'досл.',
+    'жарг.',
+    'зоол.',
+    'идиом.',
+    'информ.',
+    'ирон.',
+    'ист.',
+    'карт.',
+    'книжн.',
+    'комп.',
+    'косм.',
+    'крим.',
+    'кул.',
+    'лит.',
+    'лог.',
+    'мат.',
+    'матем.',
+    'мед.',
+    'миф.',
+    'мор.',
+    'муз.',
+    'неодобр.',
+    'общ.',
+    'обыкн.',
+    'охот.',
+    regex_fragment(r'(?:тж\. )?перен\.'),
+    'полигр.',
+    'полит.',
+    'поэт.',
+    'презр.',
+    'преим.',
+    'пренебр.',
+    'прям.',
+    'психол.',
+    'разг.',
+    'редк.',
+    'рел.',
+    'рит.',
+    'социол.',
+    'спорт.',
+    'ср.-век.',
+    'стр.',
+    'страд.',
+    'строит.',
+    'студ.',
+    'театр.',
+    'тех.',
+    'тлв.',
+    'уст.',
+    'устар.',
+    'устарев.',
+    'физ.',
+    'физиол.',
+    'филос.',
+    'фин.',
+    'хим.',
+    'церк.',
+    'шахм.',
+    'шутл.',
+    'эвф.',
+    'эк.',
+    'эл.',
+    'юр.'
 ]
 
-terms_buffer = []
-for sublist in [search_terms_langs, search_terms_gram, search_terms_misc]:
-    piped_and_escaped_sublist_str = PIPE_DELIMITER.join([re.escape(word) for word in sublist])
-    terms_buffer.append(piped_and_escaped_sublist_str)
 
-piped_and_escaped_search_terms = "|".join(terms_buffer)
-search_terms = fr'(?:{piped_and_escaped_search_terms})'
+# Здесь больше не нужно вручную различать обычные строки и regex-фрагменты.
+# build_piped_terms() сам вызывает re.escape() только для обычных строк,
+# а готовые RegexFragment оставляет без изменений.
+piped_search_terms = build_piped_terms(
+    search_terms_langs,
+    search_terms_gram,
+    search_terms_misc
+)
 
-# разделители, которыми данные грамматические термины могут отделяться друг от друга
+search_terms = fr'(?:{piped_search_terms})'
+
+
+# разделители, которыми данные термины могут отделяться друг от друга
 delimiters2_regex_group = r'(?:[,;]?\s)'
 
-search_regex3 = get_optionally_delimited_terms_search_regex(search_terms, delimiters2_regex_group)
+search_regex3 = get_optionally_delimited_terms_search_regex(
+    search_terms,
+    delimiters2_regex_group
+)
+
 
 # Case 2.3 Выделять зелёным цветом и курсивом tag-и в Basic карточках с грамматикой (т. е. в поле Front)
 # Т[12] - самоучитель Попова состоит из 2-х томов
-# У[1-8] - каждый том содержит 8 уроков
-# Зан[1-5] - каждый урок содержит максимум 5 занятий
+# У[1-8] - каждый том содержит 8 занятий
+# Зан[1-5] - каждое занятие содержит максимум 5 занятий
 search_regex_tag = r'#\sТ[12]У[1-8]Зан[1-5]'
+
 
 # Case 2.4 Выделять зелёным цветом и курсивом отдельностоящую букву, обозначающую падеж,
 # за которой следует закрывающая круглая скобка или пробел
@@ -140,7 +383,11 @@ search_regex_tag = r'#\sТ[12]У[1-8]Зан[1-5]'
 # A = Akkusativ
 
 positive_lookahead_closing_parenthesis_or_space = r'(?=[\)\s])'
-search_regex_cases = r'{0}{1}'.format(r'(?<!\w)[NGDA]', positive_lookahead_closing_parenthesis_or_space)
+
+search_regex_cases = r'{0}{1}'.format(
+    r'(?<!\w)[NGDA]',
+    positive_lookahead_closing_parenthesis_or_space
+)
 
 
 class A20_GreenAndItalicFormatter:
@@ -154,12 +401,35 @@ class A20_GreenAndItalicFormatter:
         def _process(html_line):
             processed_html_line = html_line
 
-            processed_html_line = self.make_green_and_italic(processed_html_line, search_regex1)
-            processed_html_line = self.make_green_and_italic(processed_html_line, search_regex2)
-            processed_html_line = self.make_green_and_italic(processed_html_line, search_regex_adj_deklination)
-            processed_html_line = self.make_green_and_italic(processed_html_line, search_regex_parenthesized_phrases)
-            processed_html_line = self.make_green_and_italic(processed_html_line, search_regex3)
-            processed_html_line = self.make_green_and_italic(processed_html_line, search_regex_tag)
+            processed_html_line = self.make_green_and_italic(
+                processed_html_line,
+                search_regex1
+            )
+
+            processed_html_line = self.make_green_and_italic(
+                processed_html_line,
+                search_regex2
+            )
+
+            processed_html_line = self.make_green_and_italic(
+                processed_html_line,
+                search_regex_adj_deklination
+            )
+
+            processed_html_line = self.make_green_and_italic(
+                processed_html_line,
+                search_regex_parenthesized_phrases
+            )
+
+            processed_html_line = self.make_green_and_italic(
+                processed_html_line,
+                search_regex3
+            )
+
+            processed_html_line = self.make_green_and_italic(
+                processed_html_line,
+                search_regex_tag
+            )
 
             # Временно отключил, т. к. A0_CoreAnkiFormatter.make_formatting работает неправильно:
             # он сначала ищет все plain_text_matches, а потом перебирает их, что в строке "A = Atomicity" приводит
@@ -177,7 +447,11 @@ class A20_GreenAndItalicFormatter:
         # выражениями последовательности символов, к которым можно применить форматирование. Поиск в целой html_str
         # без разбивки на отдельные полосы и строки почему не всегда даёт правильный результат: иногда не захватывает
         # нужные последовательности, а иногда хоть и захватывает, но неправильно.
-        processed_html_str = AnkiFieldHtmlIntoStripesAndLinesSplitter.split_into_stripes_and_lines(html_str, _process)
+        processed_html_str = AnkiFieldHtmlIntoStripesAndLinesSplitter.split_into_stripes_and_lines(
+            html_str,
+            _process
+        )
+
         return processed_html_str
 
     def make_green_and_italic(self, html_str, search_regex):
@@ -187,8 +461,17 @@ class A20_GreenAndItalicFormatter:
         # Более того, Анки может впоследствии переставлять теги местами. Так что завязки на последовательность
         # тегов быть не должно.
         result = html_str
-        result = self.textColorizer.colorize_green(result, search_regex)
-        result = self.textFormatter.format_italic(result, search_regex)
+
+        result = self.textColorizer.colorize_green(
+            result,
+            search_regex
+        )
+
+        result = self.textFormatter.format_italic(
+            result,
+            search_regex
+        )
+
         return result
 
 
@@ -228,6 +511,13 @@ test_html_str = """
 1) байдарочное весло; весло для каноэ
 2) сокр. от paddle wheel колёсный пароход
 3) лопасть или лопатка (гребного колеса)
+
+1. пряжка
+2. англ. готовиться к бою (to buckle on a sword – пристегнуть меч)
+"""
+
+test_html_str = """
+2) староангл. готовиться к бою
 """
 
 if __name__ == '__main__':
