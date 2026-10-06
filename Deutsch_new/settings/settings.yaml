@@ -32,7 +32,11 @@ English:
   # общепринятый трёхбуквенный код (ISO 639-2) для английского языка
   lang_code: eng
   # базовая директория для поиска .odt-файлов ([!Vocab], [Portrait], [Sentences & Inflections] файлы)
-  base_dir: "${resources_dir}\\English"
+#  base_dir: "${resources_dir}\\English"
+
+  # Иванка
+  base_dir: "E:\Languages\English\Репетиторство 2026 (Одинковка)\L1. Тимохина, Крижепольская"
+
   regular_cards_deck: "!English. !Словарь"
   aggregate_cards_deck: "!English. Агрегаты"
 
