@@ -12,18 +12,27 @@ from user_enums import Mode
 
 ankiConnectService = AnkiConnectService()
 
+# Можно вычитывать карточки, комбинируя одновременно несколько параметров (как в Анки-браузере):
+# 1. карточки по note type
+# 2. карточки по deck name
+# и др. параметры при необходимости (напр., due interval и т.д.)
+# notes = ankiConnectService.find_notes_by_search_query('"note:Basic (and reversed card) (with additional fields)" deck:English')
+# print(len(notes))
+
 # notes = ankiConnectService.get_notes_by_deck_name('Languages. Greek Modern')
 # notes = ankiConnectService.get_notes_by_deck_name('Languages. Greek Modern::raw')
-notes = ankiConnectService.get_notes_by_deck_name('temp')
+# notes = ankiConnectService.get_notes_by_deck_name('temp')
 # notes = ankiConnectService.get_notes_by_deck_name('!Deutsch. !Словарь::new2')
 # notes = ankiConnectService.get_notes_by_deck_name('Italian')
 # notes = ankiConnectService.get_notes_by_deck_name('Languages. Greek. !Словарь')
 # notes = ankiConnectService.get_notes_by_deck_name('!Deutsch. !Словарь::!Deutsch. Goethe-Institut')
 # notes = ankiConnectService.get_notes_by_deck_name('Goethe A1')
+# notes = ankiConnectService.get_notes_by_deck_name('English')
+
 
 # notes = ankiConnectService.get_all_notes_from_all_decks()
 
-# notes = ankiConnectService.get_notes_by_note_type_basic_and_reversed_card_with_additional_fields()
+notes = ankiConnectService.get_notes_by_note_type_basic_and_reversed_card_with_additional_fields()
 
 if __name__ == '__main__':
     ankiCardsAppearanceProcessor = AnkiCardsAppearanceProcessor()

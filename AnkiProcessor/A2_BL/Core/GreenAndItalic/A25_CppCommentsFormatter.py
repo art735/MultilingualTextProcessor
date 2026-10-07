@@ -1,60 +1,44 @@
 import re
 
-import AnkiFieldHtmlIntoStripesAndLinesSplitter
-from A20_GreenAndItalicFormatter import A20_GreenAndItalicFormatter
-from TextColorizer import TextColorizer
-from TextFomatter import TextFormatter
+# Q: В Анки-полях символом новой строки является не \n, а тег <br>
+# A: Символ точки . в регулярных выражениях означает «любой символ» (кроме классического \n). Для движка регулярных
+# выражений тег <br> — это не какой-то спецсимвол переноса, а просто 4 обычные буквы: <, b, r, >.
+# Поэтому комбинация .*? без проблем «проглотит» любые <br>, пробелы и текст внутри /* ... */.
 
+# Q: Почему модификатор (?s) всё равно полезно оставить?
+# A: В исходном коде карточек Anki (если нажать Ctrl+Shift+X в редакторе) всё равно могут присутствовать невидимые
+# символы \n для визуального форматирования самого HTML-кода. Если убрать (?s), регулярка может споткнуться об этот
+# невидимый перенос и не закрыть комментарий.
 
-# Однострочные C++-комментарии: от // и до конца строки
-# Символ // и всё, что идёт за ним в пределах одной строки
-SEARCH_REGEX_SINGLE_LINE_CPP_COMMENT = r'//.*'
-
-# Многострочные C++-комментарии: от /* до ближайшего */
-# Модификатор (?s) заставляет точку '.' захватывать, в том числе, и символы переноса строки \n
-SEARCH_REGEX_MULTI_LINE_CPP_COMMENT = r'(?s)/\*.*?\*/'
+# Единое регулярное выражение для C++ комментариев:
+# 1. (?s)/\*.*?\*/ — многострочный комментарий (захватывает любые теги <br> и \n)
+# 2. //(?:(?!<br\s*/?>)[^\n])* — однострочный комментарий (захватывает всё от // до первого тега <br> или \n)
+SEARCH_REGEX_CPP_COMMENTS = r'(?s)/\*.*?\*/|//(?:(?!<br\s*/?>)[^\n])*'
 
 # Форматирует однострочные и многострочные C++-комментарии зелёным цветом и курсивом
 # Данная логика вынесена в отдельный класс, т. к. она применяется не ко всем полям карточки, а в основном только в Front и Back
 class A25_CppCommentsFormatter:
     """
     Класс для поиска и форматирования однострочных (//...) и многострочных (/*...*/)
-    C++ комментариев зелёным цветом и курсивом.
+    C++ комментариев зелёным цветом и курсивом в HTML-полях Anki.
     """
 
     def __init__(self):
-        self.a20_GreenAndItalicFormatter = A20_GreenAndItalicFormatter()
-        self.textColorizer = TextColorizer()
-        self.textFormatter = TextFormatter()
+        # Теги Anki для выделения зелёным цветом и курсивом
+        self.open_tag = '<span style="color: rgb(0, 170, 0);"><i>'
+        self.close_tag = '</i></span>'
 
     def format_cpp_comments(self, html_str):
         """
         Находит все однострочные и многострочные C++ комментарии в переданной HTML-строке
         и делает их зелёными и курсивными.
         """
-        result = html_str
+        def _replace_match(match):
+            return f"{self.open_tag}{match.group(0)}{self.close_tag}"
 
-        # 1. Первым делом обрабатываем многострочные комментарии /* ... */.
-        # Обработка выполняется на всём тексте целиком, так как комментарий может пересекать переносы строк.
-        result = self.a20_GreenAndItalicFormatter.make_green_and_italic(
-            result,
-            SEARCH_REGEX_MULTI_LINE_CPP_COMMENT
-        )
+        # Заменяем все совпадения напрямую в HTML-строке без разбиения по <br>
+        return re.sub(SEARCH_REGEX_CPP_COMMENTS, _replace_match, html_str)
 
-        # 2. Обрабатываем однострочные комментарии // ...
-        # Для корректной работы с блоками/полосами разбиваем html_str через сплиттер.
-        def _process_line(html_line):
-            return self.a20_GreenAndItalicFormatter.make_green_and_italic(
-                html_line,
-                SEARCH_REGEX_SINGLE_LINE_CPP_COMMENT
-            )
-
-        result = AnkiFieldHtmlIntoStripesAndLinesSplitter.split_into_stripes_and_lines(
-            result,
-            _process_line
-        )
-
-        return result
 
 ##################################################
 
@@ -62,8 +46,28 @@ test_html_str = '// однострочный комментарий'
 test_html_str = '/* многострочный комментарий на одной линии */'
 test_html_str = '/* настоящий многострочный комментарий \n на разных \n\n строках */'
 test_html_str = '/* настоящий многострочный комментарий <br> на разных <br><br> строках */'
+test_html_str = 'versus<br>// English'
 
 if __name__ == '__main__':
     a25_CppCommentsFormatter = A25_CppCommentsFormatter()
     res = a25_CppCommentsFormatter.format_cpp_comments(test_html_str)
     print(res)
+
+    input1 = [
+        '// однострочный комментарий',
+        '/* многострочный комментарий на одной линии */',
+        '/* настоящий многострочный комментарий \n на разных \n\n строках */',
+        '/* настоящий многострочный комментарий <br> на разных <br><br> строках */'
+    ]
+
+    er1 = [
+        '<span style="color: rgb(0, 170, 0);"><i>// однострочный комментарий</i></span>',
+        '<span style="color: rgb(0, 170, 0);"><i>/* многострочный комментарий на одной линии */</i></span>',
+        '<span style="color: rgb(0, 170, 0);"><i>/* настоящий многострочный комментарий \n на разных \n\n строках */</i></span>',
+        '<span style="color: rgb(0, 170, 0);"><i>/* настоящий многострочный комментарий <br> на разных <br><br> строках */</i></span>',
+    ]
+
+    if all(a25_CppCommentsFormatter.format_cpp_comments(input_val) == er for input_val, er in zip(input1, er1)):
+        print("test - ok")
+    else:
+        print("test - failed")

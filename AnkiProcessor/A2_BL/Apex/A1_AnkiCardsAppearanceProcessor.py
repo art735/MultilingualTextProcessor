@@ -1,3 +1,4 @@
+from A25_CppCommentsFormatter import A25_CppCommentsFormatter
 from ParContentsUnitalicizer import ParContentsUnitalicizer
 from TranscriptionCommentsGreenAndItalicFormatter import TranscriptionCommentsGreenAndItalicFormatter
 from ColorTagProcessor import ColorTagProcessor
@@ -30,6 +31,7 @@ divStripper = DivStripper()
 colorTagProcessor = ColorTagProcessor()
 verbConjugationFormatter = VerbConjugationFormatter()
 greenAndItalicAggregator = GreenAndItalicAggregator()
+a25_CppCommentsFormatter = A25_CppCommentsFormatter()
 transcriptionCommentsGreenAndItalicFormatter = TranscriptionCommentsGreenAndItalicFormatter()
 a12_ItalicOnlyFormatter = A12_ItalicOnlyFormatter()
 parContentsUnitalicizer = ParContentsUnitalicizer()
@@ -47,6 +49,12 @@ callbacks_dict = {
     divStripper.strip_div_tags: [*globally_allowed_fields, 'Image'],
     colorTagProcessor.treat_colors: globally_allowed_fields,
     greenAndItalicAggregator.execute_all_the_methods: ['Front', 'Front_comment', 'Back', 'Back_comment'],
+
+    # Для запуска этой логики no_of_find_and_replace_cycles должно быть строго 1, т. к. там нет логики проверки
+    # добавлялось ли форматирование ранее, и при no_of_find_and_replace_cycles > 1 форматирование добавится более 1 раза,
+    # что является ошибкой
+    # a25_CppCommentsFormatter.format_cpp_comments: ['Front', 'Back', 'Back_comment'],
+
     NbspProcessor.insert_nbsp_before_opening_parenthesis: ['Front', 'Front_comment', 'Grammar', 'Back', 'Back_comment'],
     NbspProcessor.replace_nbsp_with_regular_space: ['Transcription'],
     transcriptionCommentsGreenAndItalicFormatter.format_comment: ['Transcription'],
@@ -88,15 +96,17 @@ class AnkiCardsAppearanceProcessor:
         # 1. Перебор всех карточек для формирования результата
         for note in notes:
             note_updated_fields_dict, info_message = self.process_single_note(note, strip_all_tags_except_br_and_img_tags)
+            # Сохраняем сообщения об обновлённых полях, берём только непустые сообщения
+            if info_message:
+                info_messages.append(info_message)
             # Если словарь не пустой, т. е. хотя бы одно поле было обновлено
             if note_updated_fields_dict and mode == Mode.FIND_AND_REPLACE:
                 note_dao = {'id': note['noteId'], 'fields': note_updated_fields_dict}
                 notes_to_update.append(note_dao)
-                info_messages.append(info_message)
 
         # 2. Вывод результата на экран и в Анки (если позволяет флаг)
         if mode == Mode.SEARCH_ONLY:
-            [print(msg) for msg in self.messages]
+            [print(f'{msg}\n') for msg in info_messages]
         elif mode == Mode.FIND_AND_REPLACE:
             # Сохраняем в Анки обновлённые поля карточек
             ankiConnectService.update_multiple_notes_in_anki(notes_to_update)
@@ -108,7 +118,7 @@ class AnkiCardsAppearanceProcessor:
     def process_single_note(self, note, strip_all_tags_except_br_and_img_tags):
         # Количество повторов операций поиска и замены всеми callback-ами. Одного раунда часто бывало не достаточно,
         # поэтому желательно делать 2-3 повтора не вручную (как раньше), а с помощью регуляции этой переменной.
-        no_of_find_and_replace_cycles = 2
+        no_of_find_and_replace_cycles = 1
         field_messages = []
         note_updated_fields_dict = {}
         # Цикл по всем полям 'карточки' (более точно - по всем полям note-а)
@@ -120,6 +130,7 @@ class AnkiCardsAppearanceProcessor:
             # background-color - это ручное выделение жёлтым маркером самой важной информации и не хочется её терять
             # при очистке html-разметки, т. к. потом это выделение маркером нужно заново делать вручную, автоматически
             # его никак не восстановить.
+            # TODO: добавить сюда и тэг, отвечающий за superscript, чтобы не сломать сноски с греческих текстах
             if strip_all_tags_except_br_and_img_tags:
                 field_value = field_data_dict['value']
                 if isinstance(field_value, str) and 'background-color' in field_value.lower():
@@ -184,6 +195,26 @@ test_note = {
     }
 }
 
+test_note = {
+    'fields': {
+        # 'noteId': {
+        #     'value': 1
+        # },
+        #
+        'Front': {
+            'value': 'versus<br>// English'
+        },
+        # 'Back': {
+        #     'value': '[<span style="color: rgb(0, 170, 0);"><i>амер.</i></span>]<br>1) авто джип<br>2) авиа небольшой разведывательный самолёт<br>3) <span style="color: rgb(0, 170, 0);"><i>воен.; жарг.</i></span> новичок, новобранец'
+        # }
+    }
+}
+
 test_notes = [test_note]
 
-# process(notes, Mode.FIND_AND_REPLACE)
+if __name__ == '__main__':
+    ankiCardsAppearanceProcessor = AnkiCardsAppearanceProcessor()
+
+    # ankiCardsAppearanceProcessor.process(test_notes, Mode.FIND_AND_REPLACE, strip_all_tags_except_br_and_img_tags=True)
+    ankiCardsAppearanceProcessor.process(test_notes, Mode.SEARCH_ONLY)
+
