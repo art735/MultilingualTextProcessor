@@ -389,6 +389,12 @@ search_regex_cases = r'{0}{1}'.format(
     positive_lookahead_closing_parenthesis_or_space
 )
 
+# CASE 3. Строки-комментарии
+
+# Case 3.1 Выделять зелёным цветом и курсивом строку, сформированную как однострочный C++-комментарий
+# (?m) - это флаг многострочности (чтобы ^ срабатывал в начале каждой строки)
+# search_regex_cpp_comment = r'(?m)^\s*//.*'
+
 
 class A20_GreenAndItalicFormatter:
     def __init__(self):
@@ -401,35 +407,13 @@ class A20_GreenAndItalicFormatter:
         def _process(html_line):
             processed_html_line = html_line
 
-            processed_html_line = self.make_green_and_italic(
-                processed_html_line,
-                search_regex1
-            )
-
-            processed_html_line = self.make_green_and_italic(
-                processed_html_line,
-                search_regex2
-            )
-
-            processed_html_line = self.make_green_and_italic(
-                processed_html_line,
-                search_regex_adj_deklination
-            )
-
-            processed_html_line = self.make_green_and_italic(
-                processed_html_line,
-                search_regex_parenthesized_phrases
-            )
-
-            processed_html_line = self.make_green_and_italic(
-                processed_html_line,
-                search_regex3
-            )
-
-            processed_html_line = self.make_green_and_italic(
-                processed_html_line,
-                search_regex_tag
-            )
+            processed_html_line = self.make_green_and_italic(processed_html_line, search_regex1)
+            processed_html_line = self.make_green_and_italic(processed_html_line, search_regex2)
+            processed_html_line = self.make_green_and_italic(processed_html_line, search_regex_adj_deklination)
+            processed_html_line = self.make_green_and_italic(processed_html_line, search_regex_parenthesized_phrases)
+            processed_html_line = self.make_green_and_italic(processed_html_line, search_regex3)
+            processed_html_line = self.make_green_and_italic(processed_html_line, search_regex_tag)
+            # processed_html_line = self.make_green_and_italic(processed_html_line, search_regex_cpp_comment)
 
             # Временно отключил, т. к. A0_CoreAnkiFormatter.make_formatting работает неправильно:
             # он сначала ищет все plain_text_matches, а потом перебирает их, что в строке "A = Atomicity" приводит
@@ -462,15 +446,8 @@ class A20_GreenAndItalicFormatter:
         # тегов быть не должно.
         result = html_str
 
-        result = self.textColorizer.colorize_green(
-            result,
-            search_regex
-        )
-
-        result = self.textFormatter.format_italic(
-            result,
-            search_regex
-        )
+        result = self.textColorizer.colorize_green(result, search_regex)
+        result = self.textFormatter.format_italic(result, search_regex)
 
         return result
 
