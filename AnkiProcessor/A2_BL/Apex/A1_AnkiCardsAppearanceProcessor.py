@@ -133,7 +133,16 @@ class AnkiCardsAppearanceProcessor:
             # TODO: добавить сюда и тэг, отвечающий за superscript, чтобы не сломать сноски с греческих текстах
             if strip_all_tags_except_br_and_img_tags:
                 field_value = field_data_dict['value']
-                if isinstance(field_value, str) and 'background-color' in field_value.lower():
+                if isinstance(field_value, str) and (
+                        'background-color' in field_value.lower()
+                        # Проверяем именно '<sup' / '<sub', а не 'sup' / 'sub',
+                        # чтобы обнаружить HTML-тег верхнего/нижнего индекса,
+                        # при этом не зависеть от конкретного варианта закрывающего символа '>'
+                        # или дополнительных атрибутов, например: <sup>, <sup class="...">.
+                        # Тег sup используется, как минимум, в сносках к греческим текстам.
+                        or '<sup' in field_value.lower()
+                        or '<sub' in field_value.lower()
+                ):
                     continue
 
             # сбрасываем флаг
