@@ -49,12 +49,7 @@ callbacks_dict = {
     divStripper.strip_div_tags: [*globally_allowed_fields, 'Image'],
     colorTagProcessor.treat_colors: globally_allowed_fields,
     greenAndItalicAggregator.execute_all_the_methods: ['Front', 'Front_comment', 'Back', 'Back_comment'],
-
-    # Для запуска этой логики no_of_find_and_replace_cycles должно быть строго 1, т. к. там нет логики проверки
-    # добавлялось ли форматирование ранее, и при no_of_find_and_replace_cycles > 1 форматирование добавится более 1 раза,
-    # что является ошибкой
-    # a25_CppCommentsFormatter.format_cpp_comments: ['Front', 'Back', 'Back_comment'],
-
+    a25_CppCommentsFormatter.format_cpp_comments: ['Front', 'Back', 'Back_comment'],
     NbspProcessor.insert_nbsp_before_opening_parenthesis: ['Front', 'Front_comment', 'Grammar', 'Back', 'Back_comment'],
     NbspProcessor.replace_nbsp_with_regular_space: ['Transcription'],
     transcriptionCommentsGreenAndItalicFormatter.format_comment: ['Transcription'],
@@ -118,7 +113,7 @@ class AnkiCardsAppearanceProcessor:
     def process_single_note(self, note, strip_all_tags_except_br_and_img_tags):
         # Количество повторов операций поиска и замены всеми callback-ами. Одного раунда часто бывало не достаточно,
         # поэтому желательно делать 2-3 повтора не вручную (как раньше), а с помощью регуляции этой переменной.
-        no_of_find_and_replace_cycles = 1
+        no_of_find_and_replace_cycles = 2
         field_messages = []
         note_updated_fields_dict = {}
         # Цикл по всем полям 'карточки' (более точно - по всем полям note-а)
@@ -213,9 +208,10 @@ test_note = {
         'Front': {
             'value': 'versus<br>// English'
         },
-        # 'Back': {
-        #     'value': '[<span style="color: rgb(0, 170, 0);"><i>амер.</i></span>]<br>1) авто джип<br>2) авиа небольшой разведывательный самолёт<br>3) <span style="color: rgb(0, 170, 0);"><i>воен.; жарг.</i></span> новичок, новобранец'
-        # }
+        'Back': {
+            # С++-комментарий уже покрашен зелёным цветом и поэтому поле после обработки должно остаться без изменений
+            'value': 'versus<br><span style="color: rgb(0, 170, 0);"><i>// English</i></span>'
+        }
     }
 }
 
