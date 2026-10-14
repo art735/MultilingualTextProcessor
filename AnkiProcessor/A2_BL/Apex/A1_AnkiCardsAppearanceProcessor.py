@@ -1,3 +1,5 @@
+import re
+
 from A25_CppCommentsFormatter import A25_CppCommentsFormatter
 from ParContentsUnitalicizer import ParContentsUnitalicizer
 from TranscriptionCommentsGreenAndItalicFormatter import TranscriptionCommentsGreenAndItalicFormatter
@@ -26,6 +28,8 @@ ignored_fields = ['SSML', 'Audio1', 'Audio2', 'Image']
 
 globally_allowed_fields = [item for item in all_possible_fields if item not in ignored_fields]
 
+# TODO: все обработчики форматирования должны быть ИДЕМПОТЕНТНЫ: поторное применение форматирования не должно
+#   менять содержимое карточки.
 # Именно объект класса, а не сам класс, нужен для работы с callback-ом
 divStripper = DivStripper()
 colorTagProcessor = ColorTagProcessor()
@@ -120,23 +124,34 @@ class AnkiCardsAppearanceProcessor:
         for field_name, field_data_dict in note['fields'].items():
 
             # НОВАЯ ЛОГИКА!
-            # Поле, содержащее background-color, полностью игнорируем:
+            # Игнорируем в плане стрипания тегов поля, содержащие некоторое форматирование (чтобы не потерять это форматирование):
+            # 1) поле, содержащее background-color, полностью игнорируем:
             # никакие callback-и и очистка тегов к нему не применяются.
             # background-color - это ручное выделение жёлтым маркером самой важной информации и не хочется её терять
             # при очистке html-разметки, т. к. потом это выделение маркером нужно заново делать вручную, автоматически
             # его никак не восстановить.
-            # TODO: добавить сюда и тэг, отвечающий за superscript, чтобы не сломать сноски с греческих текстах
+            # 2) игнорируем поля, в которых имеются subcript и superscript (широко используется в сносках к греческим диалогам)
+            # 3) игнорируем поле, в котором имеется форматирование жирным: таким форматированием выделяется важное
+            # значение многозначного слова или выделяются греческие личные местоимения, если они явно присутствуют
+            # в тексте (а не просто подразумеваются окончанием глагола)
             if strip_all_tags_except_br_and_img_tags:
                 field_value = field_data_dict['value']
+
                 if isinstance(field_value, str) and (
                         'background-color' in field_value.lower()
-                        # Проверяем именно '<sup' / '<sub', а не 'sup' / 'sub',
-                        # чтобы обнаружить HTML-тег верхнего/нижнего индекса,
-                        # при этом не зависеть от конкретного варианта закрывающего символа '>'
-                        # или дополнительных атрибутов, например: <sup>, <sup class="...">.
-                        # Тег sup используется, как минимум, в сносках к греческим текстам.
-                        or '<sup' in field_value.lower()
-                        or '<sub' in field_value.lower()
+                        # <xyz — начало искомого тега.
+                        # (?=[\s>]) — проверка следующего символа: после <xyz должен идти пробельный символ или >.
+                        # re.IGNORECASE — позволяет обнаруживать также <XYZ> и <XYZ CLASS="...">.
+                        or re.search(r'<sup(?=[\s>])', field_value, re.IGNORECASE)
+                        or re.search(r'<sub(?=[\s>])', field_value, re.IGNORECASE)
+                        # <b>	Да
+                        # <b class="important">	Да
+                        # <b style="font-weight: bold;">	Да
+                        # <body>	Нет
+                        # <blockquote>	Нет
+                        # <br>	Нет
+                        # <button>	Нет
+                        or re.search(r'<b(?=[\s>])', field_value, re.IGNORECASE)
                 ):
                     continue
 
