@@ -23,10 +23,7 @@ class TestPhoneFieldProcessor:
             "tel:+380633334455 - Сидоров Сидор "
         )
 
-        result = processor.process(
-            "ТЕЛЕФОНЫ",
-            value
-        )
+        result = processor.process(value)
 
         expected = (
             "ТЕЛЕФОНЫ:\n"
@@ -48,10 +45,7 @@ class TestPhoneFieldProcessor:
             "tel:+380633334455 - Сидоров Сидор"
         )
 
-        result = processor.process(
-            "ТЕЛЕФОНЫ",
-            value
-        )
+        result = processor.process(value)
 
         expected = (
             "ТЕЛЕФОНЫ:\n"
@@ -73,10 +67,7 @@ class TestPhoneFieldProcessor:
             "tel:+380672223344 - Петров Пётр (ДИРЕКТОР)"
         )
 
-        result = processor.process(
-            "ТЕЛЕФОНЫ",
-            value
-        )
+        result = processor.process(value)
 
         expected = (
             "ТЕЛЕФОНЫ:\n"
@@ -98,11 +89,7 @@ class TestPhoneFieldProcessor:
             "tel:+380633334455 - Сидоров Сидор Сидорович"
         )
 
-        result = processor.process(
-            "ТЕЛЕФОНЫ",
-            value,
-            director_full_name="Петров Пётр Петрович"
-        )
+        result = processor.process(value, director_full_name="Петров Пётр Петрович")
 
         expected = (
             "ТЕЛЕФОНЫ:\n"
@@ -124,11 +111,7 @@ class TestPhoneFieldProcessor:
             "tel:+380672223344 - ПЕТРОВ ПЁТР ПЕТРОВИЧ"
         )
 
-        result = processor.process(
-            "ТЕЛЕФОНЫ",
-            value,
-            director_full_name="Петров Пётр Петрович"
-        )
+        result = processor.process(value, director_full_name="Петров Пётр Петрович")
 
         expected = (
             "ТЕЛЕФОНЫ:\n"
@@ -149,11 +132,7 @@ class TestPhoneFieldProcessor:
             "tel:+380672223344 - Петров Пётр"
         )
 
-        result = processor.process(
-            "ТЕЛЕФОНЫ",
-            value,
-            director_full_name="Иванов Иван"
-        )
+        result = processor.process(value, director_full_name="Иванов Иван")
 
         expected = (
             "ТЕЛЕФОНЫ:\n"
@@ -176,11 +155,7 @@ class TestPhoneFieldProcessor:
             "tel:+380991112233 - Смирнов Сергей Сергеевич"
         )
 
-        result = processor.process(
-            "ТЕЛЕФОНЫ",
-            value,
-            director_full_name="Смирнов Сергей Сергеевич"
-        )
+        result = processor.process(value, director_full_name="Смирнов Сергей Сергеевич")
 
         expected = (
             "ТЕЛЕФОНЫ:\n"
@@ -197,10 +172,7 @@ class TestPhoneFieldProcessor:
         Проверяет обработку пустого значения.
         """
 
-        result = processor.process(
-            "ТЕЛЕФОНЫ",
-            ""
-        )
+        result = processor.process("")
 
         assert result == "ТЕЛЕФОНЫ:\n"
 
@@ -209,9 +181,6 @@ class TestPhoneFieldProcessor:
         Проверяет обработку None.
         """
 
-        result = processor.process(
-            "ТЕЛЕФОНЫ",
-            None
-        )
+        result = processor.process(None)
 
         assert result == "ТЕЛЕФОНЫ:\n"

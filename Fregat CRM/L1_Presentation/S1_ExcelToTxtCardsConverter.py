@@ -10,7 +10,7 @@ class ExcelToTxtCardsConverter:
         self.input_file = Path(input_file)
         self.phone_field_processor = PhoneFieldProcessor()
 
-    def convert(self, director_full_name):
+    def convert(self):
         workbook = load_workbook(
             self.input_file,
             data_only=True  # Получаем вычисленные значения формул, если они сохранены в Excel
@@ -34,8 +34,7 @@ class ExcelToTxtCardsConverter:
 
             card = self._process_row(
                 headers,
-                row,
-                director_full_name
+                row
             )
             cards.append(card)
 
@@ -51,8 +50,26 @@ class ExcelToTxtCardsConverter:
 
         workbook.close()
 
-    def _process_row(self, headers, row, director_full_name):
+    def _process_row(self, headers, row):
         fields = []
+
+        director_column_index = next(
+            (
+                index
+                for index, header in enumerate(headers)
+                if header is not None
+                and str(header).strip().upper() == "ДИРЕКТОР"
+            ),
+            None
+        )
+
+        director_full_name = (
+            row[director_column_index]
+            if director_column_index is not None
+            else ""
+        )
+
+        director_full_name = str(director_full_name or "").strip()
 
         for header, value in zip(headers, row):
 
@@ -72,7 +89,6 @@ class ExcelToTxtCardsConverter:
                 # и добавляем табуляцию в начале строки
                 # Формируем итоговое поле с заголовком и списком телефонов
                 field = self.phone_field_processor.process(
-                    header,
                     value,
                     director_full_name
                 )
@@ -87,12 +103,9 @@ class ExcelToTxtCardsConverter:
 
 ############################################################################################
 
-
 if __name__ == "__main__":
     converter = ExcelToTxtCardsConverter(
-        input_file="E:\! Documents\Artem\Work\Завод 'Фрегат'\для создания CRM.xlsx"
+        input_file=r"E:\! Documents\Artem\Work\Завод 'Фрегат'\для создания CRM.xlsx"
     )
 
-    converter.convert(
-        director_full_name="Иванов Иван Иванович"
-    )
+    converter.convert()

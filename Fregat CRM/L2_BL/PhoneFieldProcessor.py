@@ -6,13 +6,12 @@ class PhoneFieldProcessor:
 
     DIRECTOR_MARKER = "(директор)"
 
-    def process(self, header, value, director_full_name=None):
+    def process(self, value, director_full_name=None):
         """
         Обрабатывает поле с телефонами.
 
         Контакты директора перемещаются в начало списка.
 
-        :param header: Заголовок поля, например "ТЕЛЕФОНЫ".
         :param value: Строка с телефонными записями.
         :param director_full_name: Полное ФИО директора.
         :return: Отформатированная строка с телефонами.
@@ -64,7 +63,7 @@ class PhoneFieldProcessor:
             for _, formatted_phone in contacts
         ]
 
-        return f"{header}:\n" + "\n".join(phone_lines)
+        return "ТЕЛЕФОНЫ:\n" + "\n".join(phone_lines)
 
     def _is_director(self, contact_name, director_full_name):
         """
@@ -85,3 +84,26 @@ class PhoneFieldProcessor:
                 return True
 
         return False
+
+############################################################################################
+
+phone_field = (
+    " tel:+380501112233 - Иванов Иван ;"
+    ";"
+    "tel:+380672223344 - Петров Пётр;"
+    " "
+    "tel:+380633334455 - Сидоров Сидор "
+)
+
+# Контакт с подстрокой '(директор)' должен идти первым.
+phone_field = (
+    "tel:+380501112233 - Иванов Иван;"
+    "tel:+380672223344 - Петров Пётр (директор);"
+    "tel:+380633334455 - Сидоров Сидор"
+)
+
+if __name__ == "__main__":
+    phoneFieldProcessor = PhoneFieldProcessor()
+
+    res = phoneFieldProcessor.process(phone_field)
+    print(res)
