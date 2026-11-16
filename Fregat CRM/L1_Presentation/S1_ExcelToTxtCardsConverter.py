@@ -1,6 +1,7 @@
 from openpyxl import load_workbook
 from pathlib import Path
 
+import Fregat_constants
 from PhoneFieldProcessor import PhoneFieldProcessor
 
 
@@ -58,7 +59,7 @@ class ExcelToTxtCardsConverter:
                 index
                 for index, header in enumerate(headers)
                 if header is not None
-                and str(header).strip().upper() == "ДИРЕКТОР"
+                and str(header).strip().upper() == Fregat_constants.DIRECTOR_HEADER
             ),
             None
         )
@@ -79,7 +80,7 @@ class ExcelToTxtCardsConverter:
             if value is None:
                 value = ""
 
-            if str(header).strip().upper() == "ТЕЛЕФОНЫ":
+            if str(header).strip().upper() == Fregat_constants.PHONE_HEADER:
 
                 # Разбиваем строку с телефонами на отдельные записи по символу ";"
                 # Удаляем пробельные символы по краям и префикс "tel:"

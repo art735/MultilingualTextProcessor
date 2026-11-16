@@ -1,26 +1,51 @@
 
-
 from openpyxl import load_workbook
 from pathlib import Path
 import re
 
+import Fregat_constants
 from PhoneFieldProcessor import PhoneFieldProcessor
 
 # 1. Читает ID из первого столбца Excel.
-# 2. Получает обработанные контакты через PhoneFieldProcessor.process(). Поэтому порядок контактов, в том числе приоритет директора, сохранится.
+# 2. Получает обработанные контакты через PhoneFieldProcessor.process().
+#    Поэтому порядок контактов, в том числе приоритет директора, сохранится.
 # 3. Разделяет номер телефона и имя контакта на два столбца.
 # 4. Преобразовывает телефон в формулу HYPERLINK.
 # 5. Оставляет ID только в первой строке группы, а между разными записями добавляет пустую строку.
+# 6. Опционально начинает обработку с указанного ID (starting_id),
+#    игнорируя все предыдущие записи.
 class ExcelToGoogleSheetsConverter:
-
-    PHONE_HEADER = "ТЕЛЕФОНЫ"
-    DIRECTOR_HEADER = "ДИРЕКТОР"
 
     def __init__(self, input_file):
         self.input_file = Path(input_file)
         self.phone_field_processor = PhoneFieldProcessor()
 
-    def convert(self):
+    # 1. convert(starting_id=902) — начинает обработку с первой записи с ID 902 включительно.
+    # 2. Все строки до найденного ID пропускаются без обработки телефонов.
+    # 3. После нахождения ID обрабатываются все последующие записи независимо от их ID.
+    # 4. Если указанный ID отсутствует, выбрасывается ValueError.
+    # 5. ID корректно сравниваются даже в случае, когда в Excel он хранится как 902.0, а в аргументе передаётся 902.
+    # Важная деталь: после нахождения starting_id фильтрация прекращается. То есть в результат попадут все последующие
+    # записи, независимо от их ID. Это именно режим начала выгрузки с определённой позиции в Excel,
+    # а не фильтрация по условию ID >= starting_id.
+    # Всё это нужно для того, чтобы контакты клиентов, которые уже были прозвонены, не повторялись в выгрузке для работы
+    # с последующими клиентами.
+    def convert(self, starting_id=None):
+        """
+        Формирует TSV-текст для последующей вставки в Google Sheets.
+
+        :param starting_id:
+            ID записи, с которой необходимо начать обработку.
+            Если None, обрабатывается весь Excel.
+            Если ID указан, все предыдущие записи игнорируются.
+
+        :return:
+            Строка с данными в формате TSV.
+
+        :raises ValueError:
+            Если указанный starting_id отсутствует в Excel.
+        """
+
         workbook = load_workbook(
             self.input_file,
             data_only=True
@@ -36,16 +61,20 @@ class ExcelToGoogleSheetsConverter:
 
             phone_column_index = self._find_column_index(
                 headers,
-                self.PHONE_HEADER
+                Fregat_constants.PHONE_HEADER
             )
 
             director_column_index = self._find_column_index(
                 headers,
-                self.DIRECTOR_HEADER,
+                Fregat_constants.DIRECTOR_HEADER,
                 required=False
             )
 
             record_blocks = []
+
+            # Определяем, нужно ли искать начальный ID.
+            # Если starting_id не передан, начинаем обработку сразу.
+            starting_id_found = starting_id is None
 
             for row in sheet.iter_rows(
                 min_row=2,
@@ -60,6 +89,18 @@ class ExcelToGoogleSheetsConverter:
 
                 if record_id is None:
                     continue
+
+                # Пропускаем записи до тех пор, пока не встретим starting_id.
+                # Сама запись с указанным ID включается в результат.
+                if not starting_id_found:
+
+                    if (
+                        self._normalize_id(record_id)
+                        != self._normalize_id(starting_id)
+                    ):
+                        continue
+
+                    starting_id_found = True
 
                 phone_value = row[phone_column_index]
 
@@ -105,11 +146,31 @@ class ExcelToGoogleSheetsConverter:
                     "\n".join(record_lines)
                 )
 
+            # Проверяем, удалось ли найти starting_id
+            if not starting_id_found:
+                raise ValueError(
+                    f"Запись с ID '{starting_id}' не найдена в Excel."
+                )
+
             # Между разными записями оставляем пустую строку
             return "\n\n".join(record_blocks)
 
         finally:
             workbook.close()
+
+    @staticmethod
+    def _normalize_id(value):
+        """
+        Нормализует ID для корректного сравнения.
+
+        Например:
+        902 == 902.0 == "902"
+        """
+
+        if isinstance(value, float) and value.is_integer():
+            value = int(value)
+
+        return str(value).strip()
 
     def _find_column_index(self, headers, column_name, required=True):
         """
@@ -147,7 +208,7 @@ class ExcelToGoogleSheetsConverter:
 
             line = line.strip()
 
-            if not line or line.upper() == f"{self.PHONE_HEADER}:":
+            if not line or line.upper() == f"{Fregat_constants.PHONE_HEADER}:":
                 continue
 
             phone, separator, contact_name = line.partition(" - ")
@@ -241,6 +302,13 @@ if __name__ == "__main__":
         input_file=r"E:\! Documents\Artem\Work\Завод 'Фрегат'\для создания CRM.xlsx"
     )
 
-    result = converter.convert()
+    # Обработка всего Excel
+    # result = converter.convert()
+
+    # Обработка начиная с записи с ID 902 включительно
+    result = converter.convert(starting_id=900)
+
+    # Допускается также передача ID в виде строки
+    # result = converter.convert(starting_id="902")
 
     print(result)
