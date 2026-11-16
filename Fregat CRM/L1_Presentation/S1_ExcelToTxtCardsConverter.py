@@ -11,45 +11,97 @@ class ExcelToTxtCardsConverter:
         self.input_file = Path(input_file)
         self.phone_field_processor = PhoneFieldProcessor()
 
-    def convert(self):
+    def convert(self, starting_id=None):
+        """
+        Конвертирует данные Excel в текстовые карточки.
+
+        :param starting_id:
+            ID записи, с которой необходимо начать обработку.
+            Если None, обрабатывается весь Excel.
+            Если ID указан, все предыдущие записи игнорируются.
+        """
+
         workbook = load_workbook(
             self.input_file,
             data_only=True  # Получаем вычисленные значения формул, если они сохранены в Excel
         )
 
-        sheet = workbook.active
+        try:
+            sheet = workbook.active
 
-        headers = [
-            cell.value
-            for cell in sheet[1]
-        ]
+            headers = [
+                cell.value
+                for cell in sheet[1]
+            ]
 
-        cards = []
+            cards = []
 
-        for row in sheet.iter_rows(
-            min_row=2,
-            values_only=True  # Получаем непосредственно значения ячеек, без объектов Cell
-        ):
-            if all(value is None for value in row):
-                continue
+            # Если starting_id не передан, начинаем обработку сразу.
+            starting_id_found = starting_id is None
 
-            card = self._process_row(
-                headers,
-                row
-            )
-            cards.append(card)
+            for row in sheet.iter_rows(
+                min_row=2,
+                values_only=True  # Получаем непосредственно значения ячеек, без объектов Cell
+            ):
+                if all(value is None for value in row):
+                    continue
 
-        result = "\n\n\n".join(cards)
+                # ID записи всегда берётся из первого столбца Excel
+                record_id = row[0] if row else None
 
-        print(result)
+                # Пропускаем записи до тех пор, пока не встретим starting_id.
+                # Сама запись с указанным ID включается в результат.
+                if not starting_id_found:
 
-        # Диагностический вывод
-        # print("Путь к файлу:", self.input_file.resolve())
-        # print("Листы книги:", workbook.sheetnames)
-        # print("Активный лист:", sheet.title)
-        # print("Заголовки столбцов:", headers)
+                    if record_id is None:
+                        continue
 
-        workbook.close()
+                    if (
+                        self._normalize_id(record_id)
+                        != self._normalize_id(starting_id)
+                    ):
+                        continue
+
+                    starting_id_found = True
+
+                card = self._process_row(
+                    headers,
+                    row
+                )
+                cards.append(card)
+
+            # Проверяем, удалось ли найти starting_id
+            if not starting_id_found:
+                raise ValueError(
+                    f"Запись с ID '{starting_id}' не найдена в Excel."
+                )
+
+            result = "\n\n\n".join(cards)
+
+            print(result)
+
+            # Диагностический вывод
+            # print("Путь к файлу:", self.input_file.resolve())
+            # print("Листы книги:", workbook.sheetnames)
+            # print("Активный лист:", sheet.title)
+            # print("Заголовки столбцов:", headers)
+
+        finally:
+            workbook.close()
+
+    @staticmethod
+    def _normalize_id(value):
+        """
+        Нормализует ID для корректного сравнения.
+
+        Например:
+        902 == 902.0 == "902"
+        """
+
+        if isinstance(value, float) and value.is_integer():
+            value = int(value)
+
+        return str(value).strip()
 
     def _process_row(self, headers, row):
         fields = []
@@ -105,8 +157,16 @@ class ExcelToTxtCardsConverter:
 ############################################################################################
 
 if __name__ == "__main__":
+
     converter = ExcelToTxtCardsConverter(
         input_file=r"E:\! Documents\Artem\Work\Завод 'Фрегат'\для создания CRM.xlsx"
     )
 
-    converter.convert()
+    # Обработка всего Excel
+    # converter.convert()
+
+    # Обработка начиная с записи с ID 902 включительно
+    converter.convert(starting_id=902)
+
+    # Допускается также передача ID в виде строки
+    # converter.convert(starting_id="902")
